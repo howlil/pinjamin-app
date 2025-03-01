@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Pengguna {
+  id            String       @id @default(uuid())
+  nama_lengkap  String
+  email         String       @unique
+  kata_sandi    String
+  no_hp         String
+  tipe_peminjam TIPEUSER
+  role          ROLE
+  notifikasi    Notifikasi[]
+  token         Token[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  Peminjaman    Peminjaman[]
+}
+
+model Notifikasi {
+  id               String    @id @default(uuid())
+  pengguna_id      String?
+  jenis_notifikasi Notif
+  judul            String
+  pesan            String
+  tanggal          String
+  status_baca      Int
+  Pengguna         Pengguna? @relation(fields: [pengguna_id], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Token {
+  id          String   @id @default(uuid())
+  pengguna_id String
+  token       String   @db.Text
+  Pengguna    Pengguna @relation(fields: [pengguna_id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FasilitasGedung {
+  id             String   @id @default(uuid())
+  nama_fasilitas String
+  icon_url       String
+  gedung_id      String
+  Gedung         Gedung   @relation(fields: [gedung_id], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Gedung {
+  id                       String                  @id @default(uuid())
+  nama_gedung              String
+  deskripsi                String                  @db.Text
+  harga_sewa               Int
+  kapasitas                Int
+  lokasi                   String
+  tipe_gedung_id           String
+  penganggung_jawab_gedung PenanggungJawabGedung[]
+  FasilitasGedung          FasilitasGedung[]
+  TipeGedung               TipeGedung              @relation(fields: [tipe_gedung_id], references: [id])
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  Peminjaman               Peminjaman[]
+}
+
+model PenanggungJawabGedung {
+  id                     String   @id @default(uuid())
+  nama_penangguang_jawab String
+  no_hp                  String
+  gedung_id              String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  Gedung                 Gedung   @relation(fields: [gedung_id], references: [id])
+}
+
+model TipeGedung {
+  id               String   @id @default(uuid())
+  nama_tipe_gedung String
+  gedung           Gedung[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Peminjaman {
+  id                String           @id @default(uuid())
+  pengguna_id       String?
+  gedung_id         String
+  nama_kegiatan     String
+  tanggal_mulai     String
+  tanggal_selesai   String
+  jam_mulai         String
+  jam_selesai       String
+  surat_pengajuan   String
+  alasan_penolakan  String?
+  status_peminjaman STATUSPEMINJAMAN
+  pembayaran        Pembayaran?      @relation()
+  pengguna          Pengguna?        @relation(fields: [pengguna_id], references: [id])
+  gedung            Gedung           @relation(fields: [gedung_id], references: [id])
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model Pembayaran {
+  id                    String          @id @default(uuid())
+  transaksi_midtrans_id String
+  peminjaman_id         String          @unique
+  no_invoice            String?
+  tanggal_bayar         String
+  jumlah_bayar          Int
+  biaya_midtrans        Int
+  total_bayar           Int
+  metode_pembayaran     String
+  url_pembayaran        String
+  snap_token            String
+  status_pembayaran     STATUSTRANSAKSI
+  refund                Refund?         @relation()
+  peminjaman            Peminjaman      @relation(fields: [peminjaman_id], references: [id])
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+}
+
+model Refund {
+  id                           String     @id @default(uuid())
+  pembayaran_id                String     @unique
+  jumlah_refund                Int
+  status_redund                String
+  alasan_refund                String
+  transaski_refund_midtrans_id String
+  tanggal_refund               String
+  createdAt                    DateTime   @default(now())
+  updatedAt                    DateTime   @updatedAt
+  pembayaran                   Pembayaran @relation(fields: [pembayaran_id], references: [id])
+}
+
+enum STATUSTRANSAKSI {
+  PAID
+  PENDING
+  CANCELED
+  REFUNDED
+  PARTIAL_REFUNDED
+  CHECKOUT
+}
+
+enum STATUSPEMINJAMAN {
+  DIPROSES
+  DISETUJUI
+  DITOLAK
+  SELESAI
+}
+
+enum Notif {
+  PEMBAYARAN
+  PEMINJAMAN
+}
+
+enum TIPEUSER {
+  INUNAND
+  EXUNAND
+}
+
+enum ROLE {
+  PEMINJAM
+  ADMIN
+}
