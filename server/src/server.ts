@@ -7,6 +7,8 @@ import { apiLimiter } from "./middlewares/rate-limit.middleware";
 import { APP_CONFIG } from "./configs/app";
 import { connectToDatabase } from "./configs/db";
 import path from "path";
+import publicRoute from "./routes/public.routes";
+import privateRoute from "./routes/private.routes";
 
 setupUncaughtExceptionHandling();
 
@@ -23,20 +25,8 @@ app.use(
   express.static(path.join(process.cwd(), APP_CONFIG.UPLOAD_PATH))
 );
 
-app.get("/", (req, res) => {
-  res.json({
-    status: "success",
-    message: `${APP_CONFIG.APP_NAME} API is running`,
-    version: APP_CONFIG.APP_VERSION,
-  });
-});
-
-app.use("*", (req, res) => {
-  res.status(404).json({
-    status: "error",
-    message: "Route tidak ditemukan",
-  });
-});
+app.use(publicRoute)
+app.use(privateRoute)
 
 app.use(errorMiddleware as unknown as ErrorRequestHandler);
 
