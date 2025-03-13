@@ -9,12 +9,14 @@ export const APP_CONFIG = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   NODE_ENV: process.env.NODE_ENV || 'development',
+  ADMIN_EMAIL: 'admin@unand.ac.id',
   UPLOAD_PATH: process.env.UPLOAD_PATH || path.join(process.cwd(), 'uploads'),
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
   APP_NAME: process.env.APP_NAME || 'Peminjaman Gedung API',
   APP_VERSION: process.env.APP_VERSION || '1.0.0',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   DATABASE_URL: process.env.DATABASE_URL,
+  BCRYPT_SALT_ROUNDS: 10,
   DIRECT_URL: process.env.DIRECT_URL,
   MAX_UPLOAD_SIZE: process.env.MAX_UPLOAD_SIZE 
     ? parseInt(process.env.MAX_UPLOAD_SIZE) 

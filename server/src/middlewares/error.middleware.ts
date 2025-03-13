@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError, ValidationError } from "../configs/error";
-import { logger } from "../configs/logger";
+import { AppError, ValidationError } from "../configs/error.config";
+import { logger } from "../configs/logger.config";
 import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
 
@@ -10,7 +10,6 @@ export const errorMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  // Log error
   logger.error(`${err.name}: ${err.message}`, {
     error: err,
     path: req.path,
@@ -21,14 +20,12 @@ export const errorMiddleware = (
     query: req.query,
   });
 
-  // Handle AppError (custom error)
   if (err instanceof AppError) {
     const response = {
       status: "error",
       message: err.message,
     };
 
-    // Add validation errors if available
     if (err instanceof ValidationError && Object.keys(err.errors).length > 0) {
       Object.assign(response, { errors: err.errors });
     }
@@ -36,7 +33,6 @@ export const errorMiddleware = (
     return res.status(err.statusCode).json(response);
   }
 
-  // Handle Zod validation errors
   if (err instanceof ZodError) {
     const validationErrors = err.errors.reduce((acc, error) => {
       const field = error.path.join(".");
@@ -51,9 +47,7 @@ export const errorMiddleware = (
     });
   }
 
-  // Handle Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    // Handle unique constraint violations
     if (err.code === "P2002") {
       const field = (err.meta?.target as string[]) || ["unknown"];
       return res.status(409).json({
@@ -62,7 +56,6 @@ export const errorMiddleware = (
       });
     }
 
-    // Handle foreign key constraint violations
     if (err.code === "P2003") {
       return res.status(400).json({
         status: "error",
@@ -70,7 +63,6 @@ export const errorMiddleware = (
       });
     }
 
-    // Handle record not found
     if (err.code === "P2025") {
       return res.status(404).json({
         status: "error",
@@ -85,9 +77,6 @@ export const errorMiddleware = (
       message: "Validasi database gagal.",
     });
   }
-
-  // Default error handler for unhandled errors
-  console.error(err); // Log detailed error to console for debugging
 
   return res.status(500).json({
     status: "error",

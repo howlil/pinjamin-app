@@ -1,187 +1,93 @@
-import { Request, Response, NextFunction } from 'express';
-import { authService } from '../services/auth.service';
-import { authorizationService } from '../services/authorization.service';
-import { UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError } from '../configs/error';
-import { ROLE } from '@prisma/client';
-import { logger } from '../configs/logger';
+// src/middlewares/auth.middleware.ts
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { APP_CONFIG } from "../configs/app.config";
+import { UnauthorizedError, ForbiddenError } from "../configs/error.config";
+import { prisma } from "../configs/db.configs";
+import { ROLE } from "@prisma/client";
 
-declare global {
-  namespace Express {
-    interface Request {
-      pengguna?: any;
-      token?: string;
+interface DecodedToken {
+  id: string;
+  role: ROLE;
+  email: string;
+}
+
+export class AuthMiddleware {
+  static authenticate = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        throw new UnauthorizedError("Token tidak tersedia");
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      try {
+        const decoded = jwt.verify(
+          token,
+          APP_CONFIG.JWT_SECRET
+        ) as DecodedToken;
+
+        // Cek apakah token ada di database
+        const userToken = await prisma.token.findFirst({
+          where: {
+            token,
+            pengguna_id: decoded.id,
+          },
+        });
+
+        if (!userToken) {
+          throw new UnauthorizedError("Token tidak valid");
+        }
+
+        // Set user pada request object
+        req.user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+        };
+
+        next();
+      } catch (jwtError) {
+        throw new UnauthorizedError("Token tidak valid");
+      }
+    } catch (error) {
+      next(error);
     }
-  }
-}
+  };
 
-/**
- * Authentication Middleware Builder
- * Menggunakan pattern builder untuk mempermudah pembuatan middleware auth
- */
-export class AuthMiddlewareBuilder {
-  private middlewareFunctions: Array<(req: Request, res: Response, next: NextFunction) => Promise<void>> = [];
-
-  /**
-   * Add authentication middleware
-   */
-  withAuthentication(): AuthMiddlewareBuilder {
-    this.middlewareFunctions.push(async (req: Request, res: Response, next: NextFunction) => {
+  static authorize = (role: ROLE) => {
+    return (req: Request, res: Response, next: NextFunction) => {
       try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          throw new UnauthorizedError('Tidak ada token autentikasi');
+        if (!req.user) {
+          throw new UnauthorizedError("Autentikasi diperlukan");
         }
 
-        const token = authHeader.split(' ')[1];
-        const pengguna = await authService.getPenggunaFromToken(token);
-
-        // Set user and token in request object
-        req.pengguna = pengguna;
-        req.token = token;
-
-        next();
-      } catch (error) {
-        logger.error('Authentication error', { error });
-        next(error);
-      }
-    });
-
-    return this;
-  }
-
-  /**
-   * Add role-based authorization middleware
-   */
-  withRoleAuthorization(requiredRole: ROLE): AuthMiddlewareBuilder {
-    this.middlewareFunctions.push(async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        if (!req.pengguna) {
-          throw new UnauthorizedError('Pengguna belum terautentikasi');
-        }
-
-        const isAuthorized = await authorizationService.hasRole(req.pengguna.role, requiredRole);
-        if (!isAuthorized) {
-          throw new ForbiddenError(`Akses ditolak. Anda tidak memiliki peran ${requiredRole}`);
+        if (req.user.role !== role) {
+          throw new ForbiddenError("Tidak memiliki akses");
         }
 
         next();
       } catch (error) {
-        logger.error('Role authorization error', { error });
         next(error);
       }
-    });
+    };
+  };
 
-    return this;
-  }
+  static authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
+    return AuthMiddleware.authorize(ROLE.ADMIN)(req, res, next);
+  };
 
-  /**
-   * Add resource owner authorization middleware
-   */
-  withResourceOwnerAuthorization(
-    paramIdField: string, 
-    repository: any, 
-    userIdField: string = 'pengguna_id'
-  ): AuthMiddlewareBuilder {
-    this.middlewareFunctions.push(async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        if (!req.pengguna) {
-          throw new UnauthorizedError('Pengguna belum terautentikasi');
-        }
-
-        const resourceId = req.params[paramIdField];
-        if (!resourceId) {
-          throw new BadRequestError(`Parameter ${paramIdField} tidak ditemukan`);
-        }
-
-        const isAuthorized = await authorizationService.isResourceOwner(
-          req.pengguna.role,
-          req.pengguna.id,
-          resourceId,
-          repository,
-          userIdField
-        );
-
-        if (!isAuthorized) {
-          throw new ForbiddenError('Akses ditolak. Anda tidak memiliki akses ke resource ini');
-        }
-
-        next();
-      } catch (error) {
-        logger.error('Resource owner authorization error', { error });
-        next(error);
-      }
-    });
-
-    return this;
-  }
-
-  /**
-   * Build the middleware
-   */
-  build(): Array<(req: Request, res: Response, next: NextFunction) => Promise<void>> {
-    if (this.middlewareFunctions.length === 0) {
-      throw new Error('Middleware belum dibuat. Gunakan method "with..." untuk menambahkan middleware');
-    }
-    
-    return this.middlewareFunctions;
-  }
-}
-
-/**
- * Auth Middleware Factory
- * Pola factory untuk mempermudah pembuatan middleware auth
- */
-export class AuthMiddlewareFactory {
-  /**
-   * Create authentication middleware
-   */
-  static createAuthenticationMiddleware() {
-    return new AuthMiddlewareBuilder()
-      .withAuthentication()
-      .build();
-  }
-
-  /**
-   * Create admin authorization middleware
-   */
-  static createAdminAuthorizationMiddleware() {
-    return new AuthMiddlewareBuilder()
-      .withAuthentication()
-      .withRoleAuthorization(ROLE.ADMIN)
-      .build();
-  }
-
-  /**
-   * Create peminjam authorization middleware
-   */
-  static createPeminjamAuthorizationMiddleware() {
-    return new AuthMiddlewareBuilder()
-      .withAuthentication()
-      .withRoleAuthorization(ROLE.PEMINJAM)
-      .build();
-  }
-
-  /**
-   * Create resource owner authorization middleware
-   */
-  static createResourceOwnerAuthorizationMiddleware(
-    paramIdField: string,
-    repository: any,
-    userIdField: string = 'pengguna_id'
-  ) {
-    return new AuthMiddlewareBuilder()
-      .withAuthentication()
-      .withResourceOwnerAuthorization(paramIdField, repository, userIdField)
-      .build();
-  }
-}
-
-// Middleware function exports untuk kemudahan penggunaan
-export const authenticate = AuthMiddlewareFactory.createAuthenticationMiddleware();
-export const authorizeAdmin = AuthMiddlewareFactory.createAdminAuthorizationMiddleware();
-export const authorizePeminjam = AuthMiddlewareFactory.createPeminjamAuthorizationMiddleware();
-
-// Helper function untuk membuat resource owner authorization middleware
-export function authorizeResourceOwner(paramIdField: string, repository: any, userIdField: string = 'pengguna_id') {
-  return AuthMiddlewareFactory.createResourceOwnerAuthorizationMiddleware(paramIdField, repository, userIdField);
+  static authorizePeminjam = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    return AuthMiddleware.authorize(ROLE.PEMINJAM)(req, res, next);
+  };
 }

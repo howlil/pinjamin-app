@@ -19,12 +19,6 @@ export const penggunaUpdateSchema = z.object({
   email: z.string().email('Email tidak valid').optional(),
   kata_sandi: z.string().min(6, 'Kata sandi minimal 6 karakter').optional(),
   no_hp: z.string().min(10, 'Nomor HP tidak valid').optional(),
-  tipe_peminjam: z.nativeEnum(TIPEUSER, {
-    errorMap: () => ({ message: 'Tipe peminjam tidak valid' }),
-  }).optional(),
-  role: z.nativeEnum(ROLE, {
-    errorMap: () => ({ message: 'Role tidak valid' }),
-  }).optional(),
 });
 
 export const penggunaLoginSchema = z.object({

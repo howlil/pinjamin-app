@@ -1,11 +1,11 @@
 import express, { Express, ErrorRequestHandler } from "express";
-import { setupUncaughtExceptionHandling } from "./utils/uncaught-exception.handler";
+import { setupUncaughtExceptionHandling } from "./utils/uncaught-exception.util";
 import { errorMiddleware } from "./middlewares/error.middleware";
-import { logger, requestLogger } from "./configs/logger";
+import { logger, requestLogger } from "./configs/logger.config";
 import { setupSecurityMiddleware } from "./middlewares/security.middleware";
 import { apiLimiter } from "./middlewares/rate-limit.middleware";
-import { APP_CONFIG } from "./configs/app";
-import { connectToDatabase } from "./configs/db";
+import { APP_CONFIG } from "./configs/app.config";
+import { connectToDatabase } from "./configs/db.configs";
 import path from "path";
 import publicRoute from "./routes/public.routes";
 import privateRoute from "./routes/private.routes";
@@ -25,8 +25,8 @@ app.use(
   express.static(path.join(process.cwd(), APP_CONFIG.UPLOAD_PATH))
 );
 
-app.use(publicRoute)
-app.use(privateRoute)
+app.use(publicRoute);
+app.use(privateRoute);
 
 app.use(errorMiddleware as unknown as ErrorRequestHandler);
 

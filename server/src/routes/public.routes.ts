@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { APP_CONFIG } from "../configs/app"; 
+import { APP_CONFIG } from "../configs/app.config";
 
 const publicRoute = Router();
 
