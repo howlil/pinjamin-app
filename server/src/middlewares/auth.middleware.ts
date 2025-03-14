@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { APP_CONFIG } from "../configs/app.config";
 import { UnauthorizedError, ForbiddenError } from "../configs/error.config";
-import { prisma } from "../configs/db.configs";
+import { prisma } from "../configs/db.config";
 import { ROLE } from "@prisma/client";
 
 interface DecodedToken {

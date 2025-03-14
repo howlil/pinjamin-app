@@ -1,47 +1,62 @@
 // src/services/pengguna.service.ts
-import { prisma } from '../configs/db.configs';
-import { APP_CONFIG } from '../configs/app.config';
-import { 
-  BadRequestError, 
-  NotFoundError, 
-  UnauthorizedError, 
-  ConflictError 
-} from '../configs/error.config';
-import { Pengguna, PenggunaCreate, PenggunaLogin, PenggunaUpdate } from '../types/pengguna.types';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { ROLE, TIPEUSER } from '@prisma/client';
-import { logger } from '../configs/logger.config';
-import { IPenggunaService } from '../interfaces/pengguna.service.interface';
+import { prisma } from "../configs/db.config";
+import { APP_CONFIG } from "../configs/app.config";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+  ConflictError,
+} from "../configs/error.config";
+import {
+  Pengguna,
+  PenggunaCreate,
+  PenggunaLogin,
+  PenggunaUpdate,
+} from "../types/pengguna.types";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { ROLE, TIPEUSER } from "@prisma/client";
+import { logger } from "../configs/logger.config";
+import { IPenggunaService } from "../interfaces/pengguna.service.interface";
 
 export class PenggunaService implements IPenggunaService {
-  
-  async register(penggunaData: PenggunaCreate): Promise<Omit<Pengguna, 'kata_sandi'>> {
+  async register(
+    penggunaData: PenggunaCreate
+  ): Promise<Omit<Pengguna, "kata_sandi">> {
     const existingUser = await prisma.pengguna.findUnique({
       where: { email: penggunaData.email },
     });
 
     if (existingUser) {
-      throw new ConflictError('Email sudah terdaftar');
+      throw new ConflictError("Email sudah terdaftar");
     }
 
     if (penggunaData.role === ROLE.ADMIN) {
       const existingAdmin = await prisma.pengguna.findFirst({
         where: { role: ROLE.ADMIN },
       });
-      
+
       if (existingAdmin) {
-        throw new BadRequestError('Admin sudah terdaftar, hanya bisa ada satu admin');
+        throw new BadRequestError(
+          "Admin sudah terdaftar, hanya bisa ada satu admin"
+        );
       }
-      
+
       if (penggunaData.email !== APP_CONFIG.ADMIN_EMAIL) {
-        throw new BadRequestError('Hanya email admin yang bisa mendaftar sebagai admin');
+        throw new BadRequestError(
+          "Hanya email admin yang bisa mendaftar sebagai admin"
+        );
       }
     }
 
-    if (penggunaData.role === ROLE.PEMINJAM && penggunaData.tipe_peminjam === TIPEUSER.INUNAND) {
-      if (!penggunaData.email.endsWith('@unand.ac.id')) {
-        throw new BadRequestError('Email internal harus menggunakan domain @unand.ac.id');
+    if (
+      penggunaData.role === ROLE.PEMINJAM &&
+      penggunaData.tipe_peminjam === TIPEUSER.INUNAND
+    ) {
+      if (!penggunaData.email.endsWith("@unand.ac.id")) {
+        throw new BadRequestError(
+          "Email internal harus menggunakan domain @unand.ac.id"
+        );
       }
     }
 
@@ -58,19 +73,21 @@ export class PenggunaService implements IPenggunaService {
     });
 
     const { kata_sandi, ...penggunaWithoutPassword } = pengguna;
-    
+
     logger.info(`Pengguna baru terdaftar: ${pengguna.email}`);
-    
+
     return penggunaWithoutPassword;
   }
 
-  async login(loginData: PenggunaLogin): Promise<{ pengguna: Omit<Pengguna, 'kata_sandi'>, token: string }> {
+  async login(
+    loginData: PenggunaLogin
+  ): Promise<{ pengguna: Omit<Pengguna, "kata_sandi">; token: string }> {
     const pengguna = await prisma.pengguna.findUnique({
       where: { email: loginData.email },
     });
 
     if (!pengguna) {
-      throw new UnauthorizedError('Email atau kata sandi tidak valid');
+      throw new UnauthorizedError("Email atau kata sandi tidak valid");
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -79,7 +96,7 @@ export class PenggunaService implements IPenggunaService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedError('Email atau kata sandi tidak valid');
+      throw new UnauthorizedError("Email atau kata sandi tidak valid");
     }
 
     const tokenPayload = {
@@ -100,17 +117,16 @@ export class PenggunaService implements IPenggunaService {
     });
 
     const { kata_sandi, ...penggunaWithoutPassword } = pengguna;
-    
+
     logger.info(`Pengguna berhasil login: ${pengguna.email}`);
-    
+
     return {
       pengguna: penggunaWithoutPassword,
       token,
     };
   }
 
-
-  async getProfile(userId: string): Promise<Omit<Pengguna, 'kata_sandi'>> {
+  async getProfile(userId: string): Promise<Omit<Pengguna, "kata_sandi">> {
     const pengguna = await prisma.pengguna.findUnique({
       where: { id: userId },
       select: {
@@ -121,26 +137,28 @@ export class PenggunaService implements IPenggunaService {
         tipe_peminjam: true,
         role: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     if (!pengguna) {
-      throw new NotFoundError('Pengguna tidak ditemukan');
+      throw new NotFoundError("Pengguna tidak ditemukan");
     }
-    
-    return pengguna as Omit<Pengguna, 'kata_sandi'>;
+
+    return pengguna as Omit<Pengguna, "kata_sandi">;
   }
 
-  
-  async updateProfile(userId: string, userData: PenggunaUpdate): Promise<Omit<Pengguna, 'kata_sandi'>> {
+  async updateProfile(
+    userId: string,
+    userData: PenggunaUpdate
+  ): Promise<Omit<Pengguna, "kata_sandi">> {
     // Cek apakah pengguna ada
     const existingUser = await prisma.pengguna.findUnique({
       where: { id: userId },
     });
 
     if (!existingUser) {
-      throw new NotFoundError('Pengguna tidak ditemukan');
+      throw new NotFoundError("Pengguna tidak ditemukan");
     }
 
     // Jika ada perubahan email, cek apakah email sudah terdaftar
@@ -150,22 +168,25 @@ export class PenggunaService implements IPenggunaService {
       });
 
       if (emailExists) {
-        throw new ConflictError('Email sudah terdaftar');
+        throw new ConflictError("Email sudah terdaftar");
       }
-      
+
       // Validasi email untuk INUNAND
       if (
-        (userData.tipe_peminjam === TIPEUSER.INUNAND || 
-         (!userData.tipe_peminjam && existingUser.tipe_peminjam === TIPEUSER.INUNAND)) && 
-        !userData.email.endsWith('@unand.ac.id')
+        (userData.tipe_peminjam === TIPEUSER.INUNAND ||
+          (!userData.tipe_peminjam &&
+            existingUser.tipe_peminjam === TIPEUSER.INUNAND)) &&
+        !userData.email.endsWith("@unand.ac.id")
       ) {
-        throw new BadRequestError('Email internal harus menggunakan domain @unand.ac.id');
+        throw new BadRequestError(
+          "Email internal harus menggunakan domain @unand.ac.id"
+        );
       }
     }
 
     // Tidak mengizinkan perubahan role
     if (userData.role && userData.role !== existingUser.role) {
-      throw new BadRequestError('Tidak dapat mengubah role pengguna');
+      throw new BadRequestError("Tidak dapat mengubah role pengguna");
     }
 
     // Hash password jika ada perubahan
@@ -189,14 +210,14 @@ export class PenggunaService implements IPenggunaService {
         tipe_peminjam: true,
         role: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
         // kata_sandi secara eksplisit tidak dipilih
-      }
+      },
     });
 
     logger.info(`Profil pengguna diperbarui: ${updatedPengguna.email}`);
-    
-    return updatedPengguna as Omit<Pengguna, 'kata_sandi'>;
+
+    return updatedPengguna as Omit<Pengguna, "kata_sandi">;
   }
 
   async logout(token: string): Promise<boolean> {
@@ -205,11 +226,11 @@ export class PenggunaService implements IPenggunaService {
       await prisma.token.deleteMany({
         where: { token },
       });
-      
-      logger.info('Pengguna berhasil logout');
+
+      logger.info("Pengguna berhasil logout");
       return true;
     } catch (error) {
-      throw new BadRequestError('Gagal logout');
+      throw new BadRequestError("Gagal logout");
     }
   }
 }

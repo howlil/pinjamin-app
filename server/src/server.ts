@@ -5,7 +5,7 @@ import { logger, requestLogger } from "./configs/logger.config";
 import { setupSecurityMiddleware } from "./middlewares/security.middleware";
 import { apiLimiter } from "./middlewares/rate-limit.middleware";
 import { APP_CONFIG } from "./configs/app.config";
-import { connectToDatabase } from "./configs/db.configs";
+import { connectToDatabase } from "./configs/db.config";
 import path from "path";
 import publicRoute from "./routes/public.routes";
 import privateRoute from "./routes/private.routes";
@@ -34,10 +34,8 @@ const PORT = APP_CONFIG.PORT;
 
 const startServer = async () => {
   try {
-    // Connect to database
     await connectToDatabase();
 
-    // Start server
     app.listen(PORT, () => {
       logger.info(
         `Server berjalan pada port ${PORT} di mode ${APP_CONFIG.NODE_ENV}`

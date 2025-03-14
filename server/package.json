@@ -8,7 +8,10 @@
     "dev": "nodemon src/index.ts",
     "migrate": "npx prisma migrate dev",
     "generate": "npx prisma generate",
-    "studio": "npx prisma studio"
+    "studio": "npx prisma studio",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "howlils",
@@ -26,14 +29,21 @@
     "morgan": "^1.10.0",
     "nodemon": "^3.1.9",
     "prisma": "^6.4.1",
+    "pusher": "^5.2.0",
     "winston": "^3.17.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.26.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.5",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.6",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
   }
