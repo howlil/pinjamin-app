@@ -3,7 +3,7 @@ import { Pengguna } from './pengguna.types';
 
 export interface Notifikasi {
   id: string;
-  pengguna_id?: string;
+  pengguna_id: string | null;  // Changed from string | undefined to string | null
   jenis_notifikasi: Notif;
   judul: string;
   pesan: string;
@@ -15,7 +15,7 @@ export interface Notifikasi {
 }
 
 export interface NotifikasiCreate {
-  pengguna_id?: string;
+  pengguna_id?: string | null;  // Changed from string | undefined to string | null
   jenis_notifikasi: Notif;
   judul: string;
   pesan: string;

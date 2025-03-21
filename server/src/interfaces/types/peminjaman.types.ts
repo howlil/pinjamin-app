@@ -5,7 +5,7 @@ import { Pembayaran } from './pembayaran.types';
 
 export interface Peminjaman {
   id: string;
-  pengguna_id?: string;
+  pengguna_id: string | null;  // Changed from string | undefined to string | null
   gedung_id: string;
   nama_kegiatan: string;
   tanggal_mulai: string;
@@ -23,7 +23,7 @@ export interface Peminjaman {
 }
 
 export interface PeminjamanCreate {
-  pengguna_id?: string;
+  pengguna_id?: string | null;  // Changed from string | undefined to string | null
   gedung_id: string;
   nama_kegiatan: string;
   tanggal_mulai: string;
@@ -31,7 +31,7 @@ export interface PeminjamanCreate {
   jam_mulai: string;
   jam_selesai: string;
   surat_pengajuan: string;
-  status_peminjaman: STATUSPEMINJAMAN;
+  status_peminjaman?: STATUSPEMINJAMAN;
 }
 
 export interface PeminjamanUpdate {
@@ -47,5 +47,5 @@ export interface PeminjamanUpdate {
 
 export interface PeminjamanApproval {
   status_peminjaman: STATUSPEMINJAMAN;
-  alasan_penolakan?: string;
+  alasan_penolakan?: string | null;  
 }

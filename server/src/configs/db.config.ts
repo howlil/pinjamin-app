@@ -30,7 +30,6 @@ const prismaClientSingleton = () => {
 
 export const prisma = global.prisma || prismaClientSingleton();
 
-// Typescript type untuk event listener
 type QueryEvent = {
   timestamp: Date;
   query: string;

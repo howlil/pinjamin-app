@@ -1,9 +1,8 @@
-// src/middlewares/auth.middleware.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { APP_CONFIG } from "../configs/app.config";
 import { UnauthorizedError, ForbiddenError } from "../configs/error.config";
-import { prisma } from "../configs/db.configs";
+import { prisma } from "../configs/db.config";
 import { ROLE } from "@prisma/client";
 
 interface DecodedToken {
@@ -12,8 +11,8 @@ interface DecodedToken {
   email: string;
 }
 
-export class AuthMiddleware {
-  static authenticate = async (
+class AuthMiddleware {
+  public authenticate = async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -33,7 +32,6 @@ export class AuthMiddleware {
           APP_CONFIG.JWT_SECRET
         ) as DecodedToken;
 
-        // Cek apakah token ada di database
         const userToken = await prisma.token.findFirst({
           where: {
             token,
@@ -45,7 +43,6 @@ export class AuthMiddleware {
           throw new UnauthorizedError("Token tidak valid");
         }
 
-        // Set user pada request object
         req.user = {
           id: decoded.id,
           email: decoded.email,
@@ -79,11 +76,11 @@ export class AuthMiddleware {
     };
   };
 
-  static authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
+  public authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
     return AuthMiddleware.authorize(ROLE.ADMIN)(req, res, next);
   };
 
-  static authorizePeminjam = (
+  public authorizePeminjam = (
     req: Request,
     res: Response,
     next: NextFunction
@@ -91,3 +88,5 @@ export class AuthMiddleware {
     return AuthMiddleware.authorize(ROLE.PEMINJAM)(req, res, next);
   };
 }
+
+export default new AuthMiddleware()
