@@ -1,7 +1,7 @@
 import AllGedung from "@/components/features/beranda/all-gedung";
 import HeroSection from "@/components/features/beranda/hero-section";
-import MainLayout from "@/components/layouts/main-layout";
-import { AnimatedGridPattern } from "@/components/magicui/animated-grid-pattern";
+import MainLayout from "@/components/common/layouts/main-layout";
+import { AnimatedGridPattern } from "@/components/ui/magicui/animated-grid-pattern";
 import { cn } from "@/lib/utils";
 
 export default function BerandaPage() {

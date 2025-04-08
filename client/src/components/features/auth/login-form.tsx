@@ -1,52 +1,42 @@
-// src/features/auth/components/LoginForm.tsx
 import { useState } from "react";
 import { useFormik } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import { useMutation } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
+import { loginSchema, type LoginFormValues } from "@/validations/auth";
 import PasswordInput from "@/components/ui/costum/password-input";
-
-// Placeholder for API call
-const loginUserApi = async (data: LoginFormValues) => {
-  // This would be your actual API call
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, user: { id: 1, email: data.email } });
-    }, 1000);
-  });
-};
+import { AuthService } from "@/apis/auth";
 
 const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const loginMutation = useMutation({
-    mutationFn: loginUserApi,
-    onSuccess: (data) => {
-      // Handle successful login
-      console.log("Login successful", data);
-      // Redirect user or update auth state
-    },
-    onError: (error) => {
-      // Handle login error
-      console.error("Login failed", error);
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    },
-  });
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const formik = useFormik<LoginFormValues>({
     initialValues: {
       email: "",
-      password: "",
+      kata_sandi: "",
     },
     validationSchema: toFormikValidationSchema(loginSchema),
-    onSubmit: (values) => {
-      setIsSubmitting(true);
-      loginMutation.mutate(values);
+    onSubmit: async (values) => {
+      try {
+        setIsSubmitting(true);
+        setError(null);
+        
+        const response = await AuthService.login(values);
+        
+        if (response.data.token) {
+          localStorage.setItem("auth_token", response.data.token);
+          
+          // Redirect to dashboard or home page after successful login
+          navigate("/dashboard");
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Login failed. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
     },
   });
 
@@ -58,6 +48,12 @@ const LoginForm = () => {
           Masukkan email dan kata sandi Anda untuk masuk!
         </p>
       </div>
+
+      {error && (
+        <div className="p-3 rounded-md bg-red-50 text-red-500 text-sm">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -85,7 +81,7 @@ const LoginForm = () => {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium">
+            <label htmlFor="kata_sandi" className="text-sm font-medium">
               Password<span className="text-red-500">*</span>
             </label>
             <Link
@@ -95,18 +91,18 @@ const LoginForm = () => {
               Lupa password?
             </Link>
           </div>
-          <PasswordInput formik={formik} name="password" />
+          <PasswordInput formik={formik} name="kata_sandi" />
         </div>
 
-        <Button   disabled={isSubmitting}>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? "Memproses..." : "Masuk"}
         </Button>
       </form>
 
-      <div className="text-center  text-sm">
+      <div className="text-center text-sm">
         Belum punya akun?{" "}
         <Link to="/daftar" className="text-primary hover:underline">
-          daftar
+          Daftar
         </Link>
       </div>
     </div>

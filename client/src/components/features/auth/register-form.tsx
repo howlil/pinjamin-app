@@ -2,38 +2,19 @@
 import { useState } from "react";
 import { useFormik } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
-import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { registerSchema, type RegisterFormValues } from "@/lib/validations/auth";
+import { registerSchema, type RegisterFormValues } from "@/validations/auth";
 import PasswordInput from "@/components/ui/costum/password-input";
 import TextInput from "@/components/ui/costum/text-input";
 import SelectInput from "@/components/ui/costum/select-input";
 
-
-const registerUserApi = async (data: RegisterFormValues) => {
-  return await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, user: { id: 1, email: data.email } });
-    }, 1000);
-  });
-};
+;
 
 const RegisterForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const registerMutation = useMutation({
-    mutationFn: registerUserApi,
-    onSuccess: (data) => {
-      console.log("Registration successful", data);
-    },
-    onError: (error) => {
-      console.error("Registration failed", error);
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    }
-  });
+ 
 
   const formik = useFormik<RegisterFormValues>({
     initialValues: {
@@ -45,7 +26,6 @@ const RegisterForm = () => {
     validationSchema: toFormikValidationSchema(registerSchema),
     onSubmit: (values) => {
       setIsSubmitting(true);
-      registerMutation.mutate(values);
     }
   });
 

@@ -1,4 +1,4 @@
-import { INavItem } from '../interfaces/navigations/INavigation';
+import { INavItem } from '../interfaces/INavigation';
 
 export const dataNav: INavItem[] = [
   {

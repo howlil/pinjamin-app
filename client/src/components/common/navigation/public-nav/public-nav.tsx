@@ -1,9 +1,8 @@
 import logo from "@/assets/logo.png";
 import Navigation from "./nav-items";
-import { dataNav } from "@/lib/data/nav-data";
 import UserItems from "./user-items";
 import { FC } from "react";
-
+import { dataNav } from "@/data/nav-data";
 
 interface PublicNavProps {
   isScrolled : Boolean

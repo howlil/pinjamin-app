@@ -1,4 +1,4 @@
-import AuthLayout from "@/components/layouts/auth-layout";
+import AuthLayout from "@/components/common/layouts/auth-layout";
 import RegisterForm from "@/components/features/auth/register-form";
 import LoginForm from "@/components/features/auth/login-form";
 import { useLocation, Navigate } from "react-router-dom";

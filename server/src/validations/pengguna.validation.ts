@@ -9,9 +9,7 @@ export const penggunaSchema = z.object({
   tipe_peminjam: z.nativeEnum(TIPEUSER, {
     errorMap: () => ({ message: 'Tipe peminjam tidak valid' }),
   }),
-  role: z.nativeEnum(ROLE, {
-    errorMap: () => ({ message: 'Role tidak valid' }),
-  }),
+
 });
 
 export const penggunaUpdateSchema = z.object({

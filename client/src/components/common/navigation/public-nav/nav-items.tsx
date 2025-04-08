@@ -1,5 +1,6 @@
 import { FC } from "react";
-import { INavProps } from "../../../lib/interfaces/navigations/INavigation";
+import { INavProps } from "@/interfaces/INavigation";
+
 
 const Navigation: FC<INavProps> = ({ items }) => {
   return (
