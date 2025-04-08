@@ -1,6 +1,6 @@
 import AuthLayout from "@/components/layouts/auth-layout";
-import RegisterForm from "@/components/features/auth/components/register-form";
-import LoginForm from "@/components/features/auth/components/login-form";
+import RegisterForm from "@/components/features/auth/register-form";
+import LoginForm from "@/components/features/auth/login-form";
 import { useLocation, Navigate } from "react-router-dom";
 import bgimage from "@/assets/bg-unand.png";
 

@@ -1,7 +1,6 @@
-import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
-
-const AuthPage = lazy(() => import("@/pages/auth/AuthPage"));
+import AuthPage from "@/pages/auth/AuthPage";
+import BerandaPage from "@/pages/beranda/BerandaPage";
 
 export const PublicRoutes: RouteObject[] = [
   {
@@ -12,4 +11,8 @@ export const PublicRoutes: RouteObject[] = [
     path: "/daftar",
     element: <AuthPage />,
   },
+  {
+    path:"/",
+    element:<BerandaPage/>
+  }
 ];
