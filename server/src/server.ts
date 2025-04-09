@@ -7,6 +7,7 @@ import { setupSecurityMiddleware } from "./middlewares/security.middleware";
 import { apiLimiter } from "./middlewares/rate-limit.middleware";
 import { APP_CONFIG } from "./configs/app.config";
 import { connectToDatabase } from "./configs/db.config";
+import { configureStaticFiles } from './configs/static.config';
 import appRouter from "./routes/index"
 export class Server {
   private app: Express;
@@ -23,6 +24,7 @@ export class Server {
   
   protected plugin(): void {
     setupSecurityMiddleware(this.app);
+    configureStaticFiles(this.app);
     this.app.use(express.json({ limit: "10mb" }));
     this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
     this.app.use(requestLogger);

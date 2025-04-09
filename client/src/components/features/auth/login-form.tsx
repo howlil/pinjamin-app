@@ -7,37 +7,47 @@ import { Button } from "@/components/ui/button";
 import { loginSchema, type LoginFormValues } from "@/validations/auth";
 import PasswordInput from "@/components/ui/costum/password-input";
 import { AuthService } from "@/apis/auth";
+import { ErrorMessage } from "@/components/ui/costum/error-message";
+import { AxiosError } from "axios";
 
 const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const handleLogin = async (
+    values: LoginFormValues,
+    setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      const response = await AuthService.login(values);
+      if (response.data.token) {
+        localStorage.setItem("auth_token", response.data.token);
+
+        navigate("/dashboard");
+      }
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        setError(
+          err.response?.data?.message || "Login failed. Please try again."
+        );
+      } else {
+        setError("An unknown error occurred.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const formik = useFormik<LoginFormValues>({
     initialValues: {
       email: "",
       kata_sandi: "",
     },
     validationSchema: toFormikValidationSchema(loginSchema),
-    onSubmit: async (values) => {
-      try {
-        setIsSubmitting(true);
-        setError(null);
-        
-        const response = await AuthService.login(values);
-        
-        if (response.data.token) {
-          localStorage.setItem("auth_token", response.data.token);
-          
-          // Redirect to dashboard or home page after successful login
-          navigate("/dashboard");
-        }
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Login failed. Please try again.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
+    onSubmit: (values) => handleLogin(values, setIsSubmitting),
   });
 
   return (
@@ -49,11 +59,7 @@ const LoginForm = () => {
         </p>
       </div>
 
-      {error && (
-        <div className="p-3 rounded-md bg-red-50 text-red-500 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <ErrorMessage message={error} />}
 
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         <div className="space-y-2">

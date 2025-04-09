@@ -24,7 +24,6 @@ export interface PenggunaCreate {
   kata_sandi: string;
   no_hp: string;
   tipe_peminjam: TIPEUSER;
-  role: ROLE;
 }
 
 export interface PenggunaUpdate {
@@ -33,7 +32,6 @@ export interface PenggunaUpdate {
   kata_sandi?: string;
   no_hp?: string;
   tipe_peminjam?: TIPEUSER;
-  role?: ROLE;
 }
 
 export interface PenggunaLogin {

@@ -2,15 +2,16 @@ import { prisma } from "../configs/db.config";
 import { BadRequestError, NotFoundError } from "../configs/error.config";
 import {
   Gedung,
+  Gedungs,
   GedungCreate,
   GedungUpdate,
   GedungFilter,
 } from "../interfaces/types/gedung.types";
 import { IGedungService } from "../interfaces/services/gedung.interface";
-import { STATUSPEMINJAMAN } from "@prisma/client";
+import { STATUSPEMINJAMAN, Prisma } from "@prisma/client";
 
 export class GedungService implements IGedungService {
-  async getAllGedung(filter?: GedungFilter): Promise<Gedung[]> {
+  async getAllGedung(filter?: GedungFilter): Promise<Gedungs[]> {
     const whereClause: any = {};
 
     if (filter) {
@@ -63,10 +64,11 @@ export class GedungService implements IGedungService {
 
     const gedung = await prisma.gedung.findMany({
       where: whereClause,
-      include: {
-        TipeGedung: true,
-        FasilitasGedung: true,
-        penganggung_jawab_gedung: true,
+      select: {
+        id: true,
+        nama_gedung: true,
+        harga_sewa: true,
+        foto_gedung: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -83,6 +85,7 @@ export class GedungService implements IGedungService {
         TipeGedung: true,
         FasilitasGedung: true,
         penganggung_jawab_gedung: true,
+        Peminjaman: true,
       },
     });
 
@@ -102,8 +105,21 @@ export class GedungService implements IGedungService {
       throw new BadRequestError("Tipe gedung tidak ditemukan");
     }
 
+    // Create proper Prisma input with relation
+    const createData: Prisma.GedungCreateInput = {
+      nama_gedung: gedungData.nama_gedung,
+      deskripsi: gedungData.deskripsi,
+      harga_sewa: gedungData.harga_sewa,
+      kapasitas: gedungData.kapasitas,
+      lokasi: gedungData.lokasi,
+      foto_gedung: gedungData.foto_gedung || "",
+      TipeGedung: {
+        connect: { id: gedungData.tipe_gedung_id },
+      },
+    };
+
     const gedung = await prisma.gedung.create({
-      data: gedungData,
+      data: createData,
       include: {
         TipeGedung: true,
       },
@@ -131,9 +147,44 @@ export class GedungService implements IGedungService {
       }
     }
 
+    // Convert our custom interface to a Prisma-compatible update input
+    const updateData: Prisma.GedungUpdateInput = {};
+
+    if (gedungData.nama_gedung !== undefined) {
+      updateData.nama_gedung = gedungData.nama_gedung;
+    }
+
+    if (gedungData.deskripsi !== undefined) {
+      updateData.deskripsi = gedungData.deskripsi;
+    }
+
+    if (gedungData.harga_sewa !== undefined) {
+      updateData.harga_sewa = gedungData.harga_sewa;
+    }
+
+    if (gedungData.kapasitas !== undefined) {
+      updateData.kapasitas = gedungData.kapasitas;
+    }
+
+    if (gedungData.lokasi !== undefined) {
+      updateData.lokasi = gedungData.lokasi;
+    }
+
+    // Handle foto_gedung properly - convert null to undefined for Prisma
+    if (gedungData.foto_gedung !== undefined) {
+      updateData.foto_gedung =
+        gedungData.foto_gedung === null ? undefined : gedungData.foto_gedung;
+    }
+
+    if (gedungData.tipe_gedung_id !== undefined) {
+      updateData.TipeGedung = {
+        connect: { id: gedungData.tipe_gedung_id },
+      };
+    }
+
     const updatedGedung = await prisma.gedung.update({
       where: { id },
-      data: gedungData,
+      data: updateData,
       include: {
         TipeGedung: true,
         FasilitasGedung: true,
@@ -191,51 +242,78 @@ export class GedungService implements IGedungService {
     return true;
   }
 
-  async checkGedungAvailability(
-    gedungId: string,
-    tanggalMulai: string,
-    tanggalSelesai: string
-  ): Promise<boolean> {
-    const check_gedung = await prisma.gedung.findUnique({
-      where: { id: gedungId },
+  async checkGedungAvailability(validatedData: {
+    tanggalMulai: string;
+    jamMulai: string;
+  }): Promise<Gedungs[]> {
+    const { tanggalMulai, jamMulai } = validatedData;
+
+    const [startDay, startMonth, startYear] = tanggalMulai.split("-");
+    const formattedStartDate = `${startYear}-${startMonth.padStart(
+      2,
+      "0"
+    )}-${startDay.padStart(2, "0")}`;
+
+    const [hours, minutes] = jamMulai.split(":").map(Number);
+    const endHours = (hours + 3) % 24;
+    const jamSelesai = `${endHours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+
+    const allGedungs = await prisma.gedung.findMany({
+      select: {
+        id: true,
+        nama_gedung: true,
+        harga_sewa: true,
+        foto_gedung: true,
+        kapasitas: true,
+        lokasi: true,
+      },
     });
 
-    if (!check_gedung) {
-      throw new NotFoundError(`Gedung tidak ditemukan`);
-    }
-
-    const overlappingReservations = await prisma.peminjaman.findMany({
+    const unavailableGedungIds = await prisma.peminjaman.findMany({
       where: {
-        gedung_id: gedungId,
+        tanggal_mulai: formattedStartDate,
         status_peminjaman: {
           in: [STATUSPEMINJAMAN.DISETUJUI, STATUSPEMINJAMAN.DIPROSES],
         },
         OR: [
+          // Time overlap scenarios
           {
-            // Case 1: Start date is between existing reservation dates
+            // Case 1: Requested start time falls within existing reservation time
             AND: [
-              { tanggal_mulai: { lte: tanggalMulai } },
-              { tanggal_selesai: { gte: tanggalMulai } },
+              { jam_mulai: { lte: jamMulai } },
+              { jam_selesai: { gt: jamMulai } },
             ],
           },
           {
-            // Case 2: End date is between existing reservation dates
+            // Case 2: Requested end time falls within existing reservation time
             AND: [
-              { tanggal_mulai: { lte: tanggalSelesai } },
-              { tanggal_selesai: { gte: tanggalSelesai } },
+              { jam_mulai: { lt: jamSelesai } },
+              { jam_selesai: { gte: jamSelesai } },
             ],
           },
           {
-            // Case 3: Reservation encompasses existing reservation
+            // Case 3: Requested time completely encompasses existing reservation time
             AND: [
-              { tanggal_mulai: { gte: tanggalMulai } },
-              { tanggal_selesai: { lte: tanggalSelesai } },
+              { jam_mulai: { gte: jamMulai } },
+              { jam_selesai: { lte: jamSelesai } },
             ],
           },
         ],
       },
+      select: {
+        gedung_id: true,
+      },
+      distinct: ["gedung_id"],
     });
 
-    return overlappingReservations.length === 0;
+    const unavailableIds = unavailableGedungIds.map((item) => item.gedung_id);
+
+    const availableGedungs = allGedungs.filter(
+      (gedung) => !unavailableIds.includes(gedung.id)
+    );
+
+    return availableGedungs;
   }
 }

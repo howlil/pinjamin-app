@@ -1,3 +1,4 @@
+// src/controllers/gedung.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { GedungService } from "../services/gedung.service";
 import { ValidationUtil } from "../utils/validation.util";
@@ -5,10 +6,13 @@ import {
   gedungSchema,
   gedungUpdateSchema,
   gedungFilterSchema,
+  availabilityCheckSchema,
 } from "../validations/gedung.validation";
 import { IGedungService } from "../interfaces/services/gedung.interface";
 import { UnauthorizedError } from "../configs/error.config";
 import { IController } from "../interfaces/controller.interface";
+import fs from 'fs';
+import path from 'path';
 
 export class GedungController implements IController {
   private gedungService: IGedungService;
@@ -51,6 +55,7 @@ export class GedungController implements IController {
         );
       }
 
+      // Validate data - the foto_gedung field is now set by the upload middleware
       const validatedData = ValidationUtil.validateBody(req, gedungSchema);
 
       const gedung = await this.gedungService.createGedung(validatedData);
@@ -61,6 +66,13 @@ export class GedungController implements IController {
         data: gedung,
       });
     } catch (error) {
+      // If there was an error and a file was uploaded, clean it up
+      if (req.file) {
+        const filePath = path.join(process.cwd(), 'public', req.body.foto_gedung);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
       next(error);
     }
   };
@@ -76,12 +88,24 @@ export class GedungController implements IController {
       }
 
       const { id } = req.params;
-      const validatedData = ValidationUtil.validateBody(
-        req,
-        gedungUpdateSchema
-      );
+      const validatedData = ValidationUtil.validateBody(req, gedungUpdateSchema);
+      
+      // Get existing gedung to check for previous foto_gedung
+      const existingGedung = await this.gedungService.getGedungById(id);
+      let oldImagePath = '';
+      
+      if (existingGedung.foto_gedung) {
+        oldImagePath = path.join(process.cwd(), 'public', existingGedung.foto_gedung);
+      }
 
+      // Update the gedung
       const gedung = await this.gedungService.updateGedung(id, validatedData);
+
+      // If a new image was uploaded and there was an old one, delete the old one
+      if (req.file && oldImagePath && fs.existsSync(oldImagePath) && 
+          existingGedung.foto_gedung !== validatedData.foto_gedung) {
+        fs.unlinkSync(oldImagePath);
+      }
 
       res.status(200).json({
         success: true,
@@ -89,6 +113,13 @@ export class GedungController implements IController {
         data: gedung,
       });
     } catch (error) {
+      // If there was an error and a new file was uploaded, clean it up
+      if (req.file) {
+        const filePath = path.join(process.cwd(), 'public', req.body.foto_gedung);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
       next(error);
     }
   };
@@ -104,8 +135,17 @@ export class GedungController implements IController {
       }
 
       const { id } = req.params;
-
+      
+      const existingGedung = await this.gedungService.getGedungById(id);
+      
       await this.gedungService.deleteGedung(id);
+      
+      if (existingGedung.foto_gedung) {
+        const imagePath = path.join(process.cwd(), 'public', existingGedung.foto_gedung);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      }
 
       res.status(200).json({
         success: true,
@@ -143,34 +183,16 @@ export class GedungController implements IController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { gedungId, tanggalMulai, tanggalSelesai } = req.query as {
-        gedungId: string;
-        tanggalMulai: string;
-        tanggalSelesai: string;
-      };
-
-      if (!gedungId || !tanggalMulai || !tanggalSelesai) {
-        res.status(400).json({
-          success: false,
-          message:
-            "Parameter gedungId, tanggalMulai, dan tanggalSelesai diperlukan",
-          data: null,
-        });
-        return;
-      }
-
-      const isAvailable = await this.gedungService.checkGedungAvailability(
-        gedungId,
-        tanggalMulai,
-        tanggalSelesai
-      );
+      const validatedData = ValidationUtil.validateBody(req, availabilityCheckSchema);
+ 
+      const availableGedungs = await this.gedungService.checkGedungAvailability(validatedData);
 
       res.status(200).json({
         success: true,
-        message: isAvailable
-          ? "Gedung tersedia pada tanggal yang ditentukan"
-          : "Gedung tidak tersedia pada tanggal yang ditentukan",
-        data: { isAvailable },
+        message: availableGedungs.length > 0 
+          ? "Daftar gedung yang tersedia pada waktu yang ditentukan" 
+          : "Tidak ada gedung yang tersedia pada waktu yang ditentukan",
+        data: availableGedungs,
       });
     } catch (error) {
       next(error);

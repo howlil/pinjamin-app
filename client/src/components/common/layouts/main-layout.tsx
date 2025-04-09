@@ -27,7 +27,7 @@ const MainLayout: FC<MainLayoutProps> = ({ children }) => {
       <header className="fixed z-50 blu w-full">
         <PublicNav isScrolled={isScrolled} />
       </header>
-      <main className="mx-24 ">{children}</main>
+      <main className="mx-32 ">{children}</main>
     </>
   );
 };

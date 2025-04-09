@@ -13,6 +13,7 @@ const security_middleware_1 = require("./middlewares/security.middleware");
 const rate_limit_middleware_1 = require("./middlewares/rate-limit.middleware");
 const app_config_1 = require("./configs/app.config");
 const db_config_1 = require("./configs/db.config");
+const static_config_1 = require("./configs/static.config");
 const index_1 = __importDefault(require("./routes/index"));
 class Server {
     app;
@@ -27,6 +28,7 @@ class Server {
     }
     plugin() {
         (0, security_middleware_1.setupSecurityMiddleware)(this.app);
+        (0, static_config_1.configureStaticFiles)(this.app);
         this.app.use(express_1.default.json({ limit: "10mb" }));
         this.app.use(express_1.default.urlencoded({ extended: true, limit: "10mb" }));
         this.app.use(logger_config_1.requestLogger);

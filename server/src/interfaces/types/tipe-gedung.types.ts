@@ -4,8 +4,7 @@ export interface TipeGedung {
   id: string;
   nama_tipe_gedung: string;
   gedung?: Gedung[];
-  createdAt: Date;
-  updatedAt: Date;
+
 }
 
 export interface TipeGedungCreate {

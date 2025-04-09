@@ -15,14 +15,14 @@ export default function AllGedung() {
     <div className="py-12">
       <section className="mb-6 text-center space-y-2">
         <h1 className="text-3xl font-bold">Daftar Gedung Tersedia</h1>
-        <p className="text-neutral-500 text-md leading-5">
+        <p className="text-neutral-500 text-lg leading-5">
           Temukan gedung dengan fasilitas terbaik untuk mendukung kesuksesan
           <br />
           acara akademik maupun non-akademik Anda.
         </p>
       </section>
 
-      <section className="flex justify-between items-center">
+      <section className="flex justify-between mt-12 items-center">
         <SearchInput />
         <FilterInput />
       </section>

@@ -1,4 +1,3 @@
-// src/features/auth/components/RegisterForm.tsx
 import { useState } from "react";
 import { useFormik } from "formik";
 import { toFormikValidationSchema } from "zod-formik-adapter";
@@ -8,31 +7,38 @@ import { registerSchema, type RegisterFormValues } from "@/validations/auth";
 import PasswordInput from "@/components/ui/costum/password-input";
 import TextInput from "@/components/ui/costum/text-input";
 import SelectInput from "@/components/ui/costum/select-input";
-
-;
+import { AuthService } from "@/apis/auth";
 
 const RegisterForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
- 
+  const handleRegister = async (values: RegisterFormValues, setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>) => {
+    try {
+      setIsSubmitting(true);
+      await AuthService.register(values);
+    } catch (error) {
+      throw error
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const formik = useFormik<RegisterFormValues>({
     initialValues: {
-      namaLengkap: "",
-      tipePengguna: "",
+      nama_lengkap: "",
+      tipe_peminjam: "",
+      no_hp: "",
       email: "",
-      password: ""
+      kata_sandi: "",
     },
     validationSchema: toFormikValidationSchema(registerSchema),
-    onSubmit: (values) => {
-      setIsSubmitting(true);
-    }
+    onSubmit: (values) => handleRegister(values, setIsSubmitting),
+
   });
 
   const userTypeOptions = [
-    { value: "personal", label: "Personal" },
-    { value: "bisnis", label: "Bisnis" },
-    { value: "lainnya", label: "Lainnya" }
+    { value: "INUNAND", label: "Civitas Academic Unand" },
+    { value: "EXUNAND", label: "Non Civitas" },
   ];
 
   return (
@@ -43,11 +49,11 @@ const RegisterForm = () => {
           Masukkan data pribadi Anda untuk mendaftar!
         </p>
       </div>
-      
+
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         <TextInput
           formik={formik}
-          name="namaLengkap"
+          name="nama_lengkap"
           label="Nama Lengkap"
           placeholder="John Doe"
           required
@@ -55,7 +61,7 @@ const RegisterForm = () => {
 
         <SelectInput
           formik={formik}
-          name="tipePengguna"
+          name="tipe_peminjam"
           label="Tipe Pengguna"
           placeholder="Pilih tipe pengguna"
           options={userTypeOptions}
@@ -71,17 +77,23 @@ const RegisterForm = () => {
           required
         />
 
+        <TextInput
+          formik={formik}
+          name="no_hp"
+          label="Nomor HP"
+          type="text"
+          placeholder="081234567890"
+          required
+        />
+
         <PasswordInput
           formik={formik}
-          name="password"
+          name="kata_sandi"
           label="Password"
           required
         />
 
-        <Button 
-          
-          disabled={isSubmitting}
-        >
+        <Button disabled={isSubmitting}>
           {isSubmitting ? "Memproses..." : "Daftar"}
         </Button>
       </form>

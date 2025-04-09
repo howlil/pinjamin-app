@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ROLE, TIPEUSER } from '@prisma/client';
+import { TIPEUSER } from '@prisma/client';
 
 export const penggunaSchema = z.object({
   nama_lengkap: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
@@ -9,8 +9,18 @@ export const penggunaSchema = z.object({
   tipe_peminjam: z.nativeEnum(TIPEUSER, {
     errorMap: () => ({ message: 'Tipe peminjam tidak valid' }),
   }),
-
-});
+}).refine(
+  (data) => {
+    if (data.tipe_peminjam === TIPEUSER.INUNAND) {
+      return data.email.endsWith('@unand.ac.id');
+    }
+    return true;
+  },
+  {
+    message: 'Email internal harus menggunakan domain @unand.ac.id',
+    path: ['email'],
+  }
+);
 
 export const penggunaUpdateSchema = z.object({
   nama_lengkap: z.string().min(3, 'Nama lengkap minimal 3 karakter').optional(),

@@ -29,30 +29,14 @@ export class PenggunaService implements IPenggunaService {
     if (existingUser) {
       throw new ConflictError("Email sudah terdaftar");
     }
+    const role = ROLE.PEMINJAM;
+    const userData = {
+      ...penggunaData,
+      role,
+    };
 
-    if (penggunaData.role === ROLE.ADMIN) {
-      const existingAdmin = await prisma.pengguna.findFirst({
-        where: { role: ROLE.ADMIN },
-      });
-
-      if (existingAdmin) {
-        throw new BadRequestError(
-          "Admin sudah terdaftar, hanya bisa ada satu admin"
-        );
-      }
-
-      if (penggunaData.email !== APP_CONFIG.ADMIN_EMAIL) {
-        throw new BadRequestError(
-          "Hanya email admin yang bisa mendaftar sebagai admin"
-        );
-      }
-    }
-
-    if (
-      penggunaData.role === ROLE.PEMINJAM &&
-      penggunaData.tipe_peminjam === TIPEUSER.INUNAND
-    ) {
-      if (!penggunaData.email.endsWith("@unand.ac.id")) {
+    if (userData.tipe_peminjam === TIPEUSER.INUNAND) {
+      if (!userData.email.endsWith("@unand.ac.id")) {
         throw new BadRequestError(
           "Email internal harus menggunakan domain @unand.ac.id"
         );
@@ -60,13 +44,13 @@ export class PenggunaService implements IPenggunaService {
     }
 
     const hashedPassword = await bcrypt.hash(
-      penggunaData.kata_sandi,
+      userData.kata_sandi,
       APP_CONFIG.BCRYPT_SALT_ROUNDS
     );
 
     const pengguna = await prisma.pengguna.create({
       data: {
-        ...penggunaData,
+        ...userData,
         kata_sandi: hashedPassword,
       },
     });
@@ -115,12 +99,12 @@ export class PenggunaService implements IPenggunaService {
       },
     });
 
-    const { kata_sandi, ...penggunaWithoutPassword } = pengguna;
+    const { kata_sandi, ...newPengguna } = pengguna;
 
     logger.info(`Pengguna berhasil login: ${pengguna.email}`);
 
     return {
-      pengguna: penggunaWithoutPassword,
+      pengguna: newPengguna,
       token,
     };
   }
@@ -151,7 +135,6 @@ export class PenggunaService implements IPenggunaService {
     userId: string,
     userData: PenggunaUpdate
   ): Promise<Omit<Pengguna, "kata_sandi">> {
-    // Cek apakah pengguna ada
     const existingUser = await prisma.pengguna.findUnique({
       where: { id: userId },
     });
@@ -183,12 +166,6 @@ export class PenggunaService implements IPenggunaService {
       }
     }
 
-    // Tidak mengizinkan perubahan role
-    if (userData.role && userData.role !== existingUser.role) {
-      throw new BadRequestError("Tidak dapat mengubah role pengguna");
-    }
-
-    // Hash password jika ada perubahan
     let updatedData: any = { ...userData };
     if (userData.kata_sandi) {
       updatedData.kata_sandi = await bcrypt.hash(
@@ -210,7 +187,6 @@ export class PenggunaService implements IPenggunaService {
         role: true,
         createdAt: true,
         updatedAt: true,
-        // kata_sandi secara eksplisit tidak dipilih
       },
     });
 

@@ -60,6 +60,7 @@ model Gedung {
   nama_gedung              String
   deskripsi                String                  @db.Text
   harga_sewa               Int
+  foto_gedung              String
   kapasitas                Int
   lokasi                   String
   tipe_gedung_id           String

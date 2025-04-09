@@ -26,7 +26,7 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => {
-    if (response.config.method !== 'get') {
+    if (response.config.method !== "get") {
       toast.success(response.data.message);
     }
     return response;
@@ -35,33 +35,44 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       const responseData = error.response.data as Record<string, any>;
-      const message = responseData?.message || 'Something went wrong';
+      const message = responseData?.message || "Something went wrong";
 
-      switch (status) {
-        case 400:
-          toast.error(message);
-          break;
-        case 401:
-          toast.error(message);
-          break;
-        case 403:
-          toast.error(message);
-          break;
-        case 404:
-          toast.error(message);
-          break;
-        case 500:
-          toast.error('messgae');
-          break;
-        default:
-          toast.error(`Error: ${error.response.data || 'Something went wrong'}`);
+      if (responseData.errors) {
+        for (const [field, errorMessage] of Object.entries(responseData.errors)) {
+          toast.error(`${field}: ${errorMessage}`);
+        }
+      } else {
+        switch (status) {
+          case 400:
+            toast.error(message);
+            break;
+          case 401:
+            toast.error(message);
+            break;
+          case 403:
+            toast.error(message);
+            break;
+          case 404:
+            toast.error(message);
+            break;
+          case 409:
+            toast.error(message);
+            break;
+          case 500:
+            toast.error("messgae");
+            break;
+          default:
+            toast.error(
+              `Error: ${error.response.data || "Something went wrong"}`
+            );
+        }
       }
     } else if (error.request) {
-      toast.error('No response from server. Please check your connection.');
+      toast.error("No response from server. Please check your connection.");
     } else {
       toast.error(`Request configuration error: ${error.message}`);
     }
-    
+
     return Promise.reject(error);
   }
 );
