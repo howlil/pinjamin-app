@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Suspense } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,27 +16,23 @@ function App() {
 
   const AppRoutes = () => {
     const element = useRoutes(routes);
-    return (
-      <Suspense
-        fallback={
-          <div className="flex h-screen  items-center justify-center">
-            Loading...
-          </div>
-        }
-      >
-        {element}
-      </Suspense>
-    );
+    return element;
   };
 
   return (
-    <>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Suspense
+          fallback={
+            <div className="flex h-screen items-center justify-center">
+              Loading...
+            </div>
+          }
+        >
           <AppRoutes />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </>
+        </Suspense>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

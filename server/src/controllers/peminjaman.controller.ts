@@ -9,7 +9,7 @@ import {
 import { IPeminjamanService } from '../interfaces/services/peminjaman.interface';
 import { UnauthorizedError, ForbiddenError } from '../configs/error.config';
 import { IController } from '../interfaces/controller.interface';
-import { ROLE } from '@prisma/client';
+import { ROLE } from '@prisma/client'
 
 export class PeminjamanController implements IController {
   private peminjamanService: IPeminjamanService;
