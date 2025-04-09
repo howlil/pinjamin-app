@@ -18,7 +18,7 @@ export class PenggunaSeeder extends Seeder {
     await this.prisma.pengguna.create({
       data: {
         nama_lengkap: 'Admin Sistem',
-        email: 'admin@example.com',
+        email: 'admin@unand.ac.id',
         kata_sandi: bcrypt.hashSync('admin123', 10),
         no_hp: '082112345678',
         tipe_peminjam: TIPEUSER.INUNAND,

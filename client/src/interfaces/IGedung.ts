@@ -4,7 +4,20 @@ export interface Gedung {
   id: string;
   nama_gedung: string;
   harga_sewa: number;
+  foto_gedung?:string;
+  kapasitas?: number;
 }
+
+export interface GedungFilter {
+  nama_gedung?: string;
+  lokasi?: string;
+  tipe_gedung_id?: string;
+  kapasitas_min?: number;
+  kapasitas_max?: number;
+  harga_min?: number;
+  harga_max?: number;
+}
+
 
 export interface CheckAvailable {
   tanggalMulai : string;
@@ -21,6 +34,7 @@ export interface ResCheckAvailable {
 export interface Gedungs {
   id: string;
   nama_gedung: string;
+  foto_gedung:string;
   deskripsi: string;
   harga_sewa: number;
   kapasitas: number;

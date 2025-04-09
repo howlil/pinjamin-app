@@ -1,12 +1,47 @@
 import ApiService from "@/utils/api";
-import { CheckAvailable, Gedung, Gedungs, ResCheckAvailable } from "@/interfaces/IGedung";
+import { CheckAvailable, Gedung, Gedungs, GedungFilter,ResCheckAvailable } from "@/interfaces/IGedung";
 
 export class GedungService {
   private static baseUrl = "/api/v1/gedung";
 
-  static async getGedung(): Promise<Gedung[]> {
-    const res = await ApiService.get<Gedung[]>(`${this.baseUrl}`);
-    return res.data;
+  static async getGedung(filter:GedungFilter): Promise<Gedung[]> {
+    let queryParams = '';
+    
+    if (filter) {
+      const params = new URLSearchParams();
+      
+      if (filter.nama_gedung) {
+        params.append('nama_gedung', filter.nama_gedung);
+      }
+      
+      if (filter.lokasi) {
+        params.append('lokasi', filter.lokasi);
+      }
+      
+      if (filter.tipe_gedung_id) {
+        params.append('tipe_gedung_id', filter.tipe_gedung_id);
+      }
+      
+      if (filter.kapasitas_min) {
+        params.append('kapasitas_min', filter.kapasitas_min.toString());
+      }
+      
+      if (filter.kapasitas_max) {
+        params.append('kapasitas_max', filter.kapasitas_max.toString());
+      }
+      
+      if (filter.harga_min) {
+        params.append('harga_min', filter.harga_min.toString());
+      }
+      
+      if (filter.harga_max) {
+        params.append('harga_max', filter.harga_max.toString());
+      }
+      
+      queryParams = `?${params.toString()}`;
+    }
+    const res = await ApiService.get<{data: Gedung[]}>(`${this.baseUrl}${queryParams}`);
+    return res.data.data || [];
   }
   static async getGedungById(id: string): Promise<Gedungs> {
     const res = await ApiService.get<Gedungs>(`${this.baseUrl}/${id}`);

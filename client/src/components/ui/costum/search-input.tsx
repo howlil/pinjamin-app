@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
@@ -6,34 +6,46 @@ interface SearchInputProps {
   placeholder?: string;
   onSearch?: (value: string) => void;
   className?: string;
+  debounceTime?: number;
 }
 
 export const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = 'Search...',
   onSearch,
   className = '',
+  debounceTime = 500, 
 }) => {
   const [searchValue, setSearchValue] = useState<string>('');
+  const [debouncedValue, setDebouncedValue] = useState<string>(searchValue);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setSearchValue(value);
-      
-      // Optional debounce could be added here
-      onSearch?.(value);
+      setSearchValue(e.target.value);
     },
-    [onSearch]
+    []
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
+        setDebouncedValue(searchValue);
         onSearch?.(searchValue);
       }
     },
     [searchValue, onSearch]
   );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(searchValue);
+    }, debounceTime);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, debounceTime]);
+
+  useEffect(() => {
+    onSearch?.(debouncedValue);
+  }, [debouncedValue, onSearch]);
 
   return (
     <div className={`relative w-64 ${className}`}>
@@ -44,7 +56,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         value={searchValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="pl-10 "
+        className="pl-10"
       />
     </div>
   );

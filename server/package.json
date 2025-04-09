@@ -7,8 +7,8 @@
     "start": "nodemon dist/index.js",
     "dev": "nodemon dist/index.js",
     "build": "rmdir /s /q dist && tsc",
-    "db:reset": "ts-node src/database/reset.ts",
-    "db:seed": "ts-node src/database/seed.ts",
+    "db:reset": "ts-node src/databases/reset.ts",
+    "db:seed": "ts-node src/databases/seed.ts",
     "db:refresh": "npm run db:reset && npm run db:seed",
     "test": "jest"
   },

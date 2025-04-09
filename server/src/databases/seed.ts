@@ -1,4 +1,3 @@
-// src/database/seed.ts
 import { DatabaseSeeder } from './seeders/DatabaseSeeder';
 
 const seedDatabase = async () => {

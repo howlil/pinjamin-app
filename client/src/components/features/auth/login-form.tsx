@@ -9,11 +9,13 @@ import PasswordInput from "@/components/ui/costum/password-input";
 import { AuthService } from "@/apis/auth";
 import { ErrorMessage } from "@/components/ui/costum/error-message";
 import { AxiosError } from "axios";
+import { useAuthStore } from "@/contexts/useAuthStore";
 
 const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async (
     values: LoginFormValues,
@@ -24,10 +26,15 @@ const LoginForm = () => {
       setError(null);
 
       const response = await AuthService.login(values);
+      
       if (response.data.token) {
-        localStorage.setItem("auth_token", response.data.token);
+        
+        setAuth({
+          pengguna: response.data.pengguna,
+          token: response.data.token,
+        });
 
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
@@ -41,6 +48,7 @@ const LoginForm = () => {
       setIsSubmitting(false);
     }
   };
+  
   const formik = useFormik<LoginFormValues>({
     initialValues: {
       email: "",
@@ -49,6 +57,7 @@ const LoginForm = () => {
     validationSchema: toFormikValidationSchema(loginSchema),
     onSubmit: (values) => handleLogin(values, setIsSubmitting),
   });
+
 
   return (
     <div className="space-y-6">

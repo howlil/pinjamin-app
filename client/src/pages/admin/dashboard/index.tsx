@@ -1,8 +1,8 @@
-
+import DashboardLayout from "@/components/common/layouts/dashboard-layout"
 export default function DashboardPage() {
   return (
-    <div>
-      
-    </div>
+    <DashboardLayout>
+      q
+    </DashboardLayout>
   )
 }
