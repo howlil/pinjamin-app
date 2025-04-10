@@ -40,21 +40,21 @@ export  const navItems = [
   {
     title: "Gedung",
     icon: <Building2 className="h-5 w-5" />,
-    href: "/gedung",
+    href: "/kelola-gedung",
   },
   {
     title: "Peminjaman",
     icon: <Users className="h-5 w-5" />,
-    href: "/peminjaman",
+    href: "/ajuan-peminjaman",
   },
   {
     title: "Transaksi",
     icon: <BarChart4 className="h-5 w-5" />,
-    href: "/transaksi",
+    href: "/admin/transaksi",
   },
   {
     title: "Riwayat",
     icon: <Clock className="h-5 w-5" />,
-    href: "/riwayat",
+    href: "/admin/riwayat",
   },
 ];
