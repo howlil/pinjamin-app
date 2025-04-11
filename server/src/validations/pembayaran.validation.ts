@@ -1,3 +1,4 @@
+// src/validations/pembayaran.validation.ts
 import { z } from 'zod';
 import { STATUSTRANSAKSI } from '@prisma/client';
 
@@ -34,4 +35,19 @@ export const pembayaranUpdateSchema = z.object({
 
 export const pembayaranCreateSchema = z.object({
   peminjaman_id: z.string().uuid('ID peminjaman tidak valid'),
+});
+
+export const midtransNotificationSchema = z.object({
+  transaction_time: z.string(),
+  transaction_status: z.string(),
+  transaction_id: z.string(),
+  status_message: z.string(),
+  status_code: z.string(),
+  signature_key: z.string(),
+  payment_type: z.string(),
+  order_id: z.string(),
+  merchant_id: z.string(),
+  gross_amount: z.string(),
+  fraud_status: z.string().optional(),
+  currency: z.string(),
 });

@@ -1,15 +1,15 @@
 export interface Peminjaman {
   id: string;
-  pengguna_id: string;
   gedung_id: string;
-  nama_kegiatan: string;
+  user_id: string;
   tanggal_mulai: string;
   tanggal_selesai: string;
   jam_mulai: string;
   jam_selesai: string;
-  surat_pengajuan: string;
-  alasan_penolakan: string | null;
-  status_peminjaman: "DIPROSES" | "DISETUJUI" | "DITOLAK";
+  status_peminjaman: 'PENDING' | 'DISETUJUI' | 'DITOLAK';
+  jumlah_peserta: number;
   createdAt: string;
   updatedAt: string;
+  keterangan?: string;
+  nama_acara?: string;
 }

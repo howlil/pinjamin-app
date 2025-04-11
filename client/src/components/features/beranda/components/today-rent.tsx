@@ -7,7 +7,7 @@ const TodayRent = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <section className="relative rounded-xl p-4 backdrop-blur-sm bg-white/10 border border-[#efefef]/20 shadow-lg overflow-hidden">
+      <section className="relative rounded-xl p-4 backdrop-blur-sm bg-white/10 border border-[#efefef]/20 shadow-sm overflow-hidden">
         {/* Animated floating particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(6)].map((_, i) => (

@@ -10,7 +10,8 @@ export const APP_CONFIG = {
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   NODE_ENV: process.env.NODE_ENV || 'development',
   ADMIN_EMAIL: 'admin@unand.ac.id',
-  UPLOAD_PATH: process.env.UPLOAD_PATH || path.join(process.cwd(), 'uploads'),
+  MIDTRANS_MERCHANT_ID : process.env.MIDTRANS_MERCHANT_ID,
+  UPLOAD_PATH: process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'uploads'),
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
   APP_NAME: process.env.APP_NAME || 'Peminjaman Gedung API',
   APP_VERSION: process.env.APP_VERSION || '1.0.0',
@@ -29,7 +30,7 @@ export const APP_CONFIG = {
     : 15 * 60 * 1000, // Default 15 menit
   RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX 
     ? parseInt(process.env.RATE_LIMIT_MAX) 
-    : 100, // Default 100 requests per window
+    : 10000, // Default 100 requests per window
 };
 
 // Validate required environment variables

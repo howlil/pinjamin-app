@@ -1,20 +1,22 @@
-import { prisma } from '../configs/db.config';
-import { 
-  Peminjaman, 
-  PeminjamanCreate, 
+import { prisma } from "../configs/db.config";
+import {
+  Peminjaman,
+  PeminjamanCreate,
   PeminjamanUpdate,
-  PeminjamanApproval
-} from '../interfaces/types/peminjaman.types';
-import { IPeminjamanService } from '../interfaces/services/peminjaman.interface';
-import { NotFoundError, BadRequestError } from '../configs/error.config';
-import { NotifikasiService } from './notifikasi.service';
-import { STATUSPEMINJAMAN } from '@prisma/client';
-
+  PeminjamanApproval,
+} from "../interfaces/types/peminjaman.types";
+import { IPeminjamanService } from "../interfaces/services/peminjaman.interface";
+import { NotFoundError, BadRequestError } from "../configs/error.config";
+import { NotifikasiService } from "./notifikasi.service";
+import { STATUSPEMINJAMAN } from "@prisma/client";
+import { PembayaranService } from "./pembayaran.service";
 export class PeminjamanService implements IPeminjamanService {
   private notifikasiService: NotifikasiService;
+  private pembayaranService: PembayaranService;
 
   constructor() {
     this.notifikasiService = new NotifikasiService();
+    this.pembayaranService = new PembayaranService();
   }
 
   async getAllPeminjaman(): Promise<Peminjaman[]> {
@@ -40,10 +42,10 @@ export class PeminjamanService implements IPeminjamanService {
         pembayaran: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
-    
+
     return peminjamans as unknown as Peminjaman[];
   }
 
@@ -73,11 +75,11 @@ export class PeminjamanService implements IPeminjamanService {
         pembayaran: true,
       },
     });
-    
+
     if (!peminjaman) {
-      throw new NotFoundError('Peminjaman tidak ditemukan');
+      throw new NotFoundError("Peminjaman tidak ditemukan");
     }
-    
+
     return peminjaman as unknown as Peminjaman;
   }
 
@@ -96,18 +98,21 @@ export class PeminjamanService implements IPeminjamanService {
         pembayaran: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
-    
+
     return peminjamans as unknown as Peminjaman[];
   }
 
-  async createPeminjaman(peminjamanData: PeminjamanCreate): Promise<Peminjaman> {
+  async createPeminjaman(
+    peminjamanData: PeminjamanCreate
+  ): Promise<Peminjaman> {
     // Cek ketersediaan gedung untuk tanggal yang diminta
     const existingPeminjaman = await prisma.peminjaman.findFirst({
       where: {
         gedung_id: peminjamanData.gedung_id,
+        pengguna_id: peminjamanData.pengguna_id,
         status_peminjaman: {
           in: [STATUSPEMINJAMAN.DIPROSES, STATUSPEMINJAMAN.DISETUJUI],
         },
@@ -130,24 +135,27 @@ export class PeminjamanService implements IPeminjamanService {
         ],
       },
     });
-    
+
     if (existingPeminjaman) {
-      throw new BadRequestError('Gedung tidak tersedia untuk tanggal yang dipilih');
+      throw new BadRequestError(
+        "Gedung tidak tersedia untuk tanggal yang dipilih"
+      );
     }
 
     // Verifikasi tanggal_mulai sebelum tanggal_selesai
     const tanggalMulai = new Date(peminjamanData.tanggal_mulai);
     const tanggalSelesai = new Date(peminjamanData.tanggal_selesai);
-    
+
     if (tanggalMulai > tanggalSelesai) {
-      throw new BadRequestError('Tanggal mulai tidak boleh lebih dari tanggal selesai');
+      throw new BadRequestError(
+        "Tanggal mulai tidak boleh lebih dari tanggal selesai"
+      );
     }
 
-     
     const peminjaman = await prisma.peminjaman.create({
       data: {
         ...peminjamanData,
-        status_peminjaman: STATUSPEMINJAMAN.DIPROSES
+        status_peminjaman: STATUSPEMINJAMAN.DIPROSES,
       },
       include: {
         pengguna: {
@@ -169,27 +177,39 @@ export class PeminjamanService implements IPeminjamanService {
       },
     });
 
+    try {
+      // Check if pengguna_id exists before passing it
+      if (peminjaman.pengguna_id) {
+        await this.pembayaranService.createSnapToken(peminjaman.id, peminjaman.pengguna_id);
+      } 
+    } catch (error) {
+      throw error;
+    }
+
     // Kirim notifikasi ke user
     if (peminjaman.pengguna_id) {
       await this.notifikasiService.sendPeminjamanNotification(
         peminjaman.pengguna_id,
         peminjaman.id,
-        'DIPROSES',
-        'Pengajuan peminjaman gedung berhasil dibuat dan sedang diproses'
+        "DIPROSES",
+        "Pengajuan peminjaman gedung berhasil dibuat dan sedang diproses"
       );
     }
 
     return peminjaman as unknown as Peminjaman;
   }
 
-  async updatePeminjaman(id: string, peminjamanData: PeminjamanUpdate): Promise<Peminjaman> {
+  async updatePeminjaman(
+    id: string,
+    peminjamanData: PeminjamanUpdate
+  ): Promise<Peminjaman> {
     // Cek apakah peminjaman ada
     const existingPeminjaman = await prisma.peminjaman.findUnique({
       where: { id },
     });
-    
+
     if (!existingPeminjaman) {
-      throw new NotFoundError('Peminjaman tidak ditemukan');
+      throw new NotFoundError("Peminjaman tidak ditemukan");
     }
 
     // Jika update tanggal, cek konflik
@@ -219,9 +239,11 @@ export class PeminjamanService implements IPeminjamanService {
           ],
         },
       });
-      
+
       if (conflictingPeminjaman) {
-        throw new BadRequestError('Gedung tidak tersedia untuk tanggal yang dipilih');
+        throw new BadRequestError(
+          "Gedung tidak tersedia untuk tanggal yang dipilih"
+        );
       }
     }
 
@@ -253,7 +275,10 @@ export class PeminjamanService implements IPeminjamanService {
     return updatedPeminjaman as unknown as Peminjaman;
   }
 
-  async approvePeminjaman(id: string, approvalData: PeminjamanApproval): Promise<Peminjaman> {
+  async approvePeminjaman(
+    id: string,
+    approvalData: PeminjamanApproval
+  ): Promise<Peminjaman> {
     // Cek apakah peminjaman ada
     const peminjaman = await prisma.peminjaman.findUnique({
       where: { id },
@@ -262,9 +287,9 @@ export class PeminjamanService implements IPeminjamanService {
         gedung: true,
       },
     });
-    
+
     if (!peminjaman) {
-      throw new NotFoundError('Peminjaman tidak ditemukan');
+      throw new NotFoundError("Peminjaman tidak ditemukan");
     }
 
     // Update status peminjaman
@@ -295,19 +320,24 @@ export class PeminjamanService implements IPeminjamanService {
     // Kirim notifikasi ke user
     if (peminjaman.pengguna_id) {
       const statusMap: Record<STATUSPEMINJAMAN, string> = {
-        [STATUSPEMINJAMAN.DIPROSES]: 'sedang diproses',
-        [STATUSPEMINJAMAN.DISETUJUI]: 'telah disetujui',
-        [STATUSPEMINJAMAN.DITOLAK]: 'ditolak',
-        [STATUSPEMINJAMAN.SELESAI]: 'telah selesai',
+        [STATUSPEMINJAMAN.DIPROSES]: "sedang diproses",
+        [STATUSPEMINJAMAN.DISETUJUI]: "telah disetujui",
+        [STATUSPEMINJAMAN.DITOLAK]: "ditolak",
+        [STATUSPEMINJAMAN.SELESAI]: "telah selesai",
       };
 
-      const message = `Peminjaman ${peminjaman.gedung.nama_gedung} ${statusMap[approvalData.status_peminjaman]}`;
-      
+      const message = `Peminjaman ${peminjaman.gedung.nama_gedung} ${
+        statusMap[approvalData.status_peminjaman]
+      }`;
+
       await this.notifikasiService.sendPeminjamanNotification(
         peminjaman.pengguna_id,
         peminjaman.id,
         approvalData.status_peminjaman,
-        message + (approvalData.alasan_penolakan ? `. Alasan: ${approvalData.alasan_penolakan}` : '')
+        message +
+          (approvalData.alasan_penolakan
+            ? `. Alasan: ${approvalData.alasan_penolakan}`
+            : "")
       );
     }
 
@@ -319,9 +349,9 @@ export class PeminjamanService implements IPeminjamanService {
     const peminjaman = await prisma.peminjaman.findUnique({
       where: { id },
     });
-    
+
     if (!peminjaman) {
-      throw new NotFoundError('Peminjaman tidak ditemukan');
+      throw new NotFoundError("Peminjaman tidak ditemukan");
     }
 
     // Hapus peminjaman
@@ -345,7 +375,7 @@ export class PeminjamanService implements IPeminjamanService {
   }> {
     // Mendapatkan jumlah berdasarkan status
     const statusCounts = await prisma.peminjaman.groupBy({
-      by: ['status_peminjaman'],
+      by: ["status_peminjaman"],
       _count: {
         id: true,
       },
@@ -353,8 +383,8 @@ export class PeminjamanService implements IPeminjamanService {
 
     // Mendapatkan jumlah berdasarkan bulan
     const currentYear = new Date().getFullYear();
-    const startOfYear = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-    const endOfYear = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+    const startOfYear = new Date(currentYear, 0, 1).toISOString().split("T")[0];
+    const endOfYear = new Date(currentYear, 11, 31).toISOString().split("T")[0];
 
     const peminjamansThisYear = await prisma.peminjaman.findMany({
       where: {
@@ -370,8 +400,18 @@ export class PeminjamanService implements IPeminjamanService {
 
     // Kelompokkan berdasarkan bulan
     const monthNames = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
     ];
 
     const byMonth = Array.from({ length: 12 }, (_, i) => ({
@@ -379,17 +419,29 @@ export class PeminjamanService implements IPeminjamanService {
       count: 0,
     }));
 
-    peminjamansThisYear.forEach(peminjaman => {
+    peminjamansThisYear.forEach((peminjaman) => {
       const month = new Date(peminjaman.tanggal_mulai).getMonth();
       byMonth[month].count++;
     });
 
     return {
       total: statusCounts.reduce((acc, curr) => acc + curr._count.id, 0),
-      approved: statusCounts.find(sc => sc.status_peminjaman === STATUSPEMINJAMAN.DISETUJUI)?._count.id || 0,
-      rejected: statusCounts.find(sc => sc.status_peminjaman === STATUSPEMINJAMAN.DITOLAK)?._count.id || 0,
-      pending: statusCounts.find(sc => sc.status_peminjaman === STATUSPEMINJAMAN.DIPROSES)?._count.id || 0,
-      completed: statusCounts.find(sc => sc.status_peminjaman === STATUSPEMINJAMAN.SELESAI)?._count.id || 0,
+      approved:
+        statusCounts.find(
+          (sc) => sc.status_peminjaman === STATUSPEMINJAMAN.DISETUJUI
+        )?._count.id || 0,
+      rejected:
+        statusCounts.find(
+          (sc) => sc.status_peminjaman === STATUSPEMINJAMAN.DITOLAK
+        )?._count.id || 0,
+      pending:
+        statusCounts.find(
+          (sc) => sc.status_peminjaman === STATUSPEMINJAMAN.DIPROSES
+        )?._count.id || 0,
+      completed:
+        statusCounts.find(
+          (sc) => sc.status_peminjaman === STATUSPEMINJAMAN.SELESAI
+        )?._count.id || 0,
       byMonth,
     };
   }

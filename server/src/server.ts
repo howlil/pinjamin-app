@@ -29,7 +29,7 @@ export class Server {
     this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
     this.app.use(requestLogger);
     this.app.use(apiLimiter);
-    this.app.use( "/uploads", express.static(path.join(process.cwd(), APP_CONFIG.UPLOAD_PATH)));
+    this.app.use("/foto", express.static(APP_CONFIG.UPLOAD_PATH));
   }
   
   protected routes(): void {

@@ -55,7 +55,6 @@ export class GedungController implements IController {
         );
       }
 
-      // Validate data - the foto_gedung field is now set by the upload middleware
       const validatedData = ValidationUtil.validateBody(req, gedungSchema);
 
       const gedung = await this.gedungService.createGedung(validatedData);
@@ -66,7 +65,6 @@ export class GedungController implements IController {
         data: gedung,
       });
     } catch (error) {
-      // If there was an error and a file was uploaded, clean it up
       if (req.file) {
         const filePath = path.join(process.cwd(), 'public', req.body.foto_gedung);
         if (fs.existsSync(filePath)) {

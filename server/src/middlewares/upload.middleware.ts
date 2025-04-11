@@ -73,7 +73,7 @@ class UploadMiddleware {
 
         if (req.file) {
         
-          req.body.foto_gedung = `/uploads/${req.file.filename}`;
+          req.body.foto_gedung = `${req.file.filename}`;
         }
         
         next();

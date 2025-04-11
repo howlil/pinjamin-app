@@ -36,8 +36,8 @@ const AvailableRoomsDialog = ({ open, onOpenChange, availableRooms }: AvailableR
                   <div className="flex">
                     <div className="w-24 h-24">
                       <img 
-                        src="/ruang-seminar.jpg" 
-                        alt={room.nama_gedung} 
+                        src={`${import.meta.env.VITE_API_URL}/foto/${room.foto_gedung}`} 
+                        alt={room.foto_gedung} 
                         className="h-full w-full object-cover"
                       />
                     </div>

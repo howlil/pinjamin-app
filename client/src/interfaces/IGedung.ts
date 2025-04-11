@@ -1,10 +1,8 @@
-import { Peminjaman } from "./IPeminjaman";
-
 export interface Gedung {
   id: string;
   nama_gedung: string;
   harga_sewa: number;
-  foto_gedung?:string;
+  foto_gedung?: string;
   kapasitas?: number;
 }
 
@@ -18,38 +16,42 @@ export interface GedungFilter {
   harga_max?: number;
 }
 
-
 export interface CheckAvailable {
-  tanggalMulai : string;
-  jamMulai : string;
+  tanggalMulai: string;
+  jamMulai: string;
 }
+
 export interface ResCheckAvailable {
-  id : string;
-  nama_gedung : string;
+  id: string;
+  nama_gedung: string;
   harga_sewa: number;
-  kapasitas : number;
-  lokasi : string;
+  kapasitas: number;
+  foto_gedung : string;
+  lokasi: string;
 }
 
 export interface Gedungs {
   id: string;
   nama_gedung: string;
-  foto_gedung:string;
+  foto_gedung: string;
   deskripsi: string;
   harga_sewa: number;
   kapasitas: number;
   lokasi: string;
   tipe_gedung_id: string;
-  createdAt: string;
-  updatedAt: string;
   TipeGedung: TipeGedung;
   FasilitasGedung: FasilitasGedung[];
   penganggung_jawab_gedung: PenanggungJawabGedung[];
-  Peminjaman: Peminjaman[];
+  Peminjaman: import('./IPeminjaman').Peminjaman[];
 }
 
-export interface FasilitasGedung{
-
+export interface FasilitasGedung {
+  id: string;
+  nama_fasilitas: string;
+  icon_url?: string;
+  gedung_id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TipeGedung {
@@ -58,6 +60,7 @@ export interface TipeGedung {
   createdAt: string;
   updatedAt: string;
 }
+
 export interface PenanggungJawabGedung {
   id: string;
   nama_penangguang_jawab: string;

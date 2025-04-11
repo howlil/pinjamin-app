@@ -55,9 +55,7 @@ const CheckRuangan = () => {
         </p>
       </section>
 
-      <section className="rounded-3xl shadow-xl p-4 space-y-4 backdrop-blur-sm bg-white/5 border border-[#ededed]/10 relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#B7F6B5]/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#749C73]/20 rounded-full blur-3xl"></div>
+      <section className="rounded-xl shadow-sm p-4 space-y-4 backdrop-blur-sm bg-white/5 border border-[#ededed]/10 relative overflow-hidden">
 
         <h3 className="text-2xl font-semibold text-[#183512]">
           Cek Ruangan Tersedia

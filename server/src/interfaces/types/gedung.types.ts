@@ -1,7 +1,8 @@
-import { FasilitasGedung } from "./fasilitas-gedung.types";
-import { TipeGedung } from "./tipe-gedung.types";
-import { PenanggungJawabGedung } from "./penanggung-jawab-gedung.types";
-import { Peminjaman } from "./peminjaman.types";
+import { FasilitasGedung } from './fasilitas-gedung.types';
+import { TipeGedung } from './tipe-gedung.types';
+import { PenanggungJawabGedung, PenanggungJawabGedungCreate } from './penanggung-jawab-gedung.types';
+import { FasilitasGedungCreate } from './fasilitas-gedung.types';
+import { Peminjaman } from './peminjaman.types';
 
 export interface Gedung {
   id: string;
@@ -9,18 +10,22 @@ export interface Gedung {
   deskripsi: string;
   harga_sewa: number;
   foto_gedung?: string | null;
-    kapasitas: number;
+  kapasitas: number;
   lokasi: string;
+  tipe_gedung_id: string;
   penganggung_jawab_gedung?: PenanggungJawabGedung[];
   FasilitasGedung?: FasilitasGedung[];
   TipeGedung?: TipeGedung;
   Peminjaman?: Peminjaman[];
+  createdAt: Date;
+  updatedAt: Date;
 }
+
 export interface Gedungs {
   id: string;
   nama_gedung: string;
   foto_gedung?: string | null;
-    harga_sewa: number;
+  harga_sewa: number;
 }
 
 export interface GedungCreate {
@@ -29,8 +34,10 @@ export interface GedungCreate {
   harga_sewa: number;
   kapasitas: number;
   foto_gedung?: string | null;
-    lokasi: string;
+  lokasi: string;
   tipe_gedung_id: string;
+  penanggung_jawab_gedung?: PenanggungJawabGedungCreate[]; // Make optional
+  fasilitas_gedung?: FasilitasGedungCreate[]; // Make optional
 }
 
 export interface GedungUpdate {
@@ -41,6 +48,8 @@ export interface GedungUpdate {
   lokasi?: string;
   foto_gedung?: string | null;
   tipe_gedung_id?: string;
+  penanggung_jawab_gedung?: PenanggungJawabGedungCreate[]; // Make optional
+  fasilitas_gedung?: FasilitasGedungCreate[]; // Make optional
 }
 
 export interface GedungFilter {

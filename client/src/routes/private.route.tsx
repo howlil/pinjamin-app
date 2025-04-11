@@ -5,6 +5,7 @@ import GedungPage from "@/pages/admin/kelola-gedung";
 import AjuanPeminjamanPage from "@/pages/admin/kelola-ajuan-peminjaman";
 import TransaksiAdminPage from "@/pages/admin/kelola-transaksi";
 import RiwayatAdminPage from "@/pages/admin/riwayat";
+import RiwayatPage from "@/pages/peminjam/riwayat";
 
 export const PrivateRoutes: RouteObject[] = [
   {
@@ -44,6 +45,14 @@ export const PrivateRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute requiredRole="ADMIN">
         <RiwayatAdminPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/riwayat",
+    element: (
+      <ProtectedRoute requiredRole="PEMINJAM">
+        <RiwayatPage />
       </ProtectedRoute>
     ),
   },

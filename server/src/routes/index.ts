@@ -1,6 +1,7 @@
 import penggunaRoutes from "./routers/pengguna.routes";
 import gedungRoutes from "./routers/gedung.routes";
 import peminjamanRoutes from "./routers/peminjaman.routes";
+import pembayaranRoutes from "./routers/pembayaran.routes";
 import notifikasiRoutes from "./routers/notifikasi.routes";
 import { BaseRouter } from "./base.route";
 
@@ -10,6 +11,7 @@ class AppRouter extends BaseRouter {
     this.router.use(gedungRoutes);
     this.router.use(peminjamanRoutes);
     this.router.use(notifikasiRoutes);
+    this.router.use(pembayaranRoutes);
   }
 }
 

@@ -13,7 +13,7 @@ export interface AvailabilityCheck {
 export interface IGedungService {
   getAllGedung(filter?: GedungFilter): Promise<Gedungs[]>;
   getGedungById(id: string): Promise<Gedung>;
-  createGedung(data: GedungCreate): Promise<Gedung>;
+  createGedung(gedungData: GedungCreate): Promise<Gedung>;
   updateGedung(id: string, data: GedungUpdate): Promise<Gedung>;
   deleteGedung(id: string): Promise<boolean>;
   checkGedungAvailability(data: AvailabilityCheck): Promise<Gedungs[]>;

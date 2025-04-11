@@ -2,11 +2,12 @@ import { STATUSTRANSAKSI } from '@prisma/client';
 import { Peminjaman } from './peminjaman.types';
 import { Refund } from './refund.types';
 
+
 export interface Pembayaran {
   id: string;
   transaksi_midtrans_id: string;
   peminjaman_id: string;
-  no_invoice?: string;
+  no_invoice?: string | null; // Changed this line to accept null
   tanggal_bayar: string;
   jumlah_bayar: number;
   biaya_midtrans: number;
@@ -46,4 +47,18 @@ export interface PembayaranUpdate {
   url_pembayaran?: string;
   snap_token?: string;
   status_pembayaran?: STATUSTRANSAKSI;
+}
+export interface MidtransNotification {
+  transaction_time: string;
+  transaction_status: string;
+  transaction_id: string;
+  status_message: string;
+  status_code: string;
+  signature_key: string;
+  payment_type: string;
+  order_id: string;
+  merchant_id: string;
+  gross_amount: string;
+  fraud_status?: string;
+  currency: string;
 }

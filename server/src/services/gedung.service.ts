@@ -116,21 +116,40 @@ export class GedungService implements IGedungService {
       TipeGedung: {
         connect: { id: gedungData.tipe_gedung_id },
       },
+      FasilitasGedung: gedungData.fasilitas_gedung?.length ? {
+        create: gedungData.fasilitas_gedung.map(fasilitas => ({
+          nama_fasilitas: fasilitas.nama_fasilitas,
+          icon_url: fasilitas.icon_url
+        }))
+      } : undefined,
+      penganggung_jawab_gedung: gedungData.penanggung_jawab_gedung?.length ? {
+        create: gedungData.penanggung_jawab_gedung.map(pj => ({
+          nama_penangguang_jawab: pj.nama_penangguang_jawab,
+          no_hp: pj.no_hp
+        }))
+      } : undefined
     };
+  
 
     const gedung = await prisma.gedung.create({
       data: createData,
       include: {
         TipeGedung: true,
+        FasilitasGedung: true,
+        penganggung_jawab_gedung: true
       },
     });
 
     return gedung;
   }
 
-  async updateGedung(id: string, gedungData: GedungUpdate): Promise<Gedung> {
+   async updateGedung(id: string, gedungData: GedungUpdate): Promise<Gedung> {
     const existingGedung = await prisma.gedung.findUnique({
       where: { id },
+      include: {
+        FasilitasGedung: true,
+        penganggung_jawab_gedung: true
+      }
     });
 
     if (!existingGedung) {
@@ -147,53 +166,87 @@ export class GedungService implements IGedungService {
       }
     }
 
-    // Convert our custom interface to a Prisma-compatible update input
-    const updateData: Prisma.GedungUpdateInput = {};
+    // Start a transaction to handle all updates
+    return prisma.$transaction(async (tx) => {
+      // Update basic building information
+      const updateData: Prisma.GedungUpdateInput = {};
 
-    if (gedungData.nama_gedung !== undefined) {
-      updateData.nama_gedung = gedungData.nama_gedung;
-    }
+      if (gedungData.nama_gedung !== undefined) updateData.nama_gedung = gedungData.nama_gedung;
+      if (gedungData.deskripsi !== undefined) updateData.deskripsi = gedungData.deskripsi;
+      if (gedungData.harga_sewa !== undefined) updateData.harga_sewa = gedungData.harga_sewa;
+      if (gedungData.kapasitas !== undefined) updateData.kapasitas = gedungData.kapasitas;
+      if (gedungData.lokasi !== undefined) updateData.lokasi = gedungData.lokasi;
+      
+      // Handle foto_gedung properly
+      if (gedungData.foto_gedung !== undefined) {
+        updateData.foto_gedung = gedungData.foto_gedung === null ? undefined : gedungData.foto_gedung;
+      }
 
-    if (gedungData.deskripsi !== undefined) {
-      updateData.deskripsi = gedungData.deskripsi;
-    }
+      if (gedungData.tipe_gedung_id !== undefined) {
+        updateData.TipeGedung = {
+          connect: { id: gedungData.tipe_gedung_id },
+        };
+      }
 
-    if (gedungData.harga_sewa !== undefined) {
-      updateData.harga_sewa = gedungData.harga_sewa;
-    }
-
-    if (gedungData.kapasitas !== undefined) {
-      updateData.kapasitas = gedungData.kapasitas;
-    }
-
-    if (gedungData.lokasi !== undefined) {
-      updateData.lokasi = gedungData.lokasi;
-    }
-
-    // Handle foto_gedung properly - convert null to undefined for Prisma
-    if (gedungData.foto_gedung !== undefined) {
-      updateData.foto_gedung =
-        gedungData.foto_gedung === null ? undefined : gedungData.foto_gedung;
-    }
-
-    if (gedungData.tipe_gedung_id !== undefined) {
-      updateData.TipeGedung = {
-        connect: { id: gedungData.tipe_gedung_id },
-      };
-    }
-
-    const updatedGedung = await prisma.gedung.update({
-      where: { id },
-      data: updateData,
-      include: {
-        TipeGedung: true,
-        FasilitasGedung: true,
-        penganggung_jawab_gedung: true,
-      },
+      // First, update the building details
+      const updatedGedung = await tx.gedung.update({
+        where: { id },
+        data: updateData,
+        include: {
+          TipeGedung: true
+        }
+      });
+      
+      // Handle facilities update if provided
+      if (gedungData.fasilitas_gedung && Array.isArray(gedungData.fasilitas_gedung)) {
+        // Delete existing facilities
+        await tx.fasilitasGedung.deleteMany({
+          where: { gedung_id: id }
+        });
+        
+        // Create new facilities
+        if (gedungData.fasilitas_gedung.length > 0) {
+          await tx.fasilitasGedung.createMany({
+            data: gedungData.fasilitas_gedung.map(fasilitas => ({
+              nama_fasilitas: fasilitas.nama_fasilitas,
+              icon_url: fasilitas.icon_url,
+              gedung_id: id
+            }))
+          });
+        }
+      }
+      
+      // Handle managers update if provided
+      if (gedungData.penanggung_jawab_gedung && Array.isArray(gedungData.penanggung_jawab_gedung)) {
+        // Delete existing managers
+        await tx.penanggungJawabGedung.deleteMany({
+          where: { gedung_id: id }
+        });
+        
+        // Create new managers
+        if (gedungData.penanggung_jawab_gedung.length > 0) {
+          await tx.penanggungJawabGedung.createMany({
+            data: gedungData.penanggung_jawab_gedung.map(pj => ({
+              nama_penangguang_jawab: pj.nama_penangguang_jawab,
+              no_hp: pj.no_hp,
+              gedung_id: id
+            }))
+          });
+        }
+      }
+      
+      // Return the complete updated building with all relations
+      return tx.gedung.findUnique({
+        where: { id },
+        include: {
+          TipeGedung: true,
+          FasilitasGedung: true,
+          penganggung_jawab_gedung: true
+        }
+      }) as Promise<Gedung>;
     });
-
-    return updatedGedung;
   }
+
 
   async deleteGedung(id: string): Promise<boolean> {
     const existingGedung = await prisma.gedung.findUnique({

@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.startServer = exports.Server = void 0;
 const express_1 = __importDefault(require("express"));
-const path_1 = __importDefault(require("path"));
 const uncaught_exception_util_1 = require("./utils/uncaught-exception.util");
 const error_middleware_1 = require("./middlewares/error.middleware");
 const logger_config_1 = require("./configs/logger.config");
@@ -33,7 +32,7 @@ class Server {
         this.app.use(express_1.default.urlencoded({ extended: true, limit: "10mb" }));
         this.app.use(logger_config_1.requestLogger);
         this.app.use(rate_limit_middleware_1.apiLimiter);
-        this.app.use("/uploads", express_1.default.static(path_1.default.join(process.cwd(), app_config_1.APP_CONFIG.UPLOAD_PATH)));
+        this.app.use("/foto", express_1.default.static(app_config_1.APP_CONFIG.UPLOAD_PATH));
     }
     routes() {
         this.app.use("/api", index_1.default);
