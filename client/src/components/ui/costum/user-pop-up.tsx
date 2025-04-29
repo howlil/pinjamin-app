@@ -11,23 +11,25 @@ export interface ActionButton {
   showOnRoutes?: string[];
 }
 
+interface User {
+  nama_lengkap : string
+  email : string
+  role : string
+}
 interface UserPopUpProps {
   actions: ActionButton[];
-  namaLengkap?: string;
-  email?: string;
-  role: string;
+  user:User ;
   currentRoute: string;
 }
 
 const UserPopUp: React.FC<UserPopUpProps> = ({
-  role,
+  user,
   actions,
   currentRoute,
-  namaLengkap,
-  email,
+  
 }) => {
   const filteredAction = actions.filter((action) => {
-    if (action.showOn && action.showOn !== "ALL" && action.showOn !== role) {
+    if (action.showOn && action.showOn !== "ALL" && action.showOn !== user.role) {
       return false;
     }
     if (
@@ -49,8 +51,8 @@ const UserPopUp: React.FC<UserPopUpProps> = ({
   return (
     <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg z-10 border">
       <div className="px-4 py-2 border-b">
-        <p className="text-sm font-medium">{namaLengkap || "User"}</p>
-        <p className="text-xs text-gray-500">{email || ""}</p>
+        <p className="text-sm font-medium">{user.nama_lengkap || "User"}</p>
+        <p className="text-xs text-gray-500">{user.email || ""}</p>
       </div>
 
       <div>

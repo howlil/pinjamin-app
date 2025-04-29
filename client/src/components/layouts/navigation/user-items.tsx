@@ -41,9 +41,7 @@ export default function UserItem() {
 
         {showDropdown && (
           <UserPopUp
-            namaLengkap={pengguna.nama_lengkap}
-            email={pengguna.email}
-            role={pengguna.role}
+            user={pengguna}
             actions={userActions}
             currentRoute={currentLocation}
           />
