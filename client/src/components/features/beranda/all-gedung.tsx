@@ -1,8 +1,8 @@
-import FilterInput from "../../ui/costum/filter-input";
-import SearchInput from "@/components/ui/costum/search-input";
+import FilterInput from "../../ui/costum/input/filter-input";
+import SearchInput from "@/components/ui/costum/input/search-input";
 import CardListGedung from "./components/card-list";
 import { GedungService } from "@/apis/gedung";
-import { Gedung, GedungFilter } from "@/interfaces/IGedung";
+import { Gedung, GedungFilter } from "@/apis/interfaces/IGedung";
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 

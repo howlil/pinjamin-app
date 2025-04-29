@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Gedung } from "@/interfaces/IGedung";
+import { Gedung } from "@/apis/interfaces/IGedung";
 import CardGedung from "./card-gedung";
 
 interface IGedungListProps {

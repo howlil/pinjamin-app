@@ -7,7 +7,7 @@ import {
   ResCheckAvailable,
   GedungCreate,
   GedungUpdate,
-} from "@/interfaces/IGedung";
+} from "@/apis/interfaces/IGedung";
 
 export class GedungService {
   private static baseUrl = "/api/v1/gedung";

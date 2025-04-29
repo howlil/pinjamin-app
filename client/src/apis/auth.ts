@@ -1,5 +1,5 @@
 import ApiService from "@/utils/api";
-import { Login, LoginResponse, Register, Pengguna } from "@/interfaces/IAuth";
+import { Login, LoginResponse, Register, Pengguna } from "@/apis/interfaces/IAuth";
 
 export class AuthService {
   private static baseUrl = "/api/v1";

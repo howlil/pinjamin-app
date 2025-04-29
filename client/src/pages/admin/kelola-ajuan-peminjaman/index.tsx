@@ -1,9 +1,5 @@
-import DashboardLayout from "@/components/core/layouts/dashboard-layout"
+import DashboardLayout from "@/components/layouts/dashboard-layout";
 
 export default function AjuanPeminjamanPage() {
-  return (
-    <DashboardLayout>
-      test
-    </DashboardLayout>
-  )
+  return <DashboardLayout>test</DashboardLayout>;
 }

@@ -2,7 +2,7 @@ import { FC } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Gedung } from "@/interfaces/IGedung";
+import { Gedung } from "@/apis/interfaces/IGedung";
 
 const CardGedung: FC<{ gedung: Gedung }> = ({ gedung }) => {
   const navigate = useNavigate();

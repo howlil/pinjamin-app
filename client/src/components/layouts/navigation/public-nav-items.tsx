@@ -2,7 +2,6 @@ import { FC } from "react";
 import { useActivePath } from "@/hooks/use-active-path";
 
 
-
 export interface INavItem {
   route: string;
   label: string;

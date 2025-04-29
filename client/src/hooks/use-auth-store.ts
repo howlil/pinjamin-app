@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Pengguna } from "@/interfaces/IPengguna";
+import { Pengguna } from "@/apis/interfaces/IAuth";
 
 interface AuthState {
   pengguna: Pengguna | null;

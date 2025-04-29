@@ -11,7 +11,8 @@ const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("auth_token");
+    const token = localStorage.getItem('auth-token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -38,7 +39,9 @@ apiClient.interceptors.response.use(
       const message = responseData?.message || "Something went wrong";
 
       if (responseData.errors) {
-        for (const [field, errorMessage] of Object.entries(responseData.errors)) {
+        for (const [field, errorMessage] of Object.entries(
+          responseData.errors
+        )) {
           toast.error(`${field}: ${errorMessage}`);
         }
       } else {

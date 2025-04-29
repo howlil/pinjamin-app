@@ -5,7 +5,7 @@ import {
   PeminjamanCreate,
   PeminjamanFilter,
   PeminjamanUpdate,
-} from "@/interfaces/IPeminjaman";
+} from "@/apis/interfaces/IPeminjaman";
 export class PeminjamanService {
   private static baseUrl = "/api/v1/peminjaman";
 

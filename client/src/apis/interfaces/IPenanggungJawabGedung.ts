@@ -1,4 +1,4 @@
-import { Gedung } from "@/interfaces/IGedung";
+import { Gedung } from "./IGedung";
 
 export interface PenanggungJawabGedung {
   id: string;

@@ -1,4 +1,4 @@
-import { Notifikasi } from "@/interfaces/INotifikasi";
+import { Notifikasi } from "@/apis/interfaces/INotifikasi";
 import ApiService from "@/utils/api";
 
 export class NotifikasiService {

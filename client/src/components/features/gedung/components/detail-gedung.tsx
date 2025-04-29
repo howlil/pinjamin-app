@@ -3,7 +3,7 @@ import {
   Gedungs,
   TipeGedung,
   PenanggungJawabGedung,
-} from "@/interfaces/IGedung";
+} from "@/apis/interfaces/IGedung";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface DetailGedungProps {
@@ -19,8 +19,7 @@ export interface FasilitasGedung {
   updatedAt: string;
 }
 
-// Extend the Gedungs interface if needed
-declare module "@/interfaces/IGedung" {
+declare module "@/apis/interfaces/IGedung" {
   interface Gedungs {
     FasilitasGedung: FasilitasGedung[];
   }

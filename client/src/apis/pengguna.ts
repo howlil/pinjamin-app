@@ -1,4 +1,4 @@
-import { Pengguna, PenggunaUpdate } from "@/interfaces/IAuth";
+import { Pengguna, PenggunaUpdate } from "@/apis/interfaces/IAuth";
 import ApiService from "@/utils/api";
 
 export class PenggunaService {

@@ -5,7 +5,8 @@ import { Building2, ChevronRight, Menu } from "lucide-react";
 import UserProfile from "@/components/ui/costum/user-profile";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { navItems } from "@/data/nav-data";
+import { adminData } from "./navigation/nav-data";
+import logo from "@/assets/logo.png"
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -14,7 +15,7 @@ interface DashboardLayoutProps {
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
-  title = "Dashboard",
+  title,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,9 +45,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               collapsed ? "justify-center" : "gap-2"
             )}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-main-green text-primary-foreground">
-              <Building2 className="h-5 w-5" />
-            </div>
+            <img src={logo}  />
             {!collapsed && <span className="font-semibold">Pinjamin</span>}
           </div>
 
@@ -69,7 +68,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           )}
         >
           <ul className="space-y-2">
-            {navItems.map((item) => (
+            {adminData.map((item) => (
               <li key={item.href}>
                 <Button
                   variant={

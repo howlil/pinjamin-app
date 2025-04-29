@@ -1,6 +1,6 @@
 import { Pengguna } from "./IAuth";
 import { STATUS } from "./IEnum";
-import { Gedung } from "@/interfaces/IGedung";
+import { Gedung } from "./IGedung";
 import { Pembayaran } from "./IPembayaran";
 
 export interface Peminjaman {

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import PasswordInput from "@/components/ui/costum/password-input";
-import TextInput from "@/components/ui/costum/text-input";
-import SelectInput from "@/components/ui/costum/select-input";
+import PasswordInput from "@/components/ui/costum/input/password-input";
+import TextInput from "@/components/ui/costum/input/text-input";
+import SelectInput from "@/components/ui/costum/input/select-input";
 
 const RegisterForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);

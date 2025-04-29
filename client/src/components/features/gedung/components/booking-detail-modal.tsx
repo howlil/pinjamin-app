@@ -1,22 +1,41 @@
-import { Peminjaman } from "@/interfaces/IPeminjaman";
+import { Peminjaman } from "@/apis/interfaces/IPeminjaman";
 import { AnimatePresence, motion } from "framer-motion";
+import { STATUS } from "@/apis/interfaces/IEnum";
+
+// Helper function to safely extract the status string
+const getStatusString = (statusObject: typeof STATUS.STATUS_PEMINJAMAN): string => {
+  if (statusObject.DISETUJUI) return STATUS.STATUS_PEMINJAMAN.DISETUJUI;
+  if (statusObject.DIPROSES) return STATUS.STATUS_PEMINJAMAN.DIPROSES;
+  if (statusObject.DITOLAK) return STATUS.STATUS_PEMINJAMAN.DITOLAK;
+  if (statusObject.SELESAI) return STATUS.STATUS_PEMINJAMAN.SELESAI;
+  // Default fallback
+  return STATUS.STATUS_PEMINJAMAN.DIPROSES;
+};
+
+// Create an extended interface for the properties we're trying to access
+interface ExtendedPeminjaman extends Peminjaman {
+  keterangan?: string; // Add the missing keterangan property as optional
+}
 
 const BookingDetailModal = ({
   booking,
   isOpen,
   onClose,
 }: {
-  booking: Peminjaman | null;
+  booking: ExtendedPeminjaman | null; // Use the extended interface
   isOpen: boolean;
   onClose: () => void;
 }) => {
   if (!isOpen || !booking) return null;
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (statusObject: typeof STATUS.STATUS_PEMINJAMAN) => {
+    // Convert status object to string
+    const status = getStatusString(statusObject);
+    
     switch (status) {
-      case "DISETUJUI":
+      case STATUS.STATUS_PEMINJAMAN.DISETUJUI:
         return "bg-[#749C73] text-white";
-      case "DITOLAK":
+      case STATUS.STATUS_PEMINJAMAN.DITOLAK:
         return "bg-[#1F0909] text-white";
       default:
         return "bg-[#FCA129] text-white";
@@ -130,4 +149,5 @@ const BookingDetailModal = ({
     </AnimatePresence>
   );
 };
+
 export default BookingDetailModal;

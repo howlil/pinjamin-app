@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
-import TextInput from "@/components/ui/costum/text-input";
+import TextInput from "@/components/ui/costum/input/text-input";
 import { useState } from "react";
-import { GedungService } from "@/apis/gedung";
-import { ResCheckAvailable } from "@/interfaces/IGedung";
+import { ResCheckAvailable } from "@/apis/interfaces/IGedung";
 import AvailableRoomsDialog from "./available-rooms-dialog";
 
 const CheckRuangan = () => {

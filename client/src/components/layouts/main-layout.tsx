@@ -1,4 +1,4 @@
-import PublicNav from "../navigation/public-nav/public-nav";
+import PublicNav from "./navigation/public-nav";
 import { FC, ReactNode, useState,useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 

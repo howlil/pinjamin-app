@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Peminjaman } from "@/interfaces/IPeminjaman";
-import { motion, AnimatePresence } from "framer-motion";
+import { Peminjaman } from "@/apis/interfaces/IPeminjaman";
+import { motion} from "framer-motion";
+import { STATUS } from "@/apis/interfaces/IEnum";
 
 interface CalendarDay {
   day: number | null;
@@ -112,17 +113,34 @@ export default function CalendarGedung({
     }
   };
 
+  // Helper function to safely extract the status string
+  const getStatusString = (statusObject: typeof STATUS.STATUS_PEMINJAMAN): string => {
+    if (statusObject.DISETUJUI) return STATUS.STATUS_PEMINJAMAN.DISETUJUI;
+    if (statusObject.DIPROSES) return STATUS.STATUS_PEMINJAMAN.DIPROSES;
+    if (statusObject.DITOLAK) return STATUS.STATUS_PEMINJAMAN.DITOLAK;
+    if (statusObject.SELESAI) return STATUS.STATUS_PEMINJAMAN.SELESAI;
+    // Default fallback
+    return STATUS.STATUS_PEMINJAMAN.DIPROSES;
+  };
+
   const getStatusClass = (day: CalendarDay): string => {
     if (!day || !day.date) return "";
 
     const bookingsForDay = day.bookings || [];
 
     if (bookingsForDay.length > 0) {
-      const status = bookingsForDay[0].status_peminjaman;
+      // Get the status string safely
+      const statusString = getStatusString(bookingsForDay[0].status_peminjaman);
 
-      if (status === "DISETUJUI") return "bg-[#749C73] text-white";
-      if (status === "DITOLAK") return "bg-[#b31c1c] text-white";
-      if (status === "PENDING") return "bg-[#FCA129] text-white";
+      if (statusString === STATUS.STATUS_PEMINJAMAN.DISETUJUI) {
+        return "bg-[#749C73] text-white";
+      }
+      if (statusString === STATUS.STATUS_PEMINJAMAN.DITOLAK) {
+        return "bg-[#b31c1c] text-white";
+      }
+      if (statusString === STATUS.STATUS_PEMINJAMAN.DIPROSES) {
+        return "bg-[#FCA129] text-white";
+      }
     }
 
     const today = new Date();
@@ -133,16 +151,19 @@ export default function CalendarGedung({
     return "hover:bg-gray-50 text-gray-700";
   };
 
-  const getStatusIndicator = (status: string) => {
-    switch (status) {
-      case "DISETUJUI":
-        return "bg-[#749C73]";
-      case "DITOLAK":
-        return "bg-[#b31c1c]";
-      case "PENDING":
-        return "bg-[#FCA129]";
-      default:
-        return "bg-[#DCDCDC]";
+  const getStatusIndicator = (statusObject: typeof STATUS.STATUS_PEMINJAMAN): string => {
+    // Get the status string safely
+    const statusString = getStatusString(statusObject);
+
+    // Compare strings
+    if (statusString === STATUS.STATUS_PEMINJAMAN.DISETUJUI) {
+      return "bg-[#749C73]";
+    } else if (statusString === STATUS.STATUS_PEMINJAMAN.DITOLAK) {
+      return "bg-[#b31c1c]";
+    } else if (statusString === STATUS.STATUS_PEMINJAMAN.DIPROSES) {
+      return "bg-[#FCA129]";
+    } else {
+      return "bg-[#DCDCDC]";
     }
   };
 

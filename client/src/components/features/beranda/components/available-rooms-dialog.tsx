@@ -1,4 +1,4 @@
-import { ResCheckAvailable } from "@/interfaces/IGedung";
+import { ResCheckAvailable } from "@/apis/interfaces/IGedung";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface AvailableRoomsDialogProps {
