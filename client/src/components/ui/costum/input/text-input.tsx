@@ -25,36 +25,35 @@ const TextInput: FC<TextInputProps> = ({
   placeholder,
   className,
   required = false,
-  error
+  error,
 }) => {
   const hasError = !!error;
 
   return (
-    <div className="space-y-2">
+    <div>
       {label && (
         <label htmlFor={name} className="text-sm font-medium">
           {label}
           {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      
-      <Input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        onChange={onChange}
-        onBlur={onBlur}
-        value={value}
-        className={cn(
-          hasError && "border-red-500 focus-visible:ring-red-500",
-          className
-        )}
-      />
-      
-      {hasError && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      <div className="mt-2">
+        <Input
+          id={name}
+          name={name}
+          type={type}
+          placeholder={placeholder}
+          onChange={onChange}
+          onBlur={onBlur}
+          value={value}
+          className={cn(
+            hasError && "border-red-500  focus-visible:ring-red-500",
+            className
+          )}
+        />
+      </div>
+
+      {hasError && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 };

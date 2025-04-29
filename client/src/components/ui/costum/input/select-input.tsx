@@ -4,7 +4,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,7 @@ const SelectInput: FC<SelectInputProps> = ({
   options,
   className,
   required = false,
-  error
+  error,
 }) => {
   const handleValueChange = (newValue: string) => {
     onChange(newValue);
@@ -45,7 +45,7 @@ const SelectInput: FC<SelectInputProps> = ({
   const hasError = !!error;
 
   return (
-    <div className="space-y-2">
+    <div >
       {label && (
         <label htmlFor={name} className="text-sm font-medium">
           {label}
@@ -53,37 +53,37 @@ const SelectInput: FC<SelectInputProps> = ({
         </label>
       )}
 
-      <Select
-        name={name}
-        onValueChange={handleValueChange}
-        value={value}
-        onOpenChange={(open) => {
-          if (!open && onBlur) {
-            onBlur();
-          }
-        }}
-      >
-        <SelectTrigger 
-          id={name}
-          className={cn(
-            hasError && "border-red-500 focus-visible:ring-red-500",
-            className
-          )}
+      <div className="mt-2">
+        <Select
+          name={name}
+          onValueChange={handleValueChange}
+          value={value}
+          onOpenChange={(open) => {
+            if (!open && onBlur) {
+              onBlur();
+            }
+          }}
         >
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectTrigger
+            id={name}
+            className={cn(
+              hasError && "border-red-500 focus-visible:ring-red-500",
+              className
+            )}
+          >
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      {hasError && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {hasError && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 };

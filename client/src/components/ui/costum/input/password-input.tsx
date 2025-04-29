@@ -37,14 +37,14 @@ const PasswordInput = ({
   const hasError = !!error;
 
   return (
-    <div className="space-y-2">
+    <div >
       {label && (
         <label htmlFor={name} className="text-sm font-medium">
           {label}
           {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      <div className="relative">
+      <div className="relative mt-2 ">
         <Input
           id={name}
           name={name}

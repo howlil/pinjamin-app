@@ -1,12 +1,11 @@
 import React, { useState, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Building2, ChevronRight, Menu } from "lucide-react";
-import UserProfile from "@/components/ui/costum/user-profile";
+import {  ChevronRight, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { adminData } from "./navigation/nav-data";
-import logo from "@/assets/logo.png"
+import UserItem from "./navigation/user-items";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -45,8 +44,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               collapsed ? "justify-center" : "gap-2"
             )}
           >
-            <img src={logo}  />
-            {!collapsed && <span className="font-semibold">Pinjamin</span>}
+            {!collapsed && <span className="text-2xl text-main-green font-bold">Pinjamin</span>}
           </div>
 
           <Button
@@ -109,7 +107,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="bg-white border-b h-14 flex items-center px-6 justify-between shadow-sm">
           <h1 className="text-xl font-semibold">{title}</h1>
-          <UserProfile />
+          <UserItem />
         </header>
 
         <main className="flex-1 overflow-auto">

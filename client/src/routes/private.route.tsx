@@ -9,7 +9,7 @@ import RiwayatPage from "@/pages/peminjam/riwayat";
 
 export const PrivateRoutes: RouteObject[] = [
   {
-    path: "/dashboard",
+    path: "/admin/dashboard",
     element: (
       <ProtectedRoute requiredRole="ADMIN">
         <DashboardPage />
@@ -17,7 +17,7 @@ export const PrivateRoutes: RouteObject[] = [
     ),
   },
   {
-    path: "/kelola-gedung",
+    path: "/admin/kelola-gedung",
     element: (
       <ProtectedRoute requiredRole="ADMIN">
         <GedungPage />
@@ -25,7 +25,7 @@ export const PrivateRoutes: RouteObject[] = [
     ),
   },
   {
-    path: "/ajuan-peminjaman",
+    path: "/admin/ajuan-peminjaman",
     element: (
       <ProtectedRoute requiredRole="ADMIN">
         <AjuanPeminjamanPage />
