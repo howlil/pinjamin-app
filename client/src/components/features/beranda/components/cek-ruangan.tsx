@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { useFormik } from "formik";
 import TextInput from "@/components/ui/costum/text-input";
 import { useState } from "react";
 import { GedungService } from "@/apis/gedung";
@@ -10,38 +9,6 @@ const CheckRuangan = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [availableRooms, setAvailableRooms] = useState<ResCheckAvailable[]>([]);
-
-  const formik = useFormik({
-    initialValues: {
-      tanggalMulai: "",
-      jamMulai: "",
-    },
-    validate: (values) => {
-      const errors: any = {};
-      if (!values.tanggalMulai) {
-        errors.tanggalMulai = "Tanggal diperlukan";
-      }
-      if (!values.jamMulai) {
-        errors.jamMulai = "Jam diperlukan";
-      }
-      return errors;
-    },
-    onSubmit: async (values) => {
-      try {
-        setIsLoading(true);
-
-        const result = await GedungService.checkAvailibility(values);
-
-        setAvailableRooms(Array.isArray(result) ? result : []);
-        setShowResults(true);
-      } catch (error) {
-        console.error("Error checking availability:", error);
-        setAvailableRooms([]);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-  });
 
   return (
     <div className="relative z-10">
@@ -56,33 +23,16 @@ const CheckRuangan = () => {
       </section>
 
       <section className="rounded-xl shadow-sm p-4 space-y-4 backdrop-blur-sm bg-white/5 border border-[#ededed]/10 relative overflow-hidden">
-
         <h3 className="text-2xl font-semibold text-[#183512]">
           Cek Ruangan Tersedia
         </h3>
         <div className="grid grid-cols-2 gap-6">
-          <TextInput
-            formik={formik}
-            label="Tanggal"
-            name="tanggalMulai"
-            type="date"
-            required
-          />
-
-          <TextInput
-            formik={formik}
-            label="Jam Mulai"
-            name="jamMulai"
-            type="time"
-            required
-          />
+        
         </div>
 
         <Button
-          onClick={() => formik.handleSubmit()}
-          disabled={
-            isLoading || !formik.values.tanggalMulai || !formik.values.jamMulai
-          }
+
+     
         >
           {isLoading ? (
             <span className="flex items-center justify-center">

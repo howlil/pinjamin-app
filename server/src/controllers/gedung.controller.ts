@@ -8,14 +8,13 @@ import {
   gedungFilterSchema,
   availabilityCheckSchema,
 } from "../validations/gedung.validation";
-import { IGedungService } from "../interfaces/services/gedung.interface";
 import { UnauthorizedError } from "../configs/error.config";
 import { IController } from "../interfaces/controller.interface";
 import fs from 'fs';
 import path from 'path';
 
 export class GedungController implements IController {
-  private gedungService: IGedungService;
+  private gedungService: GedungService;
 
   constructor() {
     this.gedungService = new GedungService();

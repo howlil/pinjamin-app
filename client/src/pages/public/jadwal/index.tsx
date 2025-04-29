@@ -1,9 +1,8 @@
-import MainLayout from '@/components/common/layouts/main-layout'
-import React from 'react'
+import MainLayout from '@/components/core/layouts/main-layout'
 export default function JadwalPage() {
   return (
     <MainLayout>
-      
+      x
     </MainLayout>
   )
 }

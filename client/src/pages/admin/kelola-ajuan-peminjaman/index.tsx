@@ -1,4 +1,4 @@
-import DashboardLayout from "@/components/common/layouts/dashboard-layout"
+import DashboardLayout from "@/components/core/layouts/dashboard-layout"
 
 export default function AjuanPeminjamanPage() {
   return (

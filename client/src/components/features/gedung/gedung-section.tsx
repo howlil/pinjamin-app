@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import CalendarGedung from "./components/calender-gedung";
 import DetailGedung from "./components/detail-gedung";
-import FormPeminjaman from "./components/form-peminjaman";
 import { GedungService } from "@/apis/gedung";
 import { useParams } from "react-router-dom";
 import { Gedungs } from "@/interfaces/IGedung";
@@ -9,7 +8,6 @@ import { Peminjaman } from "@/interfaces/IPeminjaman";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import BookingDetailModal from "./components/booking-detail-modal";
-import ElegantLoader from "@/components/ui/costum/loader";
 
 export default function GedungSection() {
   const [dataGedung, setDataGedung] = useState<Gedungs | undefined>(undefined);
@@ -52,28 +50,7 @@ export default function GedungSection() {
     setSelectedBooking(null);
   };
 
-  const closePeminjamanForm = () => {
-    setShowPeminjamanForm(false);
-  };
 
-  const handlePeminjamanSubmit = async (values: any) => {
-    try {
-      // You would typically send this to your API
-      console.log("Submitting peminjaman:", values);
-      
-      // Example API call (commented out):
-      // await PeminjamanService.createPeminjaman({
-      //   ...values,
-      //   gedung_id: id,
-      // });
-      
-      
-      // Refresh the calendar data or gedung data after submission
- 
-    } catch (error) {
-      console.error("Error submitting peminjaman:", error);
-    }
-  };
 
   return (
     <div className="py-20 min-h-screen">
@@ -134,9 +111,7 @@ export default function GedungSection() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-4">
-        {isLoading ? (
-          <ElegantLoader />
-        ) : (
+       
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {dataGedung && (
               <motion.div
@@ -159,15 +134,12 @@ export default function GedungSection() {
                   data={dataGedung}
                   onBookingClick={handleBookingClick}
                 />
-                <Button 
-                  onClick={() => setShowPeminjamanForm(true)}
-                >
+                <Button onClick={() => setShowPeminjamanForm(true)}>
                   Ajukan Peminjaman
                 </Button>
               </motion.div>
             )}
           </div>
-        )}
 
         {/* Booking Detail Modal */}
         <AnimatePresence>
@@ -180,13 +152,7 @@ export default function GedungSection() {
           )}
         </AnimatePresence>
 
-        {/* Peminjaman Form Modal */}
-        <FormPeminjaman 
-          isOpen={showPeminjamanForm}
-          onClose={closePeminjamanForm}
-          onSubmit={handlePeminjamanSubmit}
-          gedungId={id}
-        />
+      
       </main>
     </div>
   );

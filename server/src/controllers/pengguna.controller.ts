@@ -7,11 +7,10 @@ import {
   penggunaUpdateSchema,
 } from "../validations/pengguna.validation";
 import { ValidationUtil } from "../utils/validation.util";
-import { IPenggunaService } from "../interfaces/services/pengguna.interface";
 import { IController } from "../interfaces/controller.interface";
 
 export class PenggunaController implements IController {
-  private penggunaService: IPenggunaService;
+  private penggunaService: PenggunaService;
 
   constructor() {
     this.penggunaService = new PenggunaService();

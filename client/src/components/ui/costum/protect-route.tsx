@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/contexts/useAuthStore";
+import { useAuthStore } from "@/hooks/use-auth-store";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -13,19 +13,17 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const location = useLocation();
 
   const isAuthenticated = !!token;
-  
-  const hasRequiredRole = requiredRole 
-    ? pengguna?.role === requiredRole
-    : true;
-  
+
+  const hasRequiredRole = requiredRole ? pengguna?.role === requiredRole : true;
+
   if (!isAuthenticated) {
     return <Navigate to="/masuk" state={{ from: location.pathname }} replace />;
   }
-  
+
   if (isAuthenticated && !hasRequiredRole) {
     return <Navigate to="/" replace />;
   }
-  
+
   return <>{children}</>;
 };
 

@@ -16,9 +16,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { ROLE, TIPEUSER } from "@prisma/client";
 import { logger } from "../configs/logger.config";
-import { IPenggunaService } from "../interfaces/services/pengguna.interface";
 
-export class PenggunaService implements IPenggunaService {
+export class PenggunaService {
   async register(
     penggunaData: PenggunaCreate
   ): Promise<Omit<Pengguna, "kata_sandi">> {

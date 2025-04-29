@@ -1,8 +1,8 @@
-import DashboardLayout from "@/components/common/layouts/dashboard-layout"
+import DashboardLayout from "@/components/core/layouts/dashboard-layout"
 import DashboardSection from "@/components/features/admin/dashboard/dashboard-section"
 export default function DashboardPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Dashboard Statistik" >
       <DashboardSection/>
     </DashboardLayout>
   )

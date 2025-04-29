@@ -1,27 +1,32 @@
-import { useState } from "react";
+import { useState, ChangeEvent, FocusEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { FormikProps } from "formik";
 import { cn } from "@/lib/utils";
 
 interface PasswordInputProps {
-  formik: FormikProps<any>;
   name: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
   label?: string;
   placeholder?: string;
   className?: string;
   minLength?: number;
   required?: boolean;
+  error?: string;
 }
 
 const PasswordInput = ({
-  formik,
   name,
+  value,
+  onChange,
+  onBlur,
   label,
   placeholder = "Min. 8 characters",
   className,
   minLength = 8,
-  required = false
+  required = false,
+  error
 }: PasswordInputProps) => {
   const [showPassword, setShowPassword] = useState(false);
   
@@ -29,7 +34,7 @@ const PasswordInput = ({
     setShowPassword(!showPassword);
   };
 
-  const hasError = formik.touched[name] && formik.errors[name];
+  const hasError = !!error;
 
   return (
     <div className="space-y-2">
@@ -44,9 +49,9 @@ const PasswordInput = ({
           id={name}
           name={name}
           type={showPassword ? "text" : "password"}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          value={formik.values[name]}
+          onChange={onChange}
+          onBlur={onBlur}
+          value={value}
           placeholder={placeholder}
           className={cn(
             "pr-10",
@@ -64,7 +69,7 @@ const PasswordInput = ({
         </button>
       </div>
       {hasError && (
-        <p className="text-sm text-red-500">{formik.errors[name] as string}</p>
+        <p className="text-sm text-red-500">{error}</p>
       )}
     </div>
   );

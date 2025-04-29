@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "main": "src/server.ts",
   "scripts": {
-    "start": "nodemon dist/index.js",
-    "dev": "nodemon dist/index.js",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only --debug src/index.ts",
     "build": "rmdir /s /q dist && tsc",
     "db:reset": "ts-node src/databases/reset.ts",
     "db:seed": "ts-node src/databases/seed.ts",

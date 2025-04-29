@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { FormikProps } from "formik";
 import {
   Select,
   SelectContent,
@@ -15,29 +14,35 @@ export interface SelectOption {
 }
 
 interface SelectInputProps {
-  formik: FormikProps<any>;
   name: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
   label?: string;
   placeholder?: string;
   options: SelectOption[];
   className?: string;
   required?: boolean;
+  error?: string;
 }
 
 const SelectInput: FC<SelectInputProps> = ({
-  formik,
   name,
+  value,
+  onChange,
+  onBlur,
   label,
   placeholder = "Select an option",
   options,
   className,
-  required = false
+  required = false,
+  error
 }) => {
-  const handleChange = (value: string) => {
-    formik.setFieldValue(name, value);
+  const handleValueChange = (newValue: string) => {
+    onChange(newValue);
   };
 
-  const hasError = formik.touched[name] && formik.errors[name];
+  const hasError = !!error;
 
   return (
     <div className="space-y-2">
@@ -50,11 +55,11 @@ const SelectInput: FC<SelectInputProps> = ({
 
       <Select
         name={name}
-        onValueChange={handleChange}
-        value={formik.values[name]}
-        onOpenChange={() => {
-          if (!formik.touched[name]) {
-            formik.setFieldTouched(name, true);
+        onValueChange={handleValueChange}
+        value={value}
+        onOpenChange={(open) => {
+          if (!open && onBlur) {
+            onBlur();
           }
         }}
       >
@@ -77,7 +82,7 @@ const SelectInput: FC<SelectInputProps> = ({
       </Select>
 
       {hasError && (
-        <p className="text-sm text-red-500">{formik.errors[name] as string}</p>
+        <p className="text-sm text-red-500">{error}</p>
       )}
     </div>
   );

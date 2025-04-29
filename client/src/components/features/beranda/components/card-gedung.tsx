@@ -11,7 +11,6 @@ const CardGedung: FC<{ gedung: Gedung }> = ({ gedung }) => {
     return new Intl.NumberFormat("id-ID").format(price);
   };
 
-  console.log(`${import.meta.env.VITE_API_URL}/foto/${gedung.foto_gedung}`);
   return (
     <motion.div
       className="rounded-lg overflow-hidden border border-white/10 bg-white/30 backdrop-blur-md shadow-sm hover:shadow-2xl transition-all duration-300"

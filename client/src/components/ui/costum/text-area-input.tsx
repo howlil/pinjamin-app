@@ -1,31 +1,31 @@
 import { FC, ChangeEvent, FocusEvent } from "react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-interface TextInputProps {
+interface TextAreaInputProps {
   name: string;
   value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
+  onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLTextAreaElement>) => void;
   label?: string;
-  type?: string;
   placeholder?: string;
   className?: string;
   required?: boolean;
   error?: string;
+  rows?: number;
 }
 
-const TextInput: FC<TextInputProps> = ({
+const TextAreaInput: FC<TextAreaInputProps> = ({
   name,
   value,
   onChange,
   onBlur,
   label,
-  type = "text",
   placeholder,
   className,
   required = false,
-  error
+  error,
+  rows = 4
 }) => {
   const hasError = !!error;
 
@@ -38,14 +38,14 @@ const TextInput: FC<TextInputProps> = ({
         </label>
       )}
       
-      <Input
+      <Textarea
         id={name}
         name={name}
-        type={type}
         placeholder={placeholder}
         onChange={onChange}
         onBlur={onBlur}
         value={value}
+        rows={rows}
         className={cn(
           hasError && "border-red-500 focus-visible:ring-red-500",
           className
@@ -59,4 +59,4 @@ const TextInput: FC<TextInputProps> = ({
   );
 };
 
-export default TextInput;
+export default TextAreaInput;

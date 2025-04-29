@@ -1,3 +1,5 @@
+import { STATUS } from "./IEnum";
+
 export interface Login {
   email: string;
   kata_sandi: string;
@@ -24,4 +26,12 @@ export interface Pengguna {
   no_hp: string;
   tipe_peminjam: string;
   role: string;
+}
+
+export interface PenggunaUpdate {
+  nama_lengkap?: string;
+  email?: string;
+  kata_sandi?: string;
+  no_hp?: string;
+  tipe_peminjam?: typeof STATUS.TIPEUSER;
 }

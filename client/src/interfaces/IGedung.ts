@@ -1,9 +1,24 @@
+import { PenanggungJawabGedungCreate } from './IPenanggungJawabGedung';
+import { FasilitasGedungCreate } from './IFasilitasGedung';
+
 export interface Gedung {
   id: string;
   nama_gedung: string;
   harga_sewa: number;
   foto_gedung?: string;
   kapasitas?: number;
+}
+
+export interface GedungCreate {
+  nama_gedung: string;
+  deskripsi: string;
+  harga_sewa: number;
+  kapasitas: number;
+  foto_gedung?: string | null;
+  lokasi: string;
+  tipe_gedung_id: string;
+  penanggung_jawab_gedung?: PenanggungJawabGedungCreate[]; // Make optional
+  fasilitas_gedung?: FasilitasGedungCreate[]; // Make optional
 }
 
 export interface GedungFilter {
@@ -68,4 +83,16 @@ export interface PenanggungJawabGedung {
   gedung_id: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface GedungUpdate {
+  nama_gedung?: string;
+  deskripsi?: string;
+  harga_sewa?: number;
+  kapasitas?: number;
+  lokasi?: string;
+  foto_gedung?: string | null;
+  tipe_gedung_id?: string;
+  penanggung_jawab_gedung?: PenanggungJawabGedungCreate[]; // Make optional
+  fasilitas_gedung?: FasilitasGedungCreate[]; // Make optional
 }

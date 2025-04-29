@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const gedungSchema = z.object({
   nama_gedung: z.string().min(3, 'Nama gedung minimal 3 karakter'),
   deskripsi: z.string().min(10, 'Deskripsi minimal 10 karakter'),
-  harga_sewa: z.number().int().positive('Harga sewa harus bernilai positif'),
-  kapasitas: z.number().int().positive('Kapasitas harus bernilai positif'),
+  harga_sewa: z.coerce.number().int().positive('Harga sewa harus bernilai positif'),
+  kapasitas: z.coerce.number().int().positive('Kapasitas harus bernilai positif'),
   lokasi: z.string().min(3, 'Lokasi minimal 3 karakter'),
   foto_gedung: z.string().optional().nullable(),
   tipe_gedung_id: z.string().uuid('ID tipe gedung tidak valid'),
@@ -26,8 +26,8 @@ export const gedungSchema = z.object({
 export const gedungUpdateSchema = z.object({
   nama_gedung: z.string().min(3, 'Nama gedung minimal 3 karakter').optional(),
   deskripsi: z.string().min(10, 'Deskripsi minimal 10 karakter').optional(),
-  harga_sewa: z.number().int().positive('Harga sewa harus bernilai positif').optional(),
-  kapasitas: z.number().int().positive('Kapasitas harus bernilai positif').optional(),
+  harga_sewa: z.coerce.number().int().positive('Harga sewa harus bernilai positif').optional(),
+  kapasitas: z.coerce.number().int().positive('Kapasitas harus bernilai positif').optional(),
   lokasi: z.string().min(3, 'Lokasi minimal 3 karakter').optional(),
   foto_gedung: z.string().optional().nullable(),
   tipe_gedung_id: z.string().uuid('ID tipe gedung tidak valid').optional(),

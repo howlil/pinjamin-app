@@ -16,13 +16,10 @@ import {
   PembayaranCreate, 
   MidtransNotification 
 } from '../interfaces/types/pembayaran.types';
-import { IPembayaranService } from '../interfaces/services/pembayaran.intercase';
 
-export class PembayaranService implements IPembayaranService {
+export class PembayaranService  {
   
-  /**
-   * Create a Snap token through Midtrans API
-   */
+
   async createSnapToken(peminjaman_id: string, userId: string): Promise<{
     snapToken: string;
     redirectUrl: string;
@@ -189,9 +186,7 @@ export class PembayaranService implements IPembayaranService {
     }
   }
 
-  /**
-   * Create a payment record in the database
-   */
+
   async createPembayaran(pembayaranData: PembayaranCreate): Promise<Pembayaran> {
     try {
       const peminjaman = await prisma.peminjaman.findUnique({

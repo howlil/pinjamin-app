@@ -6,13 +6,12 @@ import {
   peminjamanUpdateSchema,
   peminjamanApprovalSchema
 } from '../validations/peminjaman.validation';
-import { IPeminjamanService } from '../interfaces/services/peminjaman.interface';
 import { UnauthorizedError, ForbiddenError } from '../configs/error.config';
 import { IController } from '../interfaces/controller.interface';
 import { ROLE } from '@prisma/client';
 
 export class PeminjamanController implements IController {
-  private peminjamanService: IPeminjamanService;
+  private peminjamanService: PeminjamanService;
 
   constructor() {
     this.peminjamanService = new PeminjamanService();

@@ -1,6 +1,6 @@
 import AllGedung from "@/components/features/beranda/all-gedung";
 import HeroSection from "@/components/features/beranda/hero-section";
-import MainLayout from "@/components/common/layouts/main-layout";
+import MainLayout from "@/components/core/layouts/main-layout";
 import { AnimatedGridPattern } from "@/components/ui/magicui/animated-grid-pattern";
 import { cn } from "@/lib/utils";
 

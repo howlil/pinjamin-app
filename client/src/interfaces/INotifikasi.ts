@@ -1,10 +1,10 @@
-import { Notif } from '@prisma/client';
-import { Pengguna } from './pengguna.types';
+import { STATUS } from "./IEnum";
+import { Pengguna } from "./IAuth";
 
 export interface Notifikasi {
   id: string;
   pengguna_id: string | null;  // Changed from string | undefined to string | null
-  jenis_notifikasi: Notif;
+  jenis_notifikasi: typeof STATUS.STATUS_NOTIF;
   judul: string;
   pesan: string;
   tanggal: string;
@@ -14,16 +14,9 @@ export interface Notifikasi {
   updatedAt: Date;
 }
 
-export interface GetNotif {
-  pengguna_id : string
-  judul : string
-  pesan : string
-  jenisNotifikasi : Notif
-}
-
 export interface NotifikasiCreate {
   pengguna_id?: string | null;  // Changed from string | undefined to string | null
-  jenis_notifikasi: Notif;
+  jenis_notifikasi: typeof STATUS.STATUS_NOTIF;
   judul: string;
   pesan: string;
   tanggal: string;
@@ -31,7 +24,7 @@ export interface NotifikasiCreate {
 }
 
 export interface NotifikasiUpdate {
-  jenis_notifikasi?: Notif;
+  jenis_notifikasi?: typeof STATUS.STATUS_NOTIF;
   judul?: string;
   pesan?: string;
   tanggal?: string;

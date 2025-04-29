@@ -1,32 +1,38 @@
-import { prisma } from '../configs/db.config';
-import { Notif } from '@prisma/client';
-import pusherClient from '../configs/pusher.config';
+import { prisma } from "../configs/db.config";
+import { Notif, Pembayaran } from "@prisma/client";
+import pusherClient from "../configs/pusher.config";
+import { GetNotif } from "../interfaces/types";
 
 export class NotifikasiService {
   /**
    * Membuat notifikasi baru dan mengirimkan melalui Pusher
    */
-  async createNotifikasi(penggunaId: string, judul: string, pesan: string, jenisNotifikasi: Notif): Promise<void> {
+  async createNotifikasi(data: GetNotif): Promise<void> {
     try {
       // Buat tanggal hari ini
-      const today = new Date().toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+
       // Buat notifikasi di database
       const notifikasi = await prisma.notifikasi.create({
         data: {
-          pengguna_id: penggunaId,
-          jenis_notifikasi: jenisNotifikasi,
-          judul: judul,
-          pesan: pesan,
+          pengguna_id: data.pengguna_id,
+          jenis_notifikasi: data.jenisNotifikasi,
+          judul: data.judul,
+          pesan: data.pesan,
           tanggal: today,
           status_baca: 0,
         },
       });
 
       // Kirim notifikasi real-time melalui Pusher
-      await this.sendPusherNotification(penggunaId, notifikasi.id, judul, pesan);
+      await this.sendPusherNotification(
+        data.pengguna_id,
+        notifikasi.id,
+        data.judul,
+        data.pesan
+      );
     } catch (error) {
-      console.error('Error creating notification:', error);
+      console.error("Error creating notification:", error);
       // Lanjutkan eksekusi meskipun terjadi error
     }
   }
@@ -37,7 +43,7 @@ export class NotifikasiService {
   async getNotifikasiByPengguna(penggunaId: string) {
     return await prisma.notifikasi.findMany({
       where: { pengguna_id: penggunaId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -56,9 +62,9 @@ export class NotifikasiService {
    */
   async markAllAsRead(penggunaId: string) {
     return await prisma.notifikasi.updateMany({
-      where: { 
+      where: {
         pengguna_id: penggunaId,
-        status_baca: 0 
+        status_baca: 0,
       },
       data: { status_baca: 1 },
     });
@@ -80,13 +86,18 @@ export class NotifikasiService {
    * Mengirim notifikasi perubahan status peminjaman
    */
   async sendPeminjamanNotification(
-    penggunaId: string, 
-    peminjamanId: string, 
-    status: string, 
+    penggunaId: string,
+    peminjamanId: string,
+    status: string,
     message: string
   ): Promise<void> {
     const judul = `Status Peminjaman: ${status}`;
-    await this.createNotifikasi(penggunaId, judul, message, Notif.PEMINJAMAN);
+    await this.createNotifikasi({
+      pengguna_id: penggunaId,
+      judul: judul,
+      pesan: message,
+      jenisNotifikasi: Notif.PEMINJAMAN,
+    });
   }
 
   /**
@@ -99,7 +110,12 @@ export class NotifikasiService {
     message: string
   ): Promise<void> {
     const judul = `Status Pembayaran: ${status}`;
-    await this.createNotifikasi(penggunaId, judul, message, Notif.PEMBAYARAN);
+    await this.createNotifikasi({
+      pengguna_id: penggunaId,
+      judul: judul,
+      pesan: message,
+      jenisNotifikasi: Notif.PEMBAYARAN,
+    });
   }
 
   /**
@@ -112,18 +128,14 @@ export class NotifikasiService {
     pesan: string
   ): Promise<void> {
     try {
-      await pusherClient.trigger(
-        `user-${penggunaId}`,
-        'new-notification',
-        {
-          id: notifikasiId,
-          title: judul,
-          message: pesan,
-          timestamp: new Date().toISOString(),
-        }
-      );
+      await pusherClient.trigger(`user-${penggunaId}`, "new-notification", {
+        id: notifikasiId,
+        title: judul,
+        message: pesan,
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      console.error('Failed to send pusher notification:', error);
+      console.error("Failed to send pusher notification:", error);
       // Lanjutkan eksekusi meskipun Pusher gagal
     }
   }

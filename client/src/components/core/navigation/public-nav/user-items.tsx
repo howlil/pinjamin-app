@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, User, LogOut, LayoutDashboard } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useAuthStore } from "@/contexts/useAuthStore";
+import { useAuthStore } from "@/hooks/use-auth-store";
 import { useNavigate } from "react-router-dom";
 
 export default function UserProfile() {
@@ -12,8 +12,8 @@ export default function UserProfile() {
 
   const handleLogout = () => {
     clearAuth();
-    localStorage.removeItem("auth_token")
-    localStorage.removeItem("auth-storage")
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth-storage");
     navigate("/masuk");
     setShowDropdown(false);
   };
@@ -66,7 +66,9 @@ export default function UserProfile() {
           <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg z-10 border">
             {/* Show user info */}
             <div className="px-4 py-2 border-b">
-              <p className="text-sm font-medium">{pengguna?.nama_lengkap || "User"}</p>
+              <p className="text-sm font-medium">
+                {pengguna?.nama_lengkap || "User"}
+              </p>
               <p className="text-xs text-gray-500">{pengguna?.email || ""}</p>
             </div>
 

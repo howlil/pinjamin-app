@@ -5,12 +5,11 @@ import {
   PeminjamanUpdate,
   PeminjamanApproval,
 } from "../interfaces/types/peminjaman.types";
-import { IPeminjamanService } from "../interfaces/services/peminjaman.interface";
 import { NotFoundError, BadRequestError } from "../configs/error.config";
 import { NotifikasiService } from "./notifikasi.service";
 import { STATUSPEMINJAMAN } from "@prisma/client";
 import { PembayaranService } from "./pembayaran.service";
-export class PeminjamanService implements IPeminjamanService {
+export class PeminjamanService  {
   private notifikasiService: NotifikasiService;
   private pembayaranService: PembayaranService;
 
@@ -178,7 +177,6 @@ export class PeminjamanService implements IPeminjamanService {
     });
 
     try {
-      // Check if pengguna_id exists before passing it
       if (peminjaman.pengguna_id) {
         await this.pembayaranService.createSnapToken(peminjaman.id, peminjaman.pengguna_id);
       } 
@@ -186,7 +184,6 @@ export class PeminjamanService implements IPeminjamanService {
       throw error;
     }
 
-    // Kirim notifikasi ke user
     if (peminjaman.pengguna_id) {
       await this.notifikasiService.sendPeminjamanNotification(
         peminjaman.pengguna_id,
