@@ -1,14 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
-import { PeminjamanService } from '../services/peminjaman.service';
-import { ValidationUtil } from '../utils/validation.util';
-import { 
-  peminjamanSchema, 
+import { Request, Response, NextFunction } from "express";
+import { PeminjamanService } from "../services/peminjaman.service";
+import { ValidationUtil } from "../utils/validation.util";
+import {
+  peminjamanSchema,
   peminjamanUpdateSchema,
-  peminjamanApprovalSchema
-} from '../validations/peminjaman.validation';
-import { UnauthorizedError, ForbiddenError } from '../configs/error.config';
-import { IController } from '../interfaces/controller.interface';
-import { ROLE } from '@prisma/client';
+  peminjamanApprovalSchema,
+} from "../validations/peminjaman.validation";
+import { UnauthorizedError, BadRequestError } from "../configs/error.config";
+import { IController } from "../interfaces/controller.interface";
+import { logger } from "../configs/logger.config";
+import fs from "fs";
+import path from "path";
 
 export class PeminjamanController implements IController {
   private peminjamanService: PeminjamanService;
@@ -17,197 +19,320 @@ export class PeminjamanController implements IController {
     this.peminjamanService = new PeminjamanService();
   }
 
-  index = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+  index = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
-      }
-      
-      // Hanya admin yang bisa melihat semua peminjaman
-      if (req.user.role !== ROLE.ADMIN) {
-        throw new ForbiddenError('Tidak memiliki akses untuk melihat semua peminjaman');
-      }
-      
       const peminjamans = await this.peminjamanService.getAllPeminjaman();
-      
       res.status(200).json({
         success: true,
-        message: 'Daftar peminjaman berhasil diambil',
-        data: peminjamans
+        message: "Daftar peminjaman berhasil diambil",
+        data: peminjamans,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  // Membuat peminjaman baru
-  create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
-      }
-      
-      const validatedData = ValidationUtil.validateBody(req, peminjamanSchema);
-      
-      // Otomatis set pengguna_id jika tidak diberikan
-      const peminjamanData = {
-        ...validatedData,
-        pengguna_id: validatedData.pengguna_id || req.user.id
-      };
-      
-      const peminjaman = await this.peminjamanService.createPeminjaman(peminjamanData);
-      
-      res.status(201).json({
-        success: true,
-        message: 'Peminjaman berhasil dibuat',
-        data: peminjaman
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
 
-  // Mengupdate peminjaman
-  update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  show = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
-      }
-      
-      const { id } = req.params;
-      const validatedData = ValidationUtil.validateBody(req, peminjamanUpdateSchema);
-      
-      // Verifikasi pemilik atau admin
-      const existingPeminjaman = await this.peminjamanService.getPeminjamanById(id);
-      
-      if (req.user.role !== ROLE.ADMIN && existingPeminjaman.pengguna_id !== req.user.id) {
-        throw new ForbiddenError('Anda tidak memiliki akses untuk memperbarui peminjaman ini');
-      }
-      
-      const peminjaman = await this.peminjamanService.updatePeminjaman(id, validatedData);
-      
-      res.status(200).json({
-        success: true,
-        message: 'Peminjaman berhasil diperbarui',
-        data: peminjaman
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Menghapus peminjaman
-  delete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
-      }
-      
-      const { id } = req.params;
-      
-      // Verifikasi pemilik atau admin
-      const existingPeminjaman = await this.peminjamanService.getPeminjamanById(id);
-      
-      if (req.user.role !== ROLE.ADMIN && existingPeminjaman.pengguna_id !== req.user.id) {
-        throw new ForbiddenError('Anda tidak memiliki akses untuk menghapus peminjaman ini');
-      }
-      
-      await this.peminjamanService.deletePeminjaman(id);
-      
-      res.status(200).json({
-        success: true,
-        message: 'Peminjaman berhasil dihapus',
-        data: null
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Melihat detail peminjaman
-  show = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
-      }
-      
       const { id } = req.params;
       const peminjaman = await this.peminjamanService.getPeminjamanById(id);
-      
-      // Verifikasi pemilik atau admin untuk non-admin
-      if (req.user.role !== ROLE.ADMIN && peminjaman.pengguna_id !== req.user.id) {
-        throw new ForbiddenError('Anda tidak memiliki akses untuk melihat peminjaman ini');
-      }
-      
       res.status(200).json({
         success: true,
-        message: 'Peminjaman berhasil diambil',
-        data: peminjaman
+        message: "Peminjaman berhasil diambil",
+        data: peminjaman,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  // Menyetujui atau menolak peminjaman (Admin only)
-  approvePeminjaman = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+  getByUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
+        throw new UnauthorizedError("Autentikasi diperlukan");
       }
-      
-      // Hanya admin yang dapat menyetujui/menolak peminjaman
-      if (req.user.role !== ROLE.ADMIN) {
-        throw new ForbiddenError('Hanya admin yang dapat menyetujui/menolak peminjaman');
+
+      const peminjamans = await this.peminjamanService.getPeminjamanByPengguna(
+        req.user.id
+      );
+      res.status(200).json({
+        success: true,
+        message: "Daftar peminjaman pengguna berhasil diambil",
+        data: peminjamans,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+
+  create = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("Autentikasi diperlukan");
       }
-      
+
+      const validatedData = ValidationUtil.validateBody(req, peminjamanSchema);
+
+      // If file is uploaded, get the path
+      if (req.file) {
+        validatedData.surat_pengajuan = `/uploads/surat_pengajuan/${req.file.filename}`;
+      }
+
+      // Set the user ID
+      validatedData.pengguna_id = req.user.id;
+
+      // Format dates from DD-MM-YYYY to YYYY-MM-DD for database
+      if (validatedData.tanggal_mulai) {
+        const [day, month, year] = validatedData.tanggal_mulai.split("-");
+        validatedData.tanggal_mulai = `${year}-${month}-${day}`;
+      }
+
+      if (validatedData.tanggal_selesai) {
+        const [day, month, year] = validatedData.tanggal_selesai.split("-");
+        validatedData.tanggal_selesai = `${year}-${month}-${day}`;
+      }
+
+      const peminjaman = await this.peminjamanService.createPeminjaman(
+        validatedData
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Peminjaman berhasil dibuat",
+        data: peminjaman,
+      });
+    } catch (error) {
+      // If error occurs, delete the uploaded file if exists
+      if (req.file) {
+        const filePath = path.join(
+          process.cwd(),
+          "public/uploads/surat_pengajuan",
+          req.file.filename
+        );
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      next(error);
+    }
+  };
+
+
+  update = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("Autentikasi diperlukan");
+      }
+
       const { id } = req.params;
-      const validatedData = ValidationUtil.validateBody(req, peminjamanApprovalSchema);
-      
-      const peminjaman = await this.peminjamanService.approvePeminjaman(id, validatedData);
-      
+      const validatedData = ValidationUtil.validateBody(
+        req,
+        peminjamanUpdateSchema
+      );
+
+      // Get the existing peminjaman
+      const existingPeminjaman = await this.peminjamanService.getPeminjamanById(
+        id
+      );
+
+      // Check if user is authorized
+      if (
+        existingPeminjaman.pengguna_id !== req.user.id &&
+        req.user.role !== "ADMIN"
+      ) {
+        throw new UnauthorizedError(
+          "Anda tidak memiliki akses untuk mengubah peminjaman ini"
+        );
+      }
+
+      // If file is uploaded, get the path and delete old file
+      if (req.file) {
+        validatedData.surat_pengajuan = `/uploads/surat_pengajuan/${req.file.filename}`;
+
+        // Delete old file if exists
+        if (existingPeminjaman.surat_pengajuan) {
+          const oldFilePath = path.join(
+            process.cwd(),
+            "public",
+            existingPeminjaman.surat_pengajuan
+          );
+          if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+          }
+        }
+      }
+
+      // Format dates from DD-MM-YYYY to YYYY-MM-DD for database
+      if (validatedData.tanggal_mulai) {
+        const [day, month, year] = validatedData.tanggal_mulai.split("-");
+        validatedData.tanggal_mulai = `${year}-${month}-${day}`;
+      }
+
+      if (validatedData.tanggal_selesai) {
+        const [day, month, year] = validatedData.tanggal_selesai.split("-");
+        validatedData.tanggal_selesai = `${year}-${month}-${day}`;
+      }
+
+      const peminjaman = await this.peminjamanService.updatePeminjaman(
+        id,
+        validatedData
+      );
+
       res.status(200).json({
         success: true,
-        message: `Peminjaman berhasil ${validatedData.status_peminjaman === 'DISETUJUI' ? 'disetujui' : 'diperbarui'}`,
-        data: peminjaman
+        message: "Peminjaman berhasil diperbarui",
+        data: peminjaman,
+      });
+    } catch (error) {
+      if (req.file) {
+        const filePath = path.join(
+          process.cwd(),
+          "public/uploads/surat_pengajuan",
+          req.file.filename
+        );
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      next(error);
+    }
+  };
+
+  approve = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.user || req.user.role !== "ADMIN") {
+        throw new UnauthorizedError(
+          "Hanya admin yang dapat menyetujui/menolak peminjaman"
+        );
+      }
+
+      const { id } = req.params;
+      const validatedData = ValidationUtil.validateBody(
+        req,
+        peminjamanApprovalSchema
+      );
+
+      const peminjaman = await this.peminjamanService.approvePeminjaman(
+        id,
+        validatedData
+      );
+
+      if (
+        validatedData.status_peminjaman === "DITOLAK" &&
+        peminjaman.pembayaran &&
+        peminjaman.pembayaran.refund
+      ) {
+        logger.info("Peminjaman ditolak dan refund diproses", {
+          peminjamanId: id,
+          refundId: peminjaman.pembayaran.refund.id,
+          status: peminjaman.pembayaran.refund.status_redund,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Status peminjaman berhasil diperbarui",
+        data: peminjaman,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  // Mendapatkan riwayat peminjaman user
-  getUserPeminjaman = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  delete = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       if (!req.user) {
-        throw new UnauthorizedError('User tidak ditemukan dalam request');
+        throw new UnauthorizedError("Autentikasi diperlukan");
       }
-      
-      const peminjamans = await this.peminjamanService.getPeminjamanByPengguna(req.user.id);
-      
+
+      const { id } = req.params;
+
+      const existingPeminjaman = await this.peminjamanService.getPeminjamanById(
+        id
+      );
+
+      if (
+        existingPeminjaman.pengguna_id !== req.user.id &&
+        req.user.role !== "ADMIN"
+      ) {
+        throw new UnauthorizedError(
+          "Anda tidak memiliki akses untuk menghapus peminjaman ini"
+        );
+      }
+
+      if (existingPeminjaman.surat_pengajuan) {
+        const filePath = path.join(
+          process.cwd(),
+          "public",
+          existingPeminjaman.surat_pengajuan
+        );
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      await this.peminjamanService.deletePeminjaman(id);
+
       res.status(200).json({
         success: true,
-        message: 'Riwayat peminjaman berhasil diambil',
-        data: peminjamans
+        message: "Peminjaman berhasil dihapus",
+        data: null,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  // Mendapatkan statistik peminjaman (Admin only)
-  getStatistics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getStatistics = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      if (!req.user || req.user.role !== ROLE.ADMIN) {
-        throw new ForbiddenError('Hanya admin yang dapat melihat statistik peminjaman');
+      if (!req.user || req.user.role !== "ADMIN") {
+        throw new UnauthorizedError(
+          "Hanya admin yang dapat melihat statistik peminjaman"
+        );
       }
-      
+
       const statistics = await this.peminjamanService.getPeminjamanStatistics();
-      
+
       res.status(200).json({
         success: true,
-        message: 'Statistik peminjaman berhasil diambil',
-        data: statistics
+        message: "Statistik peminjaman berhasil diambil",
+        data: statistics,
       });
     } catch (error) {
       next(error);

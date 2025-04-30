@@ -16,16 +16,10 @@ export interface Refund {
 export interface RefundCreate {
   pembayaran_id: string;
   jumlah_refund: number;
-  status_redund: string;
   alasan_refund: string;
-  transaski_refund_midtrans_id: string;
-  tanggal_refund: string;
 }
 
 export interface RefundUpdate {
-  jumlah_refund?: number;
   status_redund?: string;
   alasan_refund?: string;
-  transaski_refund_midtrans_id?: string;
-  tanggal_refund?: string;
 }

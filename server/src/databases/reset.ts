@@ -13,6 +13,7 @@ const resetDatabase = async () => {
     await prisma.peminjaman.deleteMany();
     await prisma.penanggungJawabGedung.deleteMany();
     await prisma.fasilitasGedung.deleteMany();
+    await prisma.fasilitas.deleteMany();
     await prisma.gedung.deleteMany();
     await prisma.tipeGedung.deleteMany();
     await prisma.notifikasi.deleteMany();

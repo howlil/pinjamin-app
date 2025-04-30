@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { GedungService } from "../services/gedung.service";
 import { ValidationUtil } from "../utils/validation.util";
+import { fasilitasGedungSchema,fasilitasGedungUpdateSchema } from "../validations";
 import {
   gedungSchema,
   gedungUpdateSchema,
@@ -195,6 +196,26 @@ export class GedungController implements IController {
       next(error);
     }
   };
+
+  // fasilitas gedung
+
+
+  getFasilitasGedung = async (
+    req : Request,
+    res : Response,
+    next : NextFunction,
+  ) : Promise<void> => {
+
+    try {
+      
+    } catch (error) {
+      next(error)
+    }
+
+
+  };
+
+
 }
 
 export default new GedungController();

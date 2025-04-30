@@ -1,34 +1,27 @@
 import { Factory } from './Factory';
-import { PrismaClient, FasilitasGedung } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
-export class FasilitasGedungFactory extends Factory<FasilitasGedung> {
+export class FasilitasGedungFactory extends Factory<Prisma.FasilitasGedungUncheckedCreateInput> {
   constructor(prisma: PrismaClient) {
     super(prisma);
   }
 
-  definition(): Partial<FasilitasGedung> {
-    const fasilitasOptions = [
-      { nama: 'Wi-Fi', icon: 'wifi.svg' },
-      { nama: 'Parkir', icon: 'parking.svg' },
-      { nama: 'AC', icon: 'ac.svg' },
-      { nama: 'Proyektor', icon: 'projector.svg' },
-      { nama: 'Sound System', icon: 'sound.svg' },
-      { nama: 'Toilet', icon: 'toilet.svg' },
-      { nama: 'Kursi', icon: 'chair.svg' },
-      { nama: 'Meja', icon: 'table.svg' },
-      { nama: 'Lift', icon: 'elevator.svg' },
-      { nama: 'CCTV', icon: 'cctv.svg' },
-    ];
-    
-    const fasilitas = this.fakerInstance.helpers.arrayElement(fasilitasOptions);
-    
-    return {
-      nama_fasilitas: fasilitas.nama,
-      icon_url: fasilitas.icon,
-    };
+
+  definition(): Partial<Prisma.FasilitasGedungUncheckedCreateInput> {
+    return {};
   }
 
-  protected async store(data: FasilitasGedung): Promise<FasilitasGedung> {
+  
+  async createConnection(fasilitasId: string, gedungId: string) {
+    return await this.prisma.fasilitasGedung.create({
+      data: {
+        fasilitas_id: fasilitasId,
+        gedung_id: gedungId
+      }
+    });
+  }
+
+  protected async store(data: Prisma.FasilitasGedungUncheckedCreateInput): Promise<any> {
     return await this.prisma.fasilitasGedung.create({ data });
   }
 }

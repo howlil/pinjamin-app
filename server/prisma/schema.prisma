@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model Pengguna {
@@ -45,14 +44,22 @@ model Token {
   updatedAt   DateTime @updatedAt
 }
 
+model Fasilitas {
+  id              String            @id @default(uuid())
+  nama_fasilitas  String
+  icon_url        String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  FasilitasGedung FasilitasGedung[]
+}
+
 model FasilitasGedung {
-  id             String   @id @default(uuid())
-  nama_fasilitas String
-  icon_url       String
-  gedung_id      String
-  Gedung         Gedung   @relation(fields: [gedung_id], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  fasilitas_id String
+  gedung_id    String
+  fasilitas    Fasilitas @relation(fields: [fasilitas_id], references: [id])
+  gedung       Gedung    @relation(fields: [gedung_id], references: [id])
+
+  @@id([fasilitas_id, gedung_id])
 }
 
 model Gedung {
@@ -65,11 +72,11 @@ model Gedung {
   lokasi                   String
   tipe_gedung_id           String
   penganggung_jawab_gedung PenanggungJawabGedung[]
-  FasilitasGedung          FasilitasGedung[]
   TipeGedung               TipeGedung              @relation(fields: [tipe_gedung_id], references: [id])
   createdAt                DateTime                @default(now())
   updatedAt                DateTime                @updatedAt
   Peminjaman               Peminjaman[]
+  FasilitasGedung          FasilitasGedung[]
 }
 
 model PenanggungJawabGedung {

@@ -9,6 +9,45 @@ export interface Gedung {
   kapasitas?: number;
 }
 
+export interface GedungExtended extends Gedung {
+  deskripsi: string;
+  lokasi: string;
+  tipe_gedung_id: string;
+  TipeGedung?: TipeGedung;
+  FasilitasGedung?: Array<{
+    id: string;
+    nama_fasilitas: string;
+    icon_url?: string;
+    gedung_id: string;
+  }>;
+  penganggung_jawab_gedung?: Array<{
+    id: string;
+    nama_penangguang_jawab: string;
+    no_hp: string;
+    gedung_id: string;
+  }>;
+}
+
+export function isGedungExtended(gedung: Gedung): gedung is GedungExtended {
+  return (
+    'deskripsi' in gedung && 
+    'lokasi' in gedung && 
+    'tipe_gedung_id' in gedung
+  );
+}
+
+export function extendGedung(gedung: Gedung): GedungExtended {
+  return {
+    ...gedung,
+    deskripsi: (gedung as any).deskripsi || "",
+    lokasi: (gedung as any).lokasi || "",
+    tipe_gedung_id: (gedung as any).tipe_gedung_id || "",
+    TipeGedung: (gedung as any).TipeGedung,
+    FasilitasGedung: (gedung as any).FasilitasGedung || [],
+    penganggung_jawab_gedung: (gedung as any).penganggung_jawab_gedung || []
+  };
+}
+
 export interface GedungCreate {
   nama_gedung: string;
   deskripsi: string;

@@ -1,28 +1,51 @@
-// src/routes/pembayaran.routes.ts
-import { Router } from 'express';
-import authMiddleware from '../../middlewares/auth.middleware';
-import pembayaranController from '../../controllers/pembayaran.controller';
+import { BaseRouter } from "../base.route";
+import pembayaranController from "../../controllers/pembayaran.controller";
+import authMiddleware from "../../middlewares/auth.middleware";
 
-const pembayaranRoutes = Router();
+class PembayaranRouter extends BaseRouter {
+  public routes(): void {
+    
+    this.router.post("/v1/payment/notification", pembayaranController.handleNotification);
+    
+    
+    this.router.post(
+      "/v1/payment/:peminjaman_id",
+      authMiddleware.authenticate,
+      pembayaranController.createPayment
+    );
+    
+    // Get payment status for a booking
+    this.router.get(
+      "/v1/payment/status/:peminjaman_id",
+      authMiddleware.authenticate,
+      pembayaranController.getPaymentStatus
+    );
+    
+    // Admin routes (requires admin role)
+    // Get all payments
+    this.router.get(
+      "/v1/payment",
+      authMiddleware.authenticate,
+      authMiddleware.authorizeAdmin,
+      pembayaranController.getAllPembayaran
+    );
+    
+    // Manually process refund for a booking (added for admins to handle special cases)
+    this.router.post(
+      "/v1/payment/:peminjaman_id/refund",
+      authMiddleware.authenticate,
+      authMiddleware.authorizeAdmin,
+      pembayaranController.processRefund
+    );
+    
+    // Check refund status
+    this.router.get(
+      "/v1/payment/refund/:refund_id",
+      authMiddleware.authenticate,
+      authMiddleware.authorizeAdmin,
+      pembayaranController.checkRefundStatus
+    );
+  }
+}
 
-pembayaranRoutes.post(
-  '/peminjaman/:peminjaman_id/payment',
-  authMiddleware.authenticate,
-  pembayaranController.createPayment
-);
-
-// Get payment status for a booking
-pembayaranRoutes.get(
-  '/peminjaman/:peminjaman_id/payment',
-  authMiddleware.authenticate,
-  pembayaranController.getPaymentStatus
-);
-
-// Handle Midtrans webhook notifications
-// This doesn't need authentication as it's called by Midtrans
-pembayaranRoutes.post(
-  '/notifications/midtrans',
-  pembayaranController.handleNotification
-);
-
-export default pembayaranRoutes;
+export default new PembayaranRouter().router;

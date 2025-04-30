@@ -1,4 +1,3 @@
-// src/validations/pembayaran.validation.ts
 import { z } from 'zod';
 import { STATUSTRANSAKSI } from '@prisma/client';
 
@@ -50,4 +49,15 @@ export const midtransNotificationSchema = z.object({
   gross_amount: z.string(),
   fraud_status: z.string().optional(),
   currency: z.string(),
+});
+
+export const refundSchema = z.object({
+  alasan_refund: z.string().min(5, 'Alasan refund harus diisi minimal 5 karakter'),
+});
+
+export const refundUpdateSchema = z.object({
+  status_redund: z.enum(['PROCESSED', 'FAILED', 'PENDING', 'COMPLETED'], {
+    errorMap: () => ({ message: 'Status refund tidak valid' }),
+  }),
+  alasan_refund: z.string().min(5, 'Alasan refund harus diisi minimal 5 karakter').optional(),
 });

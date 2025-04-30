@@ -4,16 +4,18 @@ import { Button } from "@/components/ui/button";
 import TextInput from "@/components/ui/costum/input/text-input";
 import TextAreaInput from "@/components/ui/costum/input/text-area-input";
 import SelectInput, { SelectOption } from "@/components/ui/costum/input/select-input";
-import { GedungCreate, GedungUpdate, Gedungs } from "@/apis/interfaces/IGedung";
+import { GedungExtended, extendGedung ,GedungCreate, GedungUpdate } from "@/apis/interfaces/IGedung";
 import { Upload, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { TipeGedung } from "@/apis/interfaces/ITipeGedung";
 
 interface GedungFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: GedungCreate | GedungUpdate) => void;
-  initialData?: Gedungs;
+  initialData?: GedungExtended | null;
   title: string;
+  buildingTypes: TipeGedung[];
 }
 
 interface FormErrors {
@@ -30,6 +32,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
   onSubmit,
   initialData,
   title,
+  buildingTypes,
 }) => {
   const isEditMode = !!initialData;
   
@@ -53,26 +56,28 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
   // Initialize form data with existing data in edit mode
   useEffect(() => {
     if (isEditMode && initialData) {
+      const extended = initialData;
+      
       setFormData({
-        nama_gedung: initialData.nama_gedung || "",
-        deskripsi: initialData.deskripsi || "",
-        harga_sewa: initialData.harga_sewa || 0,
-        kapasitas: initialData.kapasitas || 0,
-        foto_gedung: initialData.foto_gedung || null,
-        lokasi: initialData.lokasi || "",
-        tipe_gedung_id: initialData.tipe_gedung_id || "",
-        penanggung_jawab_gedung: initialData.penganggung_jawab_gedung?.map(pj => ({
+        nama_gedung: extended.nama_gedung || "",
+        deskripsi: extended.deskripsi || "",
+        harga_sewa: extended.harga_sewa || 0,
+        kapasitas: extended.kapasitas || 0,
+        foto_gedung: extended.foto_gedung || null,
+        lokasi: extended.lokasi || "",
+        tipe_gedung_id: extended.tipe_gedung_id || "",
+        penanggung_jawab_gedung: extended.penganggung_jawab_gedung?.map(pj => ({
           nama_penangguang_jawab: pj.nama_penangguang_jawab,
           no_hp: pj.no_hp
         })) || [{ nama_penangguang_jawab: "", no_hp: "" }],
-        fasilitas_gedung: initialData.FasilitasGedung?.map(f => ({
+        fasilitas_gedung: extended.FasilitasGedung?.map(f => ({
           nama_fasilitas: f.nama_fasilitas,
           icon_url: f.icon_url || ""
         })) || [{ nama_fasilitas: "", icon_url: "" }]
       });
       
-      if (initialData.foto_gedung) {
-        setImagePreview(`${import.meta.env.VITE_API_URL}/foto/${initialData.foto_gedung}`);
+      if (extended.foto_gedung) {
+        setImagePreview(`${import.meta.env.VITE_API_URL}/foto/${extended.foto_gedung}`);
       }
     }
   }, [initialData, isEditMode]);
@@ -189,41 +194,36 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
       ...formData,
       penanggung_jawab_gedung: [
         {
-          nama_penangguang_jawab: formData.penanggung_jawab_gedung 
-            ? formData.penanggung_jawab_gedung[0]?.nama_penangguang_jawab || ""
-            : "",
-          no_hp: formData.penanggung_jawab_gedung 
-            ? formData.penanggung_jawab_gedung[0]?.no_hp || ""
-            : ""
+          nama_penangguang_jawab: formData.penanggung_jawab_gedung?.[0]?.nama_penangguang_jawab || "",
+          no_hp: formData.penanggung_jawab_gedung?.[0]?.no_hp || ""
         }
       ],
       fasilitas_gedung: [
         {
-          nama_fasilitas: formData.fasilitas_gedung 
-            ? formData.fasilitas_gedung[0]?.nama_fasilitas || ""
-            : "",
-          icon_url: formData.fasilitas_gedung 
-            ? formData.fasilitas_gedung[0]?.icon_url || ""
-            : ""
+          nama_fasilitas: formData.fasilitas_gedung?.[0]?.nama_fasilitas || "",
+          icon_url: formData.fasilitas_gedung?.[0]?.icon_url || ""
         }
       ]
     };
     
     onSubmit(submissionData);
+    
+    // Reset submission state after brief delay to see the loading state
+    setTimeout(() => {
+      setIsSubmitting(false);
+      onOpenChange(false);
+    }, 500);
   };
   
-  // Mock building type options (you would fetch these from API)
-  const buildingTypeOptions: SelectOption[] = [
-    { value: "1", label: "Aula" },
-    { value: "2", label: "Ruang Kelas" },
-    { value: "3", label: "Ruang Pertemuan" },
-    { value: "4", label: "Lapangan" },
-    { value: "5", label: "Gedung" }
-  ];
+  // Convert building types to select options
+  const buildingTypeOptions: SelectOption[] = buildingTypes.map(type => ({
+    value: type.id,
+    label: type.nama_tipe_gedung
+  }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white/50 max-h-screen overflow-y-scroll backdrop-blur-md border border-white/20 shadow-lg">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-white/50 backdrop-blur-md border border-white/20 shadow-lg">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -238,7 +238,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             <TextInput
               name="nama_gedung"
-              value={formData.nama_gedung}
+              value={formData.nama_gedung || ""}
               onChange={handleChange}
               label="Nama Gedung"
               placeholder="Masukkan nama gedung"
@@ -248,7 +248,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
             
             <TextAreaInput
               name="deskripsi"
-              value={formData.deskripsi}
+              value={formData.deskripsi || ""}
               onChange={handleChange}
               label="Deskripsi"
               placeholder="Masukkan deskripsi gedung"
@@ -258,7 +258,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
             />
             
             <TextInput
-              name="penanggung_jawab"
+              name="penanggungjawab"
               value={formData.penanggung_jawab_gedung?.[0]?.nama_penangguang_jawab || ""}
               onChange={(e) => {
                 const value = e.target.value;
@@ -272,11 +272,27 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
               }}
               label="Penanggung Jawab"
               placeholder="Masukkan nama penanggung jawab"
-              required
             />
             
             <TextInput
-              name="fasilitas_gedung"
+              name="no_hp"
+              value={formData.penanggung_jawab_gedung?.[0]?.no_hp || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData(prev => ({
+                  ...prev,
+                  penanggung_jawab_gedung: [{
+                    nama_penangguang_jawab: prev.penanggung_jawab_gedung?.[0]?.nama_penangguang_jawab || "",
+                    no_hp: value
+                  }]
+                }));
+              }}
+              label="Nomor HP Penanggung Jawab"
+              placeholder="Masukkan nomor HP"
+            />
+            
+            <TextInput
+              name="fasilitas"
               value={formData.fasilitas_gedung?.[0]?.nama_fasilitas || ""}
               onChange={(e) => {
                 const value = e.target.value;
@@ -290,13 +306,12 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
               }}
               label="Fasilitas Gedung"
               placeholder="Masukkan fasilitas gedung"
-              required
             />
             
             <div className="grid grid-cols-2 gap-4">
               <TextInput
                 name="harga_sewa"
-                value={formData.harga_sewa.toString()}
+                value={String(formData.harga_sewa || 0)}
                 onChange={handleChange}
                 label="Harga Sewa (Rp)"
                 type="number"
@@ -307,7 +322,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
               
               <TextInput
                 name="kapasitas"
-                value={formData.kapasitas.toString()}
+                value={String(formData.kapasitas || 0)}
                 onChange={handleChange}
                 label="Kapasitas"
                 type="number"
@@ -320,7 +335,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <TextInput
                 name="lokasi"
-                value={formData.lokasi}
+                value={formData.lokasi || ""}
                 onChange={handleChange}
                 label="Lokasi"
                 placeholder="Masukkan lokasi"
@@ -330,7 +345,7 @@ const GedungFormDialog: FC<GedungFormDialogProps> = ({
               
               <SelectInput
                 name="tipe_gedung_id"
-                value={formData.tipe_gedung_id}
+                value={formData.tipe_gedung_id || ""}
                 onChange={handleSelectChange("tipe_gedung_id")}
                 label="Tipe Gedung"
                 options={buildingTypeOptions}

@@ -9,7 +9,9 @@ import { NotFoundError, BadRequestError } from "../configs/error.config";
 import { NotifikasiService } from "./notifikasi.service";
 import { STATUSPEMINJAMAN } from "@prisma/client";
 import { PembayaranService } from "./pembayaran.service";
-export class PeminjamanService  {
+import { logger } from "../configs/logger.config";
+
+export class PeminjamanService {
   private notifikasiService: NotifikasiService;
   private pembayaranService: PembayaranService;
 
@@ -38,7 +40,11 @@ export class PeminjamanService  {
             harga_sewa: true,
           },
         },
-        pembayaran: true,
+        pembayaran: {
+          include: {
+            refund: true
+          }
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -71,7 +77,11 @@ export class PeminjamanService  {
             TipeGedung: true,
           },
         },
-        pembayaran: true,
+        pembayaran: {
+          include: {
+            refund: true
+          }
+        },
       },
     });
 
@@ -94,7 +104,11 @@ export class PeminjamanService  {
             harga_sewa: true,
           },
         },
-        pembayaran: true,
+        pembayaran: {
+          include: {
+            refund: true
+          }
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -111,7 +125,6 @@ export class PeminjamanService  {
     const existingPeminjaman = await prisma.peminjaman.findFirst({
       where: {
         gedung_id: peminjamanData.gedung_id,
-        pengguna_id: peminjamanData.pengguna_id,
         status_peminjaman: {
           in: [STATUSPEMINJAMAN.DIPROSES, STATUSPEMINJAMAN.DISETUJUI],
         },
@@ -203,6 +216,9 @@ export class PeminjamanService  {
     // Cek apakah peminjaman ada
     const existingPeminjaman = await prisma.peminjaman.findUnique({
       where: { id },
+      include: {
+        pembayaran: true
+      }
     });
 
     if (!existingPeminjaman) {
@@ -265,7 +281,11 @@ export class PeminjamanService  {
             harga_sewa: true,
           },
         },
-        pembayaran: true,
+        pembayaran: {
+          include: {
+            refund: true
+          }
+        },
       },
     });
 
@@ -282,11 +302,33 @@ export class PeminjamanService  {
       include: {
         pengguna: true,
         gedung: true,
+        pembayaran: true
       },
     });
 
     if (!peminjaman) {
       throw new NotFoundError("Peminjaman tidak ditemukan");
+    }
+
+    if (approvalData.status_peminjaman === STATUSPEMINJAMAN.DITOLAK && 
+        peminjaman.pembayaran) {
+      try {
+        // Process refund for the rejected booking
+        await this.pembayaranService.autoProcessRefundForRejectedBooking(
+          id,
+          approvalData.alasan_penolakan || "Peminjaman ditolak oleh admin"
+        );
+        
+        logger.info("Refund processed successfully for rejected booking", { 
+          peminjamanId: id
+        });
+      } catch (error) {
+        // Log the error but continue with the rejection
+        logger.error("Failed to process refund for rejected booking", { 
+          error, 
+          peminjamanId: id 
+        });
+      }
     }
 
     // Update status peminjaman
@@ -310,7 +352,11 @@ export class PeminjamanService  {
             harga_sewa: true,
           },
         },
-        pembayaran: true,
+        pembayaran: {
+          include: {
+            refund: true
+          }
+        },
       },
     });
 
@@ -327,14 +373,21 @@ export class PeminjamanService  {
         statusMap[approvalData.status_peminjaman]
       }`;
 
+      let additionalInfo = approvalData.alasan_penolakan
+        ? `. Alasan: ${approvalData.alasan_penolakan}`
+        : "";
+      
+      // Add refund information if applicable
+      if (approvalData.status_peminjaman === STATUSPEMINJAMAN.DITOLAK && 
+          peminjaman.pembayaran) {
+        additionalInfo += ". Pembayaran Anda akan direfund.";
+      }
+
       await this.notifikasiService.sendPeminjamanNotification(
         peminjaman.pengguna_id,
         peminjaman.id,
         approvalData.status_peminjaman,
-        message +
-          (approvalData.alasan_penolakan
-            ? `. Alasan: ${approvalData.alasan_penolakan}`
-            : "")
+        message + additionalInfo
       );
     }
 
@@ -345,10 +398,20 @@ export class PeminjamanService  {
     // Cek apakah peminjaman ada
     const peminjaman = await prisma.peminjaman.findUnique({
       where: { id },
+      include: {
+        pembayaran: true
+      }
     });
 
     if (!peminjaman) {
       throw new NotFoundError("Peminjaman tidak ditemukan");
+    }
+
+    // If the booking has a payment, don't allow deletion
+    if (peminjaman.pembayaran) {
+      throw new BadRequestError(
+        "Peminjaman yang sudah memiliki pembayaran tidak dapat dihapus"
+      );
     }
 
     // Hapus peminjaman

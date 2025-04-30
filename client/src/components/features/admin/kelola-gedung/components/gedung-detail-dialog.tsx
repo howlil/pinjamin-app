@@ -1,13 +1,13 @@
 import { FC } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
-import { Gedung } from "@/apis/interfaces/IGedung";
 import { MapPin, User, Coins } from "lucide-react";
+import { GedungExtended } from "@/apis/interfaces/IGedung";
 
 interface GedungDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  building: Gedung;
+  building: GedungExtended;
 }
 
 /**
@@ -86,7 +86,7 @@ const GedungDetailDialog: FC<GedungDetailDialogProps> = ({
                 <div className="bg-white/50 p-3 rounded-lg">
                   <h3 className="text-sm font-medium mb-2">Tipe Gedung</h3>
                   <p className="text-gray-600">
-                    {building.tipe_gedung_id || "Tidak tersedia"}
+                    {building.TipeGedung?.nama_tipe_gedung || "Tidak tersedia"}
                   </p>
                 </div>
               </div>

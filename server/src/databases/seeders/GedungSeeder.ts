@@ -22,8 +22,13 @@ export class GedungSeeder extends Seeder {
     for (const tipeGedung of tipeGedungList) {
       // Create 2 buildings for each building type
       for (let i = 0; i < 2; i++) {
-        await this.factory.create({
-          tipe_gedung_id: tipeGedung.id
+        const gedungData = this.factory.definition();
+        
+        await this.prisma.gedung.create({
+          data: {
+            ...gedungData,
+            tipe_gedung_id: tipeGedung.id
+          }
         });
       }
     }

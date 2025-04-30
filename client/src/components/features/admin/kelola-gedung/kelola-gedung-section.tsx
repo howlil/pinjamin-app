@@ -164,7 +164,6 @@ const KelolaGedungSection: FC = () => {
       setLoading(true);
       await GedungService.deleteGedung(id);
       
-      // Remove the deleted building from state
       const updatedBuildings = buildings.filter(building => building.id !== id);
       setBuildings(updatedBuildings);
       setFilteredBuildings(filteredBuildings.filter(building => building.id !== id));
@@ -204,7 +203,7 @@ const KelolaGedungSection: FC = () => {
         
         <Button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2"
+          className="flex w-48 items-center gap-2"
         >
           <PlusCircle size={16} />
           <span>Tambah Gedung</span>

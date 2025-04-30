@@ -23,7 +23,7 @@ const DeleteConfirmationDialog: FC<DeleteConfirmationDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white/80 backdrop-blur-md border border-white/20 shadow-lg">
+      <DialogContent className="max-w-md  bg-white/80 backdrop-blur-md border border-white/20 shadow-lg">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -48,20 +48,19 @@ const DeleteConfirmationDialog: FC<DeleteConfirmationDialogProps> = ({
             </p>
           </div>
           
-          <DialogFooter className="flex justify-center gap-3">
+          <DialogFooter className="flex flex-wrap justify-center gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="w-full"
             >
               Batal
             </Button>
             <Button 
               type="button" 
+              className="cursor-pointer"
               variant="destructive" 
               onClick={onConfirm}
-              className="w-full"
             >
               Ya, Hapus Gedung
             </Button>

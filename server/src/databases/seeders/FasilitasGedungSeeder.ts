@@ -4,53 +4,67 @@ import { FasilitasGedungFactory } from '../factories/FasilitasGedungFactory';
 
 export class FasilitasGedungSeeder extends Seeder {
   private factory: FasilitasGedungFactory;
-  
+
   constructor(prisma: PrismaClient) {
     super(prisma);
     this.factory = new FasilitasGedungFactory(prisma);
   }
-  
+
   async run(): Promise<void> {
-    console.log('Seeding fasilitas gedung...');
-    
+    console.log('Seeding fasilitas gedung connections...');
+
+    // Get all buildings
     const gedungList = await this.prisma.gedung.findMany();
-    
     if (gedungList.length === 0) {
-      throw new Error('No gedung found. Please run GedungSeeder first.');
+      throw new Error('No buildings found. Please run GedungSeeder first.');
     }
-    
-    const facilityOptions = [
-      { nama: 'Wi-Fi', icon: 'wifi.svg' },
-      { nama: 'Parkir', icon: 'parking.svg' },
-      { nama: 'AC', icon: 'ac.svg' },
-      { nama: 'Proyektor', icon: 'projector.svg' },
-      { nama: 'Sound System', icon: 'sound.svg' },
-      { nama: 'Toilet', icon: 'toilet.svg' },
-      { nama: 'Kursi', icon: 'chair.svg' },
-      { nama: 'Meja', icon: 'table.svg' },
-      { nama: 'Lift', icon: 'elevator.svg' },
-      { nama: 'CCTV', icon: 'cctv.svg' },
-    ];
-    
+
+    // Get all facilities
+    const fasilitasList = await this.prisma.fasilitas.findMany();
+    if (fasilitasList.length === 0) {
+      throw new Error('No facilities found. Please run FasilitasSeeder first.');
+    }
+
+    // Create connections for each building
     for (const gedung of gedungList) {
-      // Add 3-5 random facilities to each building
+      // Randomly assign 3-5 facilities to each building
       const facilitiesCount = Math.floor(Math.random() * 3) + 3;
       
-      // Shuffle and take random facilities
-      const shuffled = [...facilityOptions].sort(() => 0.5 - Math.random());
-      const selectedFacilities = shuffled.slice(0, facilitiesCount);
+      // Shuffle the facilities and take a random subset
+      const shuffledFacilities = [...fasilitasList]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, facilitiesCount);
       
-      for (const facility of selectedFacilities) {
-        await this.prisma.fasilitasGedung.create({
-          data: {
-            nama_fasilitas: facility.nama,
-            icon_url: facility.icon,
-            gedung_id: gedung.id
+      // Create the connections in a transaction
+      await this.prisma.$transaction(async (tx) => {
+        for (const facility of shuffledFacilities) {
+          try {
+            // Check if connection already exists to avoid unique constraint errors
+            const existingConnection = await tx.fasilitasGedung.findUnique({
+              where: {
+                fasilitas_id_gedung_id: {
+                  fasilitas_id: facility.id,
+                  gedung_id: gedung.id
+                }
+              }
+            });
+            
+            if (!existingConnection) {
+              await tx.fasilitasGedung.create({
+                data: {
+                  fasilitas_id: facility.id,
+                  gedung_id: gedung.id
+                }
+              });
+            }
+          } catch (error) {
+            console.error(`Error connecting facility ${facility.id} to building ${gedung.id}:`, error);
           }
-        });
-      }
+        }
+      });
     }
-    
-    console.log('Fasilitas gedung seeded successfully');
+
+    const connectionCount = await this.prisma.fasilitasGedung.count();
+    console.log(`Created ${connectionCount} facility-building connections successfully`);
   }
 }
