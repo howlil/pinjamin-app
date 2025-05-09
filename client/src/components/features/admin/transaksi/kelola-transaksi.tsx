@@ -22,12 +22,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchInput } from "@/components/ui/costum/input/search-input";
-import { formatDate, formatTime } from "@/utils/format-date";
-import PeminjamanDetailModal from "./components/peminjaman-detail-modal";
+import { formatDate } from "@/utils/format-date";
+import TransaksiDetailModal from "./components/transaksi-detail-modal";
 import ActionMenu from "./components/action-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, AlertCircle, RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { FilterInput } from "@/components/ui/costum/input/filter-input";
 
 // Define a type for our data interface with pagination
 interface PaginatedData {
@@ -37,7 +38,7 @@ interface PaginatedData {
   totalItems: number;
 }
 
-const KelolaPeminjaman: React.FC = () => {
+const KelolaTransaksi: React.FC = () => {
   // State for storing the peminjaman data with pagination
   const [paginatedData, setPaginatedData] = useState<PaginatedData>({
     data: [],
@@ -46,32 +47,88 @@ const KelolaPeminjaman: React.FC = () => {
     totalItems: 0
   });
   
-  // State for loading, search, and modal
+  // State for loading, search, filter, and modal
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedPeminjaman, setSelectedPeminjaman] = useState<Peminjaman | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   // Pagination config
   const itemsPerPage = 10;
 
+  // Filter options for payment status
+  const filterOptions = [
+    { value: "ALL", label: "Semua Status" },
+    { value: "PAID", label: "Lunas" },
+    { value: "PENDING", label: "Menunggu Pembayaran" },
+    { value: "CANCELED", label: "Dibatalkan" },
+    { value: "REFUNDED", label: "Dikembalikan" }
+  ];
+
+  // Format Rupiah
+  const formatRupiah = (amount: number): string => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Get status badge class
+  const getStatusBadgeClass = useCallback((status: string) => {
+    switch(status) {
+      case STATUS.STATUS_TRANSAKSI.PAID:
+        return "bg-green-50 text-green-700 border-green-100";
+      case STATUS.STATUS_TRANSAKSI.PENDING:
+        return "bg-yellow-50 text-yellow-700 border-yellow-100";
+      case STATUS.STATUS_TRANSAKSI.CANCELED:
+        return "bg-red-50 text-red-700 border-red-100";
+      case STATUS.STATUS_TRANSAKSI.REFUNDED:
+        return "bg-blue-50 text-blue-700 border-blue-100";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-100";
+    }
+  }, []);
+
+  // Get status label
+  const getStatusLabel = useCallback((status: string) => {
+    switch(status) {
+      case STATUS.STATUS_TRANSAKSI.PAID:
+        return "Lunas";
+      case STATUS.STATUS_TRANSAKSI.PENDING:
+        return "Menunggu Pembayaran";
+      case STATUS.STATUS_TRANSAKSI.CANCELED:
+        return "Dibatalkan";
+      case STATUS.STATUS_TRANSAKSI.REFUNDED:
+        return "Dikembalikan";
+      default:
+        return status;
+    }
+  }, []);
+
   // Optimized fetch data function with useCallback to prevent unnecessary recreations
-  const fetchData = useCallback(async (page: number = 1, search: string = "") => {
+  const fetchData = useCallback(async (page: number = 1, search: string = "", status: string = "ALL") => {
     setIsLoading(true);
     setIsError(false);
     
     try {
-      // Get all peminjaman data - in a real implementation, this would ideally
-      // be filtered on the server side with proper pagination parameters
+      // Get all peminjaman data with payment information
       const allData = await PeminjamanService.getAllPeminjaman();
       
-      // Filter for DIPROSES status only (applications that are pending review)
+      // Filter for peminjaman that have payment information
       let filteredData = allData.filter(
-        (peminjaman) => 
-          peminjaman.status_peminjaman === STATUS.STATUS_PEMINJAMAN.DIPROSES
+        (peminjaman) => peminjaman.pembayaran != null
       );
+      
+      // Apply status filter if not ALL
+      if (status !== "ALL") {
+        filteredData = filteredData.filter(
+          (peminjaman) => 
+            peminjaman.pembayaran?.status_pembayaran === status
+        );
+      }
       
       // Apply search filter if provided
       if (search.trim()) {
@@ -80,14 +137,17 @@ const KelolaPeminjaman: React.FC = () => {
           (peminjaman) => 
             peminjaman.nama_kegiatan?.toLowerCase().includes(searchLower) ||
             peminjaman.gedung?.nama_gedung?.toLowerCase().includes(searchLower) ||
-            peminjaman.pengguna?.nama_lengkap?.toLowerCase().includes(searchLower)
+            peminjaman.pengguna?.nama_lengkap?.toLowerCase().includes(searchLower) ||
+            peminjaman.pembayaran?.no_invoice?.toLowerCase().includes(searchLower)
         );
       }
       
       // Sort by date (newest first)
-      filteredData.sort((a, b) => 
-        new Date(b.tanggal_mulai).getTime() - new Date(a.tanggal_mulai).getTime()
-      );
+      filteredData.sort((a, b) => {
+        const dateA = a.pembayaran?.tanggal_bayar ? new Date(a.pembayaran.tanggal_bayar).getTime() : 0;
+        const dateB = b.pembayaran?.tanggal_bayar ? new Date(b.pembayaran.tanggal_bayar).getTime() : 0;
+        return dateB - dateA;
+      });
       
       // Calculate pagination
       const totalItems = filteredData.length;
@@ -104,9 +164,9 @@ const KelolaPeminjaman: React.FC = () => {
         totalItems
       });
     } catch (error) {
-      console.error("Error fetching peminjaman data:", error);
+      console.error("Error fetching pembayaran data:", error);
       setIsError(true);
-      toast.error("Gagal memuat data ajuan peminjaman");
+      toast.error("Gagal memuat data transaksi");
     } finally {
       setIsLoading(false);
     }
@@ -115,64 +175,25 @@ const KelolaPeminjaman: React.FC = () => {
   // Handle search input with debounce
   const handleSearch = useCallback((value: string) => {
     setSearchQuery(value);
-    fetchData(1, value);
-  }, [fetchData]);
+    fetchData(1, value, statusFilter);
+  }, [fetchData, statusFilter]);
+
+  // Handle status filter change
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value);
+    fetchData(1, searchQuery, value);
+  }, [fetchData, searchQuery]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
-    fetchData(page, searchQuery);
-  }, [fetchData, searchQuery]);
+    fetchData(page, searchQuery, statusFilter);
+  }, [fetchData, searchQuery, statusFilter]);
 
   // View detail
   const handleViewDetail = useCallback((peminjaman: Peminjaman) => {
     setSelectedPeminjaman(peminjaman);
     setShowDetailModal(true);
   }, []);
-
-  // Handle peminjaman approval or rejection with optimistic UI updates
-  const handleApproval = useCallback(async (id: string, isApproved: boolean, reason?: string) => {
-    setProcessingId(id);
-    
-    try {
-      // Optimistic UI update
-      setPaginatedData(prev => ({
-        ...prev,
-        data: prev.data.map(item => 
-          item.id === id ? {
-            ...item,
-            status_peminjaman: isApproved ? 
-              STATUS.STATUS_PEMINJAMAN.DISETUJUI : 
-              STATUS.STATUS_PEMINJAMAN.DITOLAK,
-            alasan_penolakan: !isApproved ? reason : undefined
-          } : item
-        )
-      }));
-      
-      // Actual API call
-      await PeminjamanService.approvePeminjaman(id, {
-        status_peminjaman: isApproved ? STATUS.STATUS_PEMINJAMAN.DISETUJUI : STATUS.STATUS_PEMINJAMAN.DITOLAK,
-        alasan_penolakan: !isApproved ? reason : undefined
-      });
-      
-      // Show success toast
-      toast.success(`Peminjaman berhasil ${isApproved ? 'disetujui' : 'ditolak'}`);
-      
-      // Refresh data after a short delay to allow the user to see the change
-      setTimeout(() => {
-        fetchData(paginatedData.currentPage, searchQuery);
-      }, 500);
-      
-      setShowDetailModal(false);
-    } catch (error) {
-      console.error("Error updating peminjaman status:", error);
-      toast.error(`Gagal ${isApproved ? 'menyetujui' : 'menolak'} peminjaman`);
-      
-      // Revert optimistic update on error
-      fetchData(paginatedData.currentPage, searchQuery);
-    } finally {
-      setProcessingId(null);
-    }
-  }, [fetchData, paginatedData.currentPage, searchQuery]);
 
   // Initial data fetch
   useEffect(() => {
@@ -251,13 +272,13 @@ const KelolaPeminjaman: React.FC = () => {
       <Card className="shadow-none border-gray-100">
         <CardHeader className="bg-gray-50/50 px-4 py-3 border-b">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-gray-900 text-base font-medium">Daftar Ajuan Peminjaman</CardTitle>
+            <CardTitle className="text-gray-900 text-base font-medium">Daftar Transaksi</CardTitle>
             {isError && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="text-xs" 
-                onClick={() => fetchData(paginatedData.currentPage, searchQuery)}
+                onClick={() => fetchData(paginatedData.currentPage, searchQuery, statusFilter)}
               >
                 <RefreshCw className="mr-1 h-3 w-3" /> Muat Ulang
               </Button>
@@ -265,15 +286,24 @@ const KelolaPeminjaman: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="mb-4 p-4 flex flex-col md:flex-row gap-4 md:gap-0 justify-between items-start md:items-center">
-            <SearchInput 
-              placeholder="Cari nama kegiatan atau peminjam..." 
-              onSearch={handleSearch}
-              className="w-full md:w-64"
-              debounceTime={400}
-            />
-            <div className="px-3 py-1.5 bg-main-green/10 text-main-green text-xs font-medium rounded-full">
-              Total: {paginatedData.totalItems} ajuan menunggu persetujuan
+          <div className="p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <SearchInput 
+                placeholder="Cari nama kegiatan atau No. Invoice..." 
+                onSearch={handleSearch}
+                className="w-full sm:w-64"
+                debounceTime={400}
+              />
+              <FilterInput 
+                placeholder="Filter Status" 
+                options={filterOptions}
+                defaultValue="ALL"
+                onFilterChange={handleStatusFilterChange}
+                className="w-full sm:w-48"
+              />
+            </div>
+            <div className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+              Total: {paginatedData.totalItems} transaksi
             </div>
           </div>
 
@@ -290,10 +320,10 @@ const KelolaPeminjaman: React.FC = () => {
             <div className="text-center py-16 px-6 bg-red-50 rounded-lg border border-red-100">
               <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-3" />
               <h3 className="text-lg font-medium text-red-800 mb-1">Gagal Memuat Data</h3>
-              <p className="text-sm text-red-600 mb-4">Terjadi kesalahan saat memuat data ajuan peminjaman.</p>
+              <p className="text-sm text-red-600 mb-4">Terjadi kesalahan saat memuat data transaksi.</p>
               <Button 
                 variant="outline" 
-                onClick={() => fetchData(paginatedData.currentPage, searchQuery)}
+                onClick={() => fetchData(paginatedData.currentPage, searchQuery, statusFilter)}
                 className="border-red-200 text-red-700 hover:bg-red-50"
               >
                 <RefreshCw className="mr-2 h-4 w-4" /> Coba Lagi
@@ -301,22 +331,23 @@ const KelolaPeminjaman: React.FC = () => {
             </div>
           ) : paginatedData.data.length === 0 ? (
             <div className="text-center py-16 px-6 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
-              <Calendar className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-              <h3 className="text-lg font-medium text-gray-600 mb-1">Tidak Ada Ajuan</h3>
+              <AlertCircle className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+              <h3 className="text-lg font-medium text-gray-600 mb-1">Tidak Ada Data</h3>
               <p className="text-sm text-gray-500">
-                Tidak ada ajuan peminjaman yang menunggu persetujuan saat ini.
+                Tidak ada transaksi yang ditemukan dengan filter yang dipilih.
               </p>
             </div>
           ) : (
-            <div className="rounded-lg border overflow-hidden bg-white">
+            <div className="rounded-lg border-t overflow-hidden bg-white">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b">
-                    <TableHead className="font-medium">Nama Kegiatan</TableHead>
-                    <TableHead className="font-medium">Gedung</TableHead>
+                    <TableHead className="font-medium">No. Invoice</TableHead>
                     <TableHead className="font-medium">Tanggal</TableHead>
-                    <TableHead className="font-medium">Waktu</TableHead>
-                    <TableHead className="font-medium">Peminjam</TableHead>
+                    <TableHead className="font-medium">Kegiatan</TableHead>
+                    <TableHead className="font-medium">Total</TableHead>
+                    <TableHead className="font-medium">Metode</TableHead>
+                    <TableHead className="font-medium">Status</TableHead>
                     <TableHead className="font-medium text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -326,47 +357,37 @@ const KelolaPeminjaman: React.FC = () => {
                       key={peminjaman.id}
                       className="hover:bg-gray-50/50 transition-colors border-t border-gray-100"
                     >
-                      <TableCell className="font-medium text-gray-900">{peminjaman.nama_kegiatan}</TableCell>
-                      <TableCell>{peminjaman.gedung?.nama_gedung || 'N/A'}</TableCell>
-                      <TableCell>
-                        {formatDate(peminjaman.tanggal_mulai)}
-                        {peminjaman.tanggal_mulai !== peminjaman.tanggal_selesai && 
-                          ` - ${formatDate(peminjaman.tanggal_selesai)}`}
+                      <TableCell className="font-medium text-gray-900">
+                        {peminjaman.pembayaran?.no_invoice || "-"}
                       </TableCell>
-                      <TableCell>{formatTime(peminjaman.jam_mulai)} - {formatTime(peminjaman.jam_selesai)}</TableCell>
-                      <TableCell>{peminjaman.pengguna?.nama_lengkap || 'N/A'}</TableCell>
+                      <TableCell>
+                        {peminjaman.pembayaran?.tanggal_bayar 
+                          ? formatDate(peminjaman.pembayaran.tanggal_bayar) 
+                          : "-"}
+                      </TableCell>
+                      <TableCell>{peminjaman.nama_kegiatan}</TableCell>
+                      <TableCell className="font-medium">
+                        {peminjaman.pembayaran 
+                          ? formatRupiah(peminjaman.pembayaran.total_bayar) 
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {peminjaman.pembayaran?.metode_pembayaran || "-"}
+                      </TableCell>
+                      <TableCell>
+                        {peminjaman.pembayaran && (
+                          <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusBadgeClass(peminjaman.pembayaran.status_pembayaran)}`}>
+                            {getStatusLabel(peminjaman.pembayaran.status_pembayaran)}
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right relative">
                         <div className="flex justify-end">
-                          {processingId === peminjaman.id ? (
-                            <div className="w-8 h-8 flex items-center justify-center">
-                              <svg 
-                                className="animate-spin h-4 w-4 text-gray-500" 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                fill="none" 
-                                viewBox="0 0 24 24"
-                              >
-                                <circle 
-                                  className="opacity-25" 
-                                  cx="12" 
-                                  cy="12" 
-                                  r="10" 
-                                  stroke="currentColor" 
-                                  strokeWidth="4"
-                                ></circle>
-                                <path 
-                                  className="opacity-75" 
-                                  fill="currentColor" 
-                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                ></path>
-                              </svg>
-                            </div>
-                          ) : (
-                            <ActionMenu 
-                              peminjaman={peminjaman} 
-                              onViewDetail={handleViewDetail}
-                              onApprove={handleApproval}
-                            />
-                          )}
+                          <ActionMenu 
+                            peminjaman={peminjaman} 
+                            onViewDetail={handleViewDetail}
+                            mode="transaction"
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -409,16 +430,14 @@ const KelolaPeminjaman: React.FC = () => {
       </Card>
 
       {selectedPeminjaman && (
-        <PeminjamanDetailModal 
+        <TransaksiDetailModal 
           isOpen={showDetailModal}
           onClose={() => setShowDetailModal(false)}
           peminjaman={selectedPeminjaman}
-          onApprove={(id) => handleApproval(id, true)}
-          onReject={(id, reason) => handleApproval(id, false, reason)}
         />
       )}
     </div>
   );
 };
 
-export default KelolaPeminjaman;
+export default KelolaTransaksi;

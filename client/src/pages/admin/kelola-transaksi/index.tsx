@@ -1,5 +1,7 @@
+import KelolaTransaksi from "@/components/features/admin/transaksi/kelola-transaksi";
 import DashboardLayout from "@/components/layouts/dashboard-layout";
 
+
 export default function TransaksiAdminPage() {
-  return <DashboardLayout>test</DashboardLayout>;
+  return <DashboardLayout><KelolaTransaksi/></DashboardLayout>;
 }
