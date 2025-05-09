@@ -6,6 +6,9 @@ export const MIDTRANS_CONFIG = {
   clientKey: APP_CONFIG.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-yrwURwBjufe2Uw0t',
   serverKey: APP_CONFIG.MIDTRANS_SERVER_KEY || 'SB-Mid-server-VMg8jGV7vesB6YVdOf5-OQZK',
   merchantId: APP_CONFIG.MIDTRANS_MERCHANT_ID || 'G809408329',
+  finishUrl: process.env.MIDTRANS_FINISH_URL || 'http://localhost:3000/pembayaran/finish',
+  errorUrl: process.env.MIDTRANS_ERROR_URL || 'http://localhost:3000/pembayaran/error',
+  pendingUrl: process.env.MIDTRANS_PENDING_URL || 'http://localhost:3000/pembayaran/pending',
   apiUrl: APP_CONFIG.MIDTRANS_IS_PRODUCTION 
     ? 'https://api.midtrans.com' 
     : 'https://api.sandbox.midtrans.com',

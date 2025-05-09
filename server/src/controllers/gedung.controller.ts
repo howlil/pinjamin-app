@@ -197,24 +197,7 @@ export class GedungController implements IController {
     }
   };
 
-  // fasilitas gedung
-
-
-  getFasilitasGedung = async (
-    req : Request,
-    res : Response,
-    next : NextFunction,
-  ) : Promise<void> => {
-
-    try {
-      
-    } catch (error) {
-      next(error)
-    }
-
-
-  };
-
+ 
 
 }
 

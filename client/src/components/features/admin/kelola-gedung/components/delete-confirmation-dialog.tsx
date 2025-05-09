@@ -23,7 +23,7 @@ const DeleteConfirmationDialog: FC<DeleteConfirmationDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md  bg-white/80 backdrop-blur-md border border-white/20 shadow-lg">
+      <DialogContent className="max-w-md bg-white/80 backdrop-blur-md border border-white/20 shadow-lg">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

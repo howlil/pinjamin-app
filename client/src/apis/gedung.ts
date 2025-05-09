@@ -12,6 +12,9 @@ import {
 export class GedungService {
   private static baseUrl = "/api/v1/gedung";
 
+  /**
+   * Get all gedung with optional filtering
+   */
   static async getGedung(filter: GedungFilter): Promise<Gedung[]> {
     let queryParams = "";
 
@@ -53,14 +56,22 @@ export class GedungService {
     );
     return res.data.data || [];
   }
+
+  /**
+   * Get a specific gedung by ID
+   */
   static async getGedungById(id: string): Promise<Gedungs> {
     const res = await ApiService.get<Gedungs>(`${this.baseUrl}/${id}`);
     return res.data;
   }
 
-  static async checkAvailibility(
+  /**
+   * Check availability of gedung for a specific date and time
+   */
+  static async checkAvailability(
     data: CheckAvailable
   ): Promise<ResCheckAvailable[]> {
+    // Format date if needed (DD-MM-YYYY to DD-MM-YYYY)
     if (data.tanggalMulai && data.tanggalMulai.includes("-")) {
       const parts = data.tanggalMulai.split("-");
       if (parts.length === 3 && parts[0].length === 4) {
@@ -70,6 +81,7 @@ export class GedungService {
         };
       }
     }
+
     const response = await ApiService.post<{ data: ResCheckAvailable[] }>(
       `${this.baseUrl}/check-availability`,
       data
@@ -86,18 +98,91 @@ export class GedungService {
     return [];
   }
 
-  static async createGedung(data: GedungCreate): Promise<Gedung> {
-    const res = await ApiService.post<Gedung>(`${this.baseUrl}`, data);
-    return res.data;
+  /**
+   * Create a new gedung with file upload support
+   */
+  static async createGedung(data: GedungCreate, fotoGedung?: File): Promise<Gedung> {
+    // If there's a file upload, use FormData
+    if (fotoGedung) {
+      const formData = new FormData();
+      
+      // Add the file
+      formData.append("foto_gedung", fotoGedung);
+      
+      // Add all other fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== "foto_gedung" && value !== undefined && value !== null) {
+          // Handle arrays like fasilitas_gedung specially
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const res = await ApiService.post<Gedung>(
+        `${this.baseUrl}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return res.data;
+    } else {
+      // No file, just send JSON
+      const res = await ApiService.post<Gedung>(`${this.baseUrl}`, data);
+      return res.data;
+    }
   }
 
-  static async updateGedung(id: string, data: GedungUpdate): Promise<Gedung> {
-    const res = await ApiService.patch<Gedung>(`${this.baseUrl}/${id}`, data);
-    return res.data;
+  /**
+   * Update an existing gedung with file upload support
+   */
+  static async updateGedung(id: string, data: GedungUpdate, fotoGedung?: File): Promise<Gedung> {
+    // If there's a file upload, use FormData
+    if (fotoGedung) {
+      const formData = new FormData();
+      
+      // Add the file
+      formData.append("foto_gedung", fotoGedung);
+      
+      // Add all other fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== "foto_gedung" && value !== undefined && value !== null) {
+          // Handle arrays like fasilitas_gedung specially
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const res = await ApiService.patch<Gedung>(
+        `${this.baseUrl}/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return res.data;
+    } else {
+      // No file, just send JSON
+      const res = await ApiService.patch<Gedung>(`${this.baseUrl}/${id}`, data);
+      return res.data;
+    }
   }
 
-  static async deleteGedung(id: string): Promise<Boolean> {
-    const res = await ApiService.delete<Boolean>(`${this.baseUrl}/${id}`);
+  /**
+   * Delete a gedung by ID
+   */
+  static async deleteGedung(id: string): Promise<boolean> {
+    const res = await ApiService.delete<boolean>(`${this.baseUrl}/${id}`);
     return res.data;
   }
 }
