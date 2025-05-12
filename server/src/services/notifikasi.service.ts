@@ -1,19 +1,20 @@
-import { prisma } from "../configs/db.config";
-import { Notif, Pembayaran } from "@prisma/client";
+// server/src/services/notifikasi.service.ts
+import { Notif } from "@prisma/client";
 import pusherClient from "../configs/pusher.config";
 import { GetNotif } from "../interfaces/types";
+import { BaseService } from "./base.service";
 
-export class NotifikasiService {
-  /**
-   * Membuat notifikasi baru dan mengirimkan melalui Pusher
-   */
+export class NotifikasiService extends BaseService {
+  constructor() {
+    super('NotifikasiService');
+  }
+
   async createNotifikasi(data: GetNotif): Promise<void> {
     try {
-      // Buat tanggal hari ini
+      this.logInfo('Creating new notification', { data });
       const today = new Date().toISOString().split("T")[0];
 
-      // Buat notifikasi di database
-      const notifikasi = await prisma.notifikasi.create({
+      const notifikasi = await this.prisma.notifikasi.create({
         data: {
           pengguna_id: data.pengguna_id,
           jenis_notifikasi: data.jenisNotifikasi,
@@ -24,67 +25,77 @@ export class NotifikasiService {
         },
       });
 
-      // Kirim notifikasi real-time melalui Pusher
       await this.sendPusherNotification(
         data.pengguna_id,
         notifikasi.id,
         data.judul,
         data.pesan
       );
+
+      this.logInfo('Notification created successfully', { notifikasiId: notifikasi.id });
     } catch (error) {
-      console.error("Error creating notification:", error);
-      // Lanjutkan eksekusi meskipun terjadi error
+      this.logError("Error creating notification", error);
+      // Continue execution even if error occurs
     }
   }
 
-  /**
-   * Mendapatkan semua notifikasi untuk pengguna tertentu
-   */
   async getNotifikasiByPengguna(penggunaId: string) {
-    return await prisma.notifikasi.findMany({
-      where: { pengguna_id: penggunaId },
-      orderBy: { createdAt: "desc" },
-    });
+    try {
+      this.logInfo('Fetching notifications for user', { penggunaId });
+      return await this.prisma.notifikasi.findMany({
+        where: { pengguna_id: penggunaId },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (error) {
+      this.handleError(error, 'getNotifikasiByPengguna');
+      throw error;
+    }
   }
 
-  /**
-   * Menandai notifikasi sebagai telah dibaca
-   */
   async markAsRead(notifikasiId: string) {
-    return await prisma.notifikasi.update({
-      where: { id: notifikasiId },
-      data: { status_baca: 1 },
-    });
+    try {
+      this.logInfo('Marking notification as read', { notifikasiId });
+      return await this.prisma.notifikasi.update({
+        where: { id: notifikasiId },
+        data: { status_baca: 1 },
+      });
+    } catch (error) {
+      this.handleError(error, 'markAsRead');
+      throw error;
+    }
   }
 
-  /**
-   * Menandai semua notifikasi pengguna sebagai telah dibaca
-   */
   async markAllAsRead(penggunaId: string) {
-    return await prisma.notifikasi.updateMany({
-      where: {
-        pengguna_id: penggunaId,
-        status_baca: 0,
-      },
-      data: { status_baca: 1 },
-    });
+    try {
+      this.logInfo('Marking all notifications as read', { penggunaId });
+      return await this.prisma.notifikasi.updateMany({
+        where: {
+          pengguna_id: penggunaId,
+          status_baca: 0,
+        },
+        data: { status_baca: 1 },
+      });
+    } catch (error) {
+      this.handleError(error, 'markAllAsRead');
+      throw error;
+    }
   }
 
-  /**
-   * Mendapatkan jumlah notifikasi yang belum dibaca
-   */
   async getUnreadCount(penggunaId: string) {
-    return await prisma.notifikasi.count({
-      where: {
-        pengguna_id: penggunaId,
-        status_baca: 0,
-      },
-    });
+    try {
+      this.logInfo('Getting unread count', { penggunaId });
+      return await this.prisma.notifikasi.count({
+        where: {
+          pengguna_id: penggunaId,
+          status_baca: 0,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, 'getUnreadCount');
+      throw error;
+    }
   }
 
-  /**
-   * Mengirim notifikasi perubahan status peminjaman
-   */
   async sendPeminjamanNotification(
     penggunaId: string,
     peminjamanId: string,
@@ -100,9 +111,6 @@ export class NotifikasiService {
     });
   }
 
-  /**
-   * Mengirim notifikasi pembayaran
-   */
   async sendPembayaranNotification(
     penggunaId: string,
     pembayaranId: string,
@@ -118,9 +126,6 @@ export class NotifikasiService {
     });
   }
 
-  /**
-   * Kirim notifikasi melalui Pusher
-   */
   private async sendPusherNotification(
     penggunaId: string,
     notifikasiId: string,
@@ -134,9 +139,11 @@ export class NotifikasiService {
         message: pesan,
         timestamp: new Date().toISOString(),
       });
+      this.logInfo('Pusher notification sent', { penggunaId, notifikasiId });
     } catch (error) {
-      console.error("Failed to send pusher notification:", error);
-      // Lanjutkan eksekusi meskipun Pusher gagal
+      this.logError("Failed to send pusher notification", error);
     }
   }
 }
+
+export default new NotifikasiService();

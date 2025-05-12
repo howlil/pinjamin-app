@@ -1,3 +1,4 @@
+// server/src/controllers/peminjaman.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { PeminjamanService } from "../services/peminjaman.service";
 import { ValidationUtil } from "../utils/validation.util";
@@ -7,18 +8,17 @@ import {
   peminjamanApprovalSchema,
 } from "../validations/peminjaman.validation";
 import { UnauthorizedError, BadRequestError } from "../configs/error.config";
-import { IController } from "../interfaces/controller.interface";
-import { logger } from "../configs/logger.config";
+import { BaseController } from "./base.controller";
 import fs from "fs";
 import path from "path";
 
-export class PeminjamanController implements IController {
+export class PeminjamanController extends BaseController {
   private peminjamanService: PeminjamanService;
 
   constructor() {
+    super('PeminjamanController');
     this.peminjamanService = new PeminjamanService();
   }
-
 
   index = async (
     req: Request,
@@ -27,16 +27,12 @@ export class PeminjamanController implements IController {
   ): Promise<void> => {
     try {
       const peminjamans = await this.peminjamanService.getAllPeminjaman();
-      res.status(200).json({
-        success: true,
-        message: "Daftar peminjaman berhasil diambil",
-        data: peminjamans,
-      });
+      this.sendSuccess(res, "Daftar peminjaman berhasil diambil", peminjamans);
     } catch (error) {
+      this.logError("Error fetching all peminjaman", error);
       next(error);
     }
   };
-
 
   show = async (
     req: Request,
@@ -46,16 +42,12 @@ export class PeminjamanController implements IController {
     try {
       const { id } = req.params;
       const peminjaman = await this.peminjamanService.getPeminjamanById(id);
-      res.status(200).json({
-        success: true,
-        message: "Peminjaman berhasil diambil",
-        data: peminjaman,
-      });
+      this.sendSuccess(res, "Peminjaman berhasil diambil", peminjaman);
     } catch (error) {
+      this.logError("Error fetching peminjaman detail", error);
       next(error);
     }
   };
-
 
   getByUser = async (
     req: Request,
@@ -70,16 +62,12 @@ export class PeminjamanController implements IController {
       const peminjamans = await this.peminjamanService.getPeminjamanByPengguna(
         req.user.id
       );
-      res.status(200).json({
-        success: true,
-        message: "Daftar peminjaman pengguna berhasil diambil",
-        data: peminjamans,
-      });
+      this.sendSuccess(res, "Daftar peminjaman pengguna berhasil diambil", peminjamans);
     } catch (error) {
+      this.logError("Error fetching user peminjaman", error);
       next(error);
     }
   };
-
 
   create = async (
     req: Request,
@@ -93,15 +81,13 @@ export class PeminjamanController implements IController {
 
       const validatedData = ValidationUtil.validateBody(req, peminjamanSchema);
 
-      // If file is uploaded, get the path
       if (req.file) {
         validatedData.surat_pengajuan = `/uploads/surat_pengajuan/${req.file.filename}`;
       }
 
-      // Set the user ID
       validatedData.pengguna_id = req.user.id;
 
-      // Format dates from DD-MM-YYYY to YYYY-MM-DD for database
+      // Format dates
       if (validatedData.tanggal_mulai) {
         const [day, month, year] = validatedData.tanggal_mulai.split("-");
         validatedData.tanggal_mulai = `${year}-${month}-${day}`;
@@ -116,13 +102,8 @@ export class PeminjamanController implements IController {
         validatedData
       );
 
-      res.status(201).json({
-        success: true,
-        message: "Peminjaman berhasil dibuat",
-        data: peminjaman,
-      });
+      this.sendSuccess(res, "Peminjaman berhasil dibuat", peminjaman, 201);
     } catch (error) {
-      // If error occurs, delete the uploaded file if exists
       if (req.file) {
         const filePath = path.join(
           process.cwd(),
@@ -133,10 +114,10 @@ export class PeminjamanController implements IController {
           fs.unlinkSync(filePath);
         }
       }
+      this.logError("Error creating peminjaman", error);
       next(error);
     }
   };
-
 
   update = async (
     req: Request,
@@ -154,12 +135,10 @@ export class PeminjamanController implements IController {
         peminjamanUpdateSchema
       );
 
-      // Get the existing peminjaman
       const existingPeminjaman = await this.peminjamanService.getPeminjamanById(
         id
       );
 
-      // Check if user is authorized
       if (
         existingPeminjaman.pengguna_id !== req.user.id &&
         req.user.role !== "ADMIN"
@@ -169,11 +148,9 @@ export class PeminjamanController implements IController {
         );
       }
 
-      // If file is uploaded, get the path and delete old file
       if (req.file) {
         validatedData.surat_pengajuan = `/uploads/surat_pengajuan/${req.file.filename}`;
 
-        // Delete old file if exists
         if (existingPeminjaman.surat_pengajuan) {
           const oldFilePath = path.join(
             process.cwd(),
@@ -186,7 +163,7 @@ export class PeminjamanController implements IController {
         }
       }
 
-      // Format dates from DD-MM-YYYY to YYYY-MM-DD for database
+      // Format dates
       if (validatedData.tanggal_mulai) {
         const [day, month, year] = validatedData.tanggal_mulai.split("-");
         validatedData.tanggal_mulai = `${year}-${month}-${day}`;
@@ -202,11 +179,7 @@ export class PeminjamanController implements IController {
         validatedData
       );
 
-      res.status(200).json({
-        success: true,
-        message: "Peminjaman berhasil diperbarui",
-        data: peminjaman,
-      });
+      this.sendSuccess(res, "Peminjaman berhasil diperbarui", peminjaman);
     } catch (error) {
       if (req.file) {
         const filePath = path.join(
@@ -218,6 +191,7 @@ export class PeminjamanController implements IController {
           fs.unlinkSync(filePath);
         }
       }
+      this.logError("Error updating peminjaman", error);
       next(error);
     }
   };
@@ -250,19 +224,16 @@ export class PeminjamanController implements IController {
         peminjaman.pembayaran &&
         peminjaman.pembayaran.refund
       ) {
-        logger.info("Peminjaman ditolak dan refund diproses", {
+        this.logInfo("Peminjaman ditolak dan refund diproses", {
           peminjamanId: id,
           refundId: peminjaman.pembayaran.refund.id,
           status: peminjaman.pembayaran.refund.status_redund,
         });
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Status peminjaman berhasil diperbarui",
-        data: peminjaman,
-      });
+      this.sendSuccess(res, "Status peminjaman berhasil diperbarui", peminjaman);
     } catch (error) {
+      this.logError("Error approving peminjaman", error);
       next(error);
     }
   };
@@ -305,12 +276,9 @@ export class PeminjamanController implements IController {
 
       await this.peminjamanService.deletePeminjaman(id);
 
-      res.status(200).json({
-        success: true,
-        message: "Peminjaman berhasil dihapus",
-        data: null,
-      });
+      this.sendSuccess(res, "Peminjaman berhasil dihapus", null);
     } catch (error) {
+      this.logError("Error deleting peminjaman", error);
       next(error);
     }
   };
@@ -329,12 +297,9 @@ export class PeminjamanController implements IController {
 
       const statistics = await this.peminjamanService.getPeminjamanStatistics();
 
-      res.status(200).json({
-        success: true,
-        message: "Statistik peminjaman berhasil diambil",
-        data: statistics,
-      });
+      this.sendSuccess(res, "Statistik peminjaman berhasil diambil", statistics);
     } catch (error) {
+      this.logError("Error fetching statistics", error);
       next(error);
     }
   };

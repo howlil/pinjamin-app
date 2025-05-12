@@ -1,17 +1,37 @@
+// server/src/controllers/pembayaran.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { PembayaranService } from "../services/pembayaran.service";
 import { UnauthorizedError, BadRequestError } from "../configs/error.config";
-import { refundSchema } from "../validations/pembayaran.validation";
+import { refundSchema } from "../validations/refund.validation";
 import { ValidationUtil } from "../utils/validation.util";
-import { logger } from "../configs/logger.config";
+import { BaseController } from "./base.controller";
 import { MIDTRANS_CONFIG } from "../configs/midtrans.config";
 
-export class PembayaranController {
+export class PembayaranController extends BaseController {
   private pembayaranService: PembayaranService;
 
   constructor() {
+    super('PembayaranController');
     this.pembayaranService = new PembayaranService();
   }
+
+  index = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.user || req.user.role !== "ADMIN") {
+        throw new UnauthorizedError("Hanya admin yang dapat melihat semua pembayaran");
+      }
+
+      const response = await this.pembayaranService.getAllPembayaran();
+      this.sendSuccess(res, "Data pembayaran berhasil diambil", response);
+    } catch (error) {
+      this.logError("Error fetching all payments", error);
+      next(error);
+    }
+  };
 
   createPayment = async (
     req: Request,
@@ -24,52 +44,23 @@ export class PembayaranController {
       }
 
       const { peminjaman_id } = req.params;
-
       if (!peminjaman_id) {
         throw new BadRequestError("ID peminjaman diperlukan");
       }
 
-      // Create a Snap token for this booking
       const result = await this.pembayaranService.createSnapToken(
         peminjaman_id,
         req.user.id
       );
 
-      res.status(200).json({
-        success: true,
-        message: "Token pembayaran berhasil dibuat",
-        data: {
-          snap_token: result.snapToken,
-          redirect_url: result.redirectUrl,
-          order_id: result.orderId,
-          client_key: MIDTRANS_CONFIG.clientKey,
-        },
+      this.sendSuccess(res, "Token pembayaran berhasil dibuat", {
+        snap_token: result.snapToken,
+        redirect_url: result.redirectUrl,
+        order_id: result.orderId,
+        client_key: MIDTRANS_CONFIG.clientKey,
       });
     } catch (error) {
-      next(error);
-    }
-  };
-
-  getAllPembayaran = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      if (!req.user || req.user.role !== "ADMIN") {
-        throw new UnauthorizedError(
-          "Hanya admin yang dapat melihat semua pembayaran"
-        );
-      }
-
-      const response = await this.pembayaranService.getAllPembayaran();
-
-      res.status(200).json({
-        success: true,
-        message: "Data pembayaran berhasil diambil",
-        data: response,
-      });
-    } catch (error) {
+      this.logError("Error creating payment", error);
       next(error);
     }
   };
@@ -85,7 +76,6 @@ export class PembayaranController {
       }
 
       const { peminjaman_id } = req.params;
-
       if (!peminjaman_id) {
         throw new BadRequestError("ID peminjaman diperlukan");
       }
@@ -95,20 +85,13 @@ export class PembayaranController {
       );
 
       if (!payment) {
-        res.status(404).json({
-          success: false,
-          message: "Pembayaran tidak ditemukan",
-          data: null,
-        });
+        this.sendError(res, "Pembayaran tidak ditemukan", 404);
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Status pembayaran berhasil diambil",
-        data: payment,
-      });
+      this.sendSuccess(res, "Status pembayaran berhasil diambil", payment);
     } catch (error) {
+      this.logError("Error fetching payment status", error);
       next(error);
     }
   };
@@ -119,30 +102,19 @@ export class PembayaranController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      // Log the notification
-      logger.info("Received Midtrans notification", {
-        notification: req.body,
-      });
-
-      // Process the notification
+      this.logInfo("Received Midtrans notification", req.body);
+      
       const result = await this.pembayaranService.processNotification(req.body);
-
-      res.status(200).json({
-        success: true,
-        message: "Notifikasi berhasil diproses",
-      });
+      
+      this.sendSuccess(res, "Notifikasi berhasil diproses");
     } catch (error) {
-      logger.error("Error processing Midtrans notification", {
+      this.logError("Error processing Midtrans notification", {
         error,
         body: req.body,
       });
-
+      
       // Always return 200 to Midtrans even if there's an error
-      // This is to prevent Midtrans from retrying the notification
-      res.status(200).json({
-        success: false,
-        message: "Terjadi kesalahan saat memproses notifikasi",
-      });
+      this.sendSuccess(res, "Terjadi kesalahan saat memproses notifikasi");
     }
   };
 
@@ -157,24 +129,20 @@ export class PembayaranController {
       }
 
       const { peminjaman_id } = req.params;
-
       if (!peminjaman_id) {
         throw new BadRequestError("ID peminjaman diperlukan");
       }
 
       const validatedData = ValidationUtil.validateBody(req, refundSchema);
-
-      // Process the refund
+      
       await this.pembayaranService.processRefund(
         peminjaman_id,
         validatedData.alasan_refund
       );
 
-      res.status(200).json({
-        success: true,
-        message: "Refund berhasil diproses",
-      });
+      this.sendSuccess(res, "Refund berhasil diproses");
     } catch (error) {
+      this.logError("Error processing refund", error);
       next(error);
     }
   };
@@ -186,26 +154,19 @@ export class PembayaranController {
   ): Promise<void> => {
     try {
       if (!req.user || req.user.role !== "ADMIN") {
-        throw new UnauthorizedError(
-          "Hanya admin yang dapat memeriksa status refund"
-        );
+        throw new UnauthorizedError("Hanya admin yang dapat memeriksa status refund");
       }
 
       const { refund_id } = req.params;
-
       if (!refund_id) {
         throw new BadRequestError("ID refund diperlukan");
       }
 
-      // Check the refund status
       const status = await this.pembayaranService.checkRefundStatus(refund_id);
-
-      res.status(200).json({
-        success: true,
-        message: "Status refund berhasil diambil",
-        data: status,
-      });
+      
+      this.sendSuccess(res, "Status refund berhasil diambil", status);
     } catch (error) {
+      this.logError("Error checking refund status", error);
       next(error);
     }
   };

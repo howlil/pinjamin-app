@@ -6,5 +6,15 @@ export * from './fasilitas-gedung.types';
 export * from './penanggung-jawab-gedung.types';
 export * from './tipe-gedung.types';
 export * from './peminjaman.types';
-export * from './pembayaran.types';
-export * from './refund.types';
+
+export { 
+  Pembayaran, 
+  PembayaranCreate, 
+  PembayaranUpdate 
+} from './pembayaran.types';
+
+export { 
+  Refund, 
+  RefundCreate, 
+  RefundUpdate 
+} from './refund.types';

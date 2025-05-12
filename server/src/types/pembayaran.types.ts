@@ -1,18 +1,6 @@
 import { Peminjaman } from './peminjaman.types';
 import { STATUSTRANSAKSI } from '@prisma/client';
-
-export interface Refund {
-  id: string;
-  pembayaran_id: string;
-  jumlah_refund: number;
-  status_redund: string;
-  alasan_refund: string;
-  transaski_refund_midtrans_id: string;
-  tanggal_refund: string;
-  createdAt: Date;
-  updatedAt: Date;
-  pembayaran?: Pembayaran;
-}
+import { Refund } from './refund.types'; // Import Refund from the dedicated file
 
 export interface Pembayaran {
   id: string;

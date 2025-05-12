@@ -1,3 +1,4 @@
+// server/src/controllers/penanggung-jawab.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { PenanggungJawabGedungService } from "../services/penanggung-jawab.service";
 import { ValidationUtil } from "../utils/validation.util";
@@ -6,15 +7,15 @@ import {
   penanggungJawabGedungUpdateSchema
 } from "../validations/penanggung-jawab-gedung.validation";
 import { UnauthorizedError } from "../configs/error.config";
-import { IController } from "../interfaces/controller.interface";
+import { BaseController } from "./base.controller";
 
-export class PenanggungJawabGedungController implements IController {
+export class PenanggungJawabGedungController extends BaseController {
   private penanggungJawabService: PenanggungJawabGedungService;
 
   constructor() {
+    super('PenanggungJawabGedungController');
     this.penanggungJawabService = new PenanggungJawabGedungService();
   }
-
 
   index = async (
     req: Request,
@@ -22,15 +23,10 @@ export class PenanggungJawabGedungController implements IController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      
       const penanggungJawab = await this.penanggungJawabService.getAllPenanggungJawab();
-
-      res.status(200).json({
-        success: true,
-        message: "Daftar penanggung jawab gedung berhasil diambil",
-        data: penanggungJawab,
-      });
+      this.sendSuccess(res, "Daftar penanggung jawab gedung berhasil diambil", penanggungJawab);
     } catch (error) {
+      this.logError("Error fetching penanggung jawab", error);
       next(error);
     }
   };
@@ -48,17 +44,13 @@ export class PenanggungJawabGedungController implements IController {
       const validatedData = ValidationUtil.validateBody(req, penanggungJawabGedungSchema);
       const newPenanggungJawab = await this.penanggungJawabService.createPenanggungJawab(validatedData);
 
-      res.status(201).json({
-        success: true,
-        message: "Penanggung jawab gedung berhasil ditambahkan",
-        data: newPenanggungJawab,
-      });
+      this.sendSuccess(res, "Penanggung jawab gedung berhasil ditambahkan", newPenanggungJawab, 201);
     } catch (error) {
+      this.logError("Error creating penanggung jawab", error);
       next(error);
     }
   };
 
- 
   update = async (
     req: Request,
     res: Response,
@@ -73,16 +65,12 @@ export class PenanggungJawabGedungController implements IController {
       const validatedData = ValidationUtil.validateBody(req, penanggungJawabGedungUpdateSchema);
       const updatedPenanggungJawab = await this.penanggungJawabService.updatePenanggungJawab(id, validatedData);
 
-      res.status(200).json({
-        success: true,
-        message: "Penanggung jawab gedung berhasil diperbarui",
-        data: updatedPenanggungJawab,
-      });
+      this.sendSuccess(res, "Penanggung jawab gedung berhasil diperbarui", updatedPenanggungJawab);
     } catch (error) {
+      this.logError("Error updating penanggung jawab", error);
       next(error);
     }
   };
-
 
   delete = async (
     req: Request,
@@ -97,12 +85,9 @@ export class PenanggungJawabGedungController implements IController {
       const { id } = req.params;
       await this.penanggungJawabService.deletePenanggungJawab(id);
 
-      res.status(200).json({
-        success: true,
-        message: "Penanggung jawab gedung berhasil dihapus",
-        data: null,
-      });
+      this.sendSuccess(res, "Penanggung jawab gedung berhasil dihapus", null);
     } catch (error) {
+      this.logError("Error deleting penanggung jawab", error);
       next(error);
     }
   };

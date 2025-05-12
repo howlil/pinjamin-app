@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { IRoute } from "../interfaces/route.interface";
+
+export interface IRoute {
+  router: Router;
+  routes(): void;
+}
 
 export abstract class BaseRouter implements IRoute {
   public router: Router;

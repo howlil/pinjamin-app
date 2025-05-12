@@ -1,3 +1,4 @@
+// server/src/controllers/fasilitas.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { FasilitasService } from "../services/fasilitas.service";
 import { ValidationUtil } from "../utils/validation.util";
@@ -6,12 +7,13 @@ import {
   fasilitasUpdateSchema,
 } from "../validations/fasilitas.validation";
 import { UnauthorizedError } from "../configs/error.config";
-import { IController } from "../interfaces/controller.interface";
+import { BaseController } from "./base.controller";
 
-export class FasilitasController implements IController {
+export class FasilitasController extends BaseController {
   private fasilitasService: FasilitasService;
 
   constructor() {
+    super('FasilitasController');
     this.fasilitasService = new FasilitasService();
   }
 
@@ -21,21 +23,14 @@ export class FasilitasController implements IController {
     next: NextFunction
   ): Promise<void> => {
     try {
-
       const fasilitas = await this.fasilitasService.getAllFasilitas();
-
-      res.status(200).json({
-        success: true,
-        message: "Daftar fasilitas berhasil diambil",
-        data: fasilitas,
-      });
+      this.sendSuccess(res, "Daftar fasilitas berhasil diambil", fasilitas);
     } catch (error) {
+      this.logError("Error fetching facilities", error);
       next(error);
     }
   };
 
-
-  
   create = async (
     req: Request,
     res: Response,
@@ -43,27 +38,19 @@ export class FasilitasController implements IController {
   ): Promise<void> => {
     try {
       if (!req.user || req.user.role !== "ADMIN") {
-        throw new UnauthorizedError(
-          "Hanya admin yang dapat menambahkan fasilitas"
-        );
+        throw new UnauthorizedError("Hanya admin yang dapat menambahkan fasilitas");
       }
 
       const validatedData = ValidationUtil.validateBody(req, fasilitasSchema);
-      const newFasilitas = await this.fasilitasService.createFasilitas(
-        validatedData
-      );
+      const newFasilitas = await this.fasilitasService.createFasilitas(validatedData);
 
-      res.status(201).json({
-        success: true,
-        message: "Fasilitas berhasil ditambahkan",
-        data: newFasilitas,
-      });
+      this.sendSuccess(res, "Fasilitas berhasil ditambahkan", newFasilitas, 201);
     } catch (error) {
+      this.logError("Error creating facility", error);
       next(error);
     }
   };
 
-  
   update = async (
     req: Request,
     res: Response,
@@ -71,32 +58,20 @@ export class FasilitasController implements IController {
   ): Promise<void> => {
     try {
       if (!req.user || req.user.role !== "ADMIN") {
-        throw new UnauthorizedError(
-          "Hanya admin yang dapat mengubah fasilitas"
-        );
+        throw new UnauthorizedError("Hanya admin yang dapat mengubah fasilitas");
       }
 
       const { id } = req.params;
-      const validatedData = ValidationUtil.validateBody(
-        req,
-        fasilitasUpdateSchema
-      );
-      const updatedFasilitas = await this.fasilitasService.updateFasilitas(
-        id,
-        validatedData
-      );
+      const validatedData = ValidationUtil.validateBody(req, fasilitasUpdateSchema);
+      const updatedFasilitas = await this.fasilitasService.updateFasilitas(id, validatedData);
 
-      res.status(200).json({
-        success: true,
-        message: "Fasilitas berhasil diperbarui",
-        data: updatedFasilitas,
-      });
+      this.sendSuccess(res, "Fasilitas berhasil diperbarui", updatedFasilitas);
     } catch (error) {
+      this.logError("Error updating facility", error);
       next(error);
     }
   };
 
-  
   delete = async (
     req: Request,
     res: Response,
@@ -104,25 +79,18 @@ export class FasilitasController implements IController {
   ): Promise<void> => {
     try {
       if (!req.user || req.user.role !== "ADMIN") {
-        throw new UnauthorizedError(
-          "Hanya admin yang dapat menghapus fasilitas"
-        );
+        throw new UnauthorizedError("Hanya admin yang dapat menghapus fasilitas");
       }
 
       const { id } = req.params;
       await this.fasilitasService.deleteFasilitas(id);
 
-      res.status(200).json({
-        success: true,
-        message: "Fasilitas berhasil dihapus",
-        data: null,
-      });
+      this.sendSuccess(res, "Fasilitas berhasil dihapus", null);
     } catch (error) {
+      this.logError("Error deleting facility", error);
       next(error);
     }
   };
-
-  
 }
 
 export default new FasilitasController();

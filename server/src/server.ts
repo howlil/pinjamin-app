@@ -1,4 +1,4 @@
-import express, { Express, ErrorRequestHandler } from "express";
+rimport express, { Express, ErrorRequestHandler } from "express";
 import path from "path";
 import { setupUncaughtExceptionHandling } from "./utils/uncaught-exception.util";
 import { errorMiddleware } from "./middlewares/error.middleware";

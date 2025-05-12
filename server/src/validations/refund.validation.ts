@@ -21,3 +21,8 @@ export const refundCreateSchema = z.object({
   pembayaran_id: z.string().uuid('ID pembayaran tidak valid'),
   alasan_refund: z.string().min(5, 'Alasan refund minimal 5 karakter'),
 });
+
+// If you need a simplified refund schema for the controller
+export const processRefundSchema = z.object({
+  alasan_refund: z.string().min(5, 'Alasan refund minimal 5 karakter'),
+});

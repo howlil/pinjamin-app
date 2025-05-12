@@ -1,8 +1,7 @@
-// src/controllers/gedung.controller.ts
+// server/src/controllers/gedung.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { GedungService } from "../services/gedung.service";
 import { ValidationUtil } from "../utils/validation.util";
-import { fasilitasGedungSchema,fasilitasGedungUpdateSchema } from "../validations";
 import {
   gedungSchema,
   gedungUpdateSchema,
@@ -10,14 +9,15 @@ import {
   availabilityCheckSchema,
 } from "../validations/gedung.validation";
 import { UnauthorizedError } from "../configs/error.config";
-import { IController } from "../interfaces/controller.interface";
+import { BaseController } from "./base.controller";
 import fs from 'fs';
 import path from 'path';
 
-export class GedungController implements IController {
+export class GedungController extends BaseController {
   private gedungService: GedungService;
 
   constructor() {
+    super('GedungController');
     this.gedungService = new GedungService();
   }
 
@@ -32,13 +32,10 @@ export class GedungController implements IController {
         : undefined;
 
       const gedung = await this.gedungService.getAllGedung(filter);
-
-      res.status(200).json({
-        success: true,
-        message: "Daftar gedung berhasil diambil",
-        data: gedung,
-      });
+      
+      this.sendSuccess(res, "Daftar gedung berhasil diambil", gedung);
     } catch (error) {
+      this.logError("Error fetching gedung list", error);
       next(error);
     }
   };
@@ -50,20 +47,13 @@ export class GedungController implements IController {
   ): Promise<void> => {
     try {
       if (!req.user || req.user.role !== "ADMIN") {
-        throw new UnauthorizedError(
-          "Hanya admin yang dapat menambahkan gedung"
-        );
+        throw new UnauthorizedError("Hanya admin yang dapat menambahkan gedung");
       }
 
       const validatedData = ValidationUtil.validateBody(req, gedungSchema);
-
       const gedung = await this.gedungService.createGedung(validatedData);
-
-      res.status(201).json({
-        success: true,
-        message: "Gedung berhasil ditambahkan",
-        data: gedung,
-      });
+      
+      this.sendSuccess(res, "Gedung berhasil ditambahkan", gedung, 201);
     } catch (error) {
       if (req.file) {
         const filePath = path.join(process.cwd(), 'public', req.body.foto_gedung);
@@ -71,6 +61,7 @@ export class GedungController implements IController {
           fs.unlinkSync(filePath);
         }
       }
+      this.logError("Error creating gedung", error);
       next(error);
     }
   };
@@ -88,7 +79,6 @@ export class GedungController implements IController {
       const { id } = req.params;
       const validatedData = ValidationUtil.validateBody(req, gedungUpdateSchema);
       
-      // Get existing gedung to check for previous foto_gedung
       const existingGedung = await this.gedungService.getGedungById(id);
       let oldImagePath = '';
       
@@ -96,28 +86,22 @@ export class GedungController implements IController {
         oldImagePath = path.join(process.cwd(), 'public', existingGedung.foto_gedung);
       }
 
-      // Update the gedung
       const gedung = await this.gedungService.updateGedung(id, validatedData);
 
-      // If a new image was uploaded and there was an old one, delete the old one
       if (req.file && oldImagePath && fs.existsSync(oldImagePath) && 
           existingGedung.foto_gedung !== validatedData.foto_gedung) {
         fs.unlinkSync(oldImagePath);
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Gedung berhasil diperbarui",
-        data: gedung,
-      });
+      this.sendSuccess(res, "Gedung berhasil diperbarui", gedung);
     } catch (error) {
-      // If there was an error and a new file was uploaded, clean it up
       if (req.file) {
         const filePath = path.join(process.cwd(), 'public', req.body.foto_gedung);
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }
       }
+      this.logError("Error updating gedung", error);
       next(error);
     }
   };
@@ -133,7 +117,6 @@ export class GedungController implements IController {
       }
 
       const { id } = req.params;
-      
       const existingGedung = await this.gedungService.getGedungById(id);
       
       await this.gedungService.deleteGedung(id);
@@ -145,12 +128,9 @@ export class GedungController implements IController {
         }
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Gedung berhasil dihapus",
-        data: null,
-      });
+      this.sendSuccess(res, "Gedung berhasil dihapus", null);
     } catch (error) {
+      this.logError("Error deleting gedung", error);
       next(error);
     }
   };
@@ -162,15 +142,11 @@ export class GedungController implements IController {
   ): Promise<void> => {
     try {
       const { id } = req.params;
-
       const gedung = await this.gedungService.getGedungById(id);
-
-      res.status(200).json({
-        success: true,
-        message: "Gedung berhasil diambil",
-        data: gedung,
-      });
+      
+      this.sendSuccess(res, "Gedung berhasil diambil", gedung);
     } catch (error) {
+      this.logError("Error fetching gedung detail", error);
       next(error);
     }
   };
@@ -182,23 +158,18 @@ export class GedungController implements IController {
   ): Promise<void> => {
     try {
       const validatedData = ValidationUtil.validateBody(req, availabilityCheckSchema);
- 
       const availableGedungs = await this.gedungService.checkGedungAvailability(validatedData);
 
-      res.status(200).json({
-        success: true,
-        message: availableGedungs.length > 0 
-          ? "Daftar gedung yang tersedia pada waktu yang ditentukan" 
-          : "Tidak ada gedung yang tersedia pada waktu yang ditentukan",
-        data: availableGedungs,
-      });
+      const message = availableGedungs.length > 0 
+        ? "Daftar gedung yang tersedia pada waktu yang ditentukan" 
+        : "Tidak ada gedung yang tersedia pada waktu yang ditentukan";
+        
+      this.sendSuccess(res, message, availableGedungs);
     } catch (error) {
+      this.logError("Error checking gedung availability", error);
       next(error);
     }
   };
-
- 
-
 }
 
 export default new GedungController();

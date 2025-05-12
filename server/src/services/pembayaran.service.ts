@@ -1,18 +1,19 @@
-import { prisma } from "../configs/db.config";
+// server/src/services/pembayaran.service.ts
 import { Pembayaran } from "../interfaces/types/pembayaran.types";
 import { NotFoundError, BadRequestError } from "../configs/error.config";
 import { MIDTRANS_CONFIG } from "../configs/midtrans.config";
 import { STATUSPEMINJAMAN, STATUSTRANSAKSI } from "@prisma/client";
-import { logger } from "../configs/logger.config";
 import axios from "axios";
 import * as crypto from "crypto";
+import { BaseService } from "./base.service";
 
-export class PembayaranService {
+export class PembayaranService extends BaseService {
   private midtransBaseUrl: string;
   private midtransServerKey: string;
   private midtransClientKey: string;
 
   constructor() {
+    super('PembayaranService');
     this.midtransBaseUrl = MIDTRANS_CONFIG.isProduction
       ? "https://api.midtrans.com"
       : "https://api.sandbox.midtrans.com";
@@ -21,92 +22,113 @@ export class PembayaranService {
   }
 
   async getAllPembayaran(): Promise<Pembayaran[]> {
-    const pembayaranList = await prisma.pembayaran.findMany({
-      include: {
-        peminjaman: {
-          include: {
-            pengguna: true,
-            gedung: true
-          }
+    try {
+      this.logInfo('Fetching all payments');
+      
+      const pembayaranList = await this.prisma.pembayaran.findMany({
+        include: {
+          peminjaman: {
+            include: {
+              pengguna: true,
+              gedung: true
+            }
+          },
+          refund: true
         },
-        refund: true
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
-    
-    if (!pembayaranList.length) return [];
-    
-    // Map each payment record to the expected format
-    const result = pembayaranList.map(pembayaran => ({
-      ...pembayaran,
-      no_invoice: pembayaran.no_invoice || undefined,
-      peminjaman: pembayaran.peminjaman
-        ? {
-            ...pembayaran.peminjaman,
-            pengguna: pembayaran.peminjaman.pengguna || undefined,
-          }
-        : undefined,
-    }));
+        orderBy: {
+          createdAt: "desc"
+        }
+      });
+      
+      if (!pembayaranList.length) return [];
+      
+      const result = pembayaranList.map(pembayaran => ({
+        ...pembayaran,
+        no_invoice: pembayaran.no_invoice || undefined,
+        peminjaman: pembayaran.peminjaman
+          ? {
+              ...pembayaran.peminjaman,
+              pengguna: pembayaran.peminjaman.pengguna || undefined,
+            }
+          : undefined,
+      }));
 
-    return result;
+      this.logInfo(`Found ${result.length} payments`);
+      return result;
+    } catch (error) {
+      this.handleError(error, 'getAllPembayaran');
+      throw error;
+    }
   }
 
   async getPembayaranById(id: string): Promise<Pembayaran | null> {
-    const pembayaran = await prisma.pembayaran.findUnique({
-      where: { id },
-      include: {
-        peminjaman: {
-          include: {
-            pengguna: true,
-            gedung: true
-          }
-        },
-        refund: true
-      }
-    });
+    try {
+      this.logInfo('Fetching payment by ID', { id });
+      
+      const pembayaran = await this.prisma.pembayaran.findUnique({
+        where: { id },
+        include: {
+          peminjaman: {
+            include: {
+              pengguna: true,
+              gedung: true
+            }
+          },
+          refund: true
+        }
+      });
 
-    if (!pembayaran) return null;
+      if (!pembayaran) return null;
 
-    return {
-      ...pembayaran,
-      no_invoice: pembayaran.no_invoice || undefined,
-      peminjaman: pembayaran.peminjaman
-        ? {
-            ...pembayaran.peminjaman,
-            pengguna: pembayaran.peminjaman.pengguna || undefined,
-          }
-        : undefined,
-    } as Pembayaran;
+      return {
+        ...pembayaran,
+        no_invoice: pembayaran.no_invoice || undefined,
+        peminjaman: pembayaran.peminjaman
+          ? {
+              ...pembayaran.peminjaman,
+              pengguna: pembayaran.peminjaman.pengguna || undefined,
+            }
+          : undefined,
+      } as Pembayaran;
+    } catch (error) {
+      this.handleError(error, 'getPembayaranById');
+      throw error;
+    }
   }
 
   async getPembayaranByPeminjamanId(peminjamanId: string): Promise<Pembayaran | null> {
-    const pembayaran = await prisma.pembayaran.findUnique({
-      where: { peminjaman_id: peminjamanId },
-      include: {
-        peminjaman: {
-          include: {
-            pengguna: true,
-            gedung: true
-          }
-        },
-        refund: true
-      }
-    });
+    try {
+      this.logInfo('Fetching payment by peminjaman ID', { peminjamanId });
+      
+      const pembayaran = await this.prisma.pembayaran.findUnique({
+        where: { peminjaman_id: peminjamanId },
+        include: {
+          peminjaman: {
+            include: {
+              pengguna: true,
+              gedung: true
+            }
+          },
+          refund: true
+        }
+      });
 
-    if (!pembayaran) return null;
+      if (!pembayaran) return null;
 
-    return {
-      ...pembayaran,
-      no_invoice: pembayaran.no_invoice || undefined,
-      peminjaman: pembayaran.peminjaman
-        ? {
-            ...pembayaran.peminjaman,
-            pengguna: pembayaran.peminjaman.pengguna || undefined,
-          }
-        : undefined,
-    } as Pembayaran;
+      return {
+        ...pembayaran,
+        no_invoice: pembayaran.no_invoice || undefined,
+        peminjaman: pembayaran.peminjaman
+          ? {
+              ...pembayaran.peminjaman,
+              pengguna: pembayaran.peminjaman.pengguna || undefined,
+            }
+          : undefined,
+      } as Pembayaran;
+    } catch (error) {
+      this.handleError(error, 'getPembayaranByPeminjamanId');
+      throw error;
+    }
   }
 
   async createSnapToken(peminjamanId: string, penggunaId: string): Promise<{
@@ -114,79 +136,71 @@ export class PembayaranService {
     redirectUrl: string;
     orderId: string;
   }> {
-    // Get the peminjaman details
-    const peminjaman = await prisma.peminjaman.findUnique({
-      where: { id: peminjamanId },
-      include: {
-        gedung: true,
-        pengguna: true,
-        pembayaran: true
-      }
-    });
-
-    if (!peminjaman) {
-      throw new NotFoundError("Peminjaman tidak ditemukan");
-    }
-
-    // Check if the peminjaman belongs to the user
-    if (peminjaman.pengguna_id !== penggunaId) {
-      throw new BadRequestError("Peminjaman ini bukan milik anda");
-    }
-
-    // Check if payment already exists
-    if (peminjaman.pembayaran) {
-      // If payment exists and is not completed, return the existing snap token
-      if (peminjaman.pembayaran.status_pembayaran !== STATUSTRANSAKSI.PAID) {
-        return {
-          snapToken: peminjaman.pembayaran.snap_token,
-          redirectUrl: peminjaman.pembayaran.url_pembayaran,
-          orderId: peminjaman.pembayaran.transaksi_midtrans_id
-        };
-      }
-      
-      // If payment is already completed, throw error
-      throw new BadRequestError("Pembayaran untuk peminjaman ini sudah selesai");
-    }
-
-    // Calculate the total price
-    const grossAmount = peminjaman.gedung.harga_sewa;
-    
-    // Generate a unique order ID
-    const today = new Date();
-    const orderId = `ORDER-${peminjaman.id}-${today.getTime()}`;
-
-    // Create the transaction data
-    const transactionData = {
-      transaction_details: {
-        order_id: orderId,
-        gross_amount: grossAmount
-      },
-      credit_card: {
-        secure: true
-      },
-      customer_details: {
-        first_name: peminjaman.pengguna?.nama_lengkap || "Guest",
-        email: peminjaman.pengguna?.email || "guest@example.com",
-        phone: peminjaman.pengguna?.no_hp || "08123456789"
-      },
-      item_details: [
-        {
-          id: peminjaman.gedung.id,
-          price: grossAmount,
-          quantity: 1,
-          name: `Sewa ${peminjaman.gedung.nama_gedung} - ${peminjaman.nama_kegiatan}`,
-          category: "Sewa Gedung"
-        }
-      ],
-      callbacks: {
-        finish: `${MIDTRANS_CONFIG.finishUrl}/${peminjaman.id}`,
-        error: `${MIDTRANS_CONFIG.errorUrl}/${peminjaman.id}`,
-        pending: `${MIDTRANS_CONFIG.pendingUrl}/${peminjaman.id}`
-      }
-    };
-
     try {
-      // Create Snap transaction token
+      this.logInfo('Creating snap token', { peminjamanId, penggunaId });
+      
+      const peminjaman = await this.prisma.peminjaman.findUnique({
+        where: { id: peminjamanId },
+        include: {
+          gedung: true,
+          pengguna: true,
+          pembayaran: true
+        }
+      });
+
+      if (!peminjaman) {
+        throw new NotFoundError("Peminjaman tidak ditemukan");
+      }
+
+      if (peminjaman.pengguna_id !== penggunaId) {
+        throw new BadRequestError("Peminjaman ini bukan milik anda");
+      }
+
+      if (peminjaman.pembayaran) {
+        if (peminjaman.pembayaran.status_pembayaran !== STATUSTRANSAKSI.PAID) {
+          return {
+            snapToken: peminjaman.pembayaran.snap_token,
+            redirectUrl: peminjaman.pembayaran.url_pembayaran,
+            orderId: peminjaman.pembayaran.transaksi_midtrans_id
+          };
+        }
+        
+        throw new BadRequestError("Pembayaran untuk peminjaman ini sudah selesai");
+      }
+
+      const grossAmount = peminjaman.gedung.harga_sewa;
+      const today = new Date();
+      const orderId = `ORDER-${peminjaman.id}-${today.getTime()}`;
+
+      const transactionData = {
+        transaction_details: {
+          order_id: orderId,
+          gross_amount: grossAmount
+        },
+        credit_card: {
+          secure: true
+        },
+        customer_details: {
+          first_name: peminjaman.pengguna?.nama_lengkap || "Guest",
+          email: peminjaman.pengguna?.email || "guest@example.com",
+          phone: peminjaman.pengguna?.no_hp || "08123456789"
+        },
+        item_details: [
+          {
+            id: peminjaman.gedung.id,
+            price: grossAmount,
+            quantity: 1,
+            name: `Sewa ${peminjaman.gedung.nama_gedung} - ${peminjaman.nama_kegiatan}`,
+            category: "Sewa Gedung"
+          }
+        ],
+        callbacks: {
+          finish: `${MIDTRANS_CONFIG.finishUrl}/${peminjaman.id}`,
+          error: `${MIDTRANS_CONFIG.errorUrl}/${peminjaman.id}`,
+          pending: `${MIDTRANS_CONFIG.pendingUrl}/${peminjaman.id}`
+        }
+      };
+
       const response = await axios.post(
         `${this.midtransBaseUrl}/snap/v1/transactions`,
         transactionData,
@@ -200,13 +214,9 @@ export class PembayaranService {
       );
 
       const { token, redirect_url } = response.data;
-
-      // Calculate Midtrans fee (estimate)
-      // This is a simplified example - actual fee calculation may vary
-      const midtransFee = Math.round(grossAmount * 0.02); // 2% fee example
+      const midtransFee = Math.round(grossAmount * 0.02);
       
-      // Create the payment record
-      await prisma.pembayaran.create({
+      await this.prisma.pembayaran.create({
         data: {
           peminjaman_id: peminjamanId,
           transaksi_midtrans_id: orderId,
@@ -221,19 +231,22 @@ export class PembayaranService {
         }
       });
 
+      this.logInfo('Snap token created successfully', { orderId });
       return {
         snapToken: token,
         redirectUrl: redirect_url,
         orderId
       };
     } catch (error) {
-      logger.error("Error creating Midtrans snap token", { error });
+      this.handleError(error, 'createSnapToken');
       throw new BadRequestError("Gagal membuat token pembayaran");
     }
   }
 
   async processNotification(notification: any): Promise<boolean> {
     try {
+      this.logInfo('Processing Midtrans notification', { orderId: notification.order_id });
+      
       const {
         transaction_status,
         order_id,
@@ -243,15 +256,13 @@ export class PembayaranService {
         fraud_status
       } = notification;
 
-      // Validate signature
       const expectedSignature = this.generateSignature(notification);
       if (signature_key !== expectedSignature) {
-        logger.warn("Invalid signature for Midtrans notification", { notification });
+        this.logWarn("Invalid signature for Midtrans notification", { notification });
         return false;
       }
 
-      // Find the payment by transaction ID
-      const pembayaran = await prisma.pembayaran.findFirst({
+      const pembayaran = await this.prisma.pembayaran.findFirst({
         where: { transaksi_midtrans_id: order_id },
         include: {
           peminjaman: true
@@ -259,11 +270,10 @@ export class PembayaranService {
       });
 
       if (!pembayaran) {
-        logger.warn("Payment not found for Midtrans notification", { order_id });
+        this.logWarn("Payment not found for Midtrans notification", { order_id });
         return false;
       }
 
-      // Update payment status based on transaction status
       let newStatus: STATUSTRANSAKSI;
       switch (transaction_status) {
         case "capture":
@@ -285,8 +295,7 @@ export class PembayaranService {
           newStatus = pembayaran.status_pembayaran;
       }
 
-      // Update the payment
-      await prisma.pembayaran.update({
+      await this.prisma.pembayaran.update({
         where: { id: pembayaran.id },
         data: {
           status_pembayaran: newStatus,
@@ -295,9 +304,8 @@ export class PembayaranService {
         }
       });
 
-      // If payment is successful, update peminjaman status
       if (newStatus === STATUSTRANSAKSI.PAID) {
-        await prisma.peminjaman.update({
+        await this.prisma.peminjaman.update({
           where: { id: pembayaran.peminjaman_id },
           data: {
             status_peminjaman: STATUSPEMINJAMAN.DIPROSES
@@ -305,9 +313,10 @@ export class PembayaranService {
         });
       }
 
+      this.logInfo('Notification processed successfully', { orderId: order_id, status: newStatus });
       return true;
     } catch (error) {
-      logger.error("Error processing Midtrans notification", { error });
+      this.handleError(error, 'processNotification');
       return false;
     }
   }
@@ -318,13 +327,11 @@ export class PembayaranService {
     return crypto.createHash("sha512").update(dataString).digest("hex");
   }
 
-  /**
-   * Process refund for a rejected booking
-   */
   async processRefund(peminjamanId: string, alasanRefund: string): Promise<boolean> {
     try {
-      // Get the payment for this booking
-      const pembayaran = await prisma.pembayaran.findUnique({
+      this.logInfo('Processing refund', { peminjamanId });
+      
+      const pembayaran = await this.prisma.pembayaran.findUnique({
         where: { peminjaman_id: peminjamanId },
         include: {
           peminjaman: true,
@@ -340,14 +347,11 @@ export class PembayaranService {
         throw new BadRequestError("Pembayaran belum selesai atau sudah direfund");
       }
 
-      // Check if refund already exists
       if (pembayaran.refund) {
         throw new BadRequestError("Refund untuk pembayaran ini sudah ada");
       }
 
-      // Call Midtrans API to process refund
       try {
-        // Create refund request to Midtrans
         const response = await axios.post(
           `${this.midtransBaseUrl}/v2/${pembayaran.transaksi_midtrans_id}/refund`,
           {
@@ -364,10 +368,8 @@ export class PembayaranService {
           }
         );
 
-        // Check if refund is successful
         if (response.data && response.data.status_code === "200") {
-          // Create refund record
-          await prisma.refund.create({
+          await this.prisma.refund.create({
             data: {
               pembayaran_id: pembayaran.id,
               jumlah_refund: pembayaran.jumlah_bayar,
@@ -378,28 +380,22 @@ export class PembayaranService {
             }
           });
 
-          // Update payment status
-          await prisma.pembayaran.update({
+          await this.prisma.pembayaran.update({
             where: { id: pembayaran.id },
             data: {
               status_pembayaran: STATUSTRANSAKSI.REFUNDED
             }
           });
 
+          this.logInfo('Refund processed successfully', { pembayaranId: pembayaran.id });
           return true;
         } else {
           throw new Error(`Midtrans refund failed: ${JSON.stringify(response.data)}`);
         }
       } catch (apiError: any) {
-        // Handle API errors
-        logger.error("Error processing refund with Midtrans", { 
-          error: apiError.response?.data || apiError.message,
-          pembayaranId: pembayaran.id 
-        });
+        this.logError("Error processing refund with Midtrans", apiError, { pembayaranId: pembayaran.id });
 
-        // If there's a specific error from Midtrans, we can create a pending refund
-        // that will need manual intervention
-        await prisma.refund.create({
+        await this.prisma.refund.create({
           data: {
             pembayaran_id: pembayaran.id,
             jumlah_refund: pembayaran.jumlah_bayar,
@@ -413,18 +409,16 @@ export class PembayaranService {
         throw new BadRequestError("Gagal melakukan refund: " + (apiError.response?.data?.status_message || apiError.message));
       }
     } catch (error) {
-      logger.error("Error processing refund", { error, peminjamanId });
+      this.handleError(error, 'processRefund');
       throw error;
     }
   }
 
-  /**
-   * Check refund status from Midtrans
-   */
   async checkRefundStatus(refundId: string): Promise<any> {
     try {
-      // Get the refund record
-      const refund = await prisma.refund.findUnique({
+      this.logInfo('Checking refund status', { refundId });
+      
+      const refund = await this.prisma.refund.findUnique({
         where: { id: refundId },
         include: {
           pembayaran: true
@@ -435,7 +429,6 @@ export class PembayaranService {
         throw new NotFoundError("Refund tidak ditemukan");
       }
 
-      // Call Midtrans API to check refund status
       const response = await axios.get(
         `${this.midtransBaseUrl}/v2/${refund.pembayaran.transaksi_midtrans_id}/refund/${refund.transaski_refund_midtrans_id}/status`,
         {
@@ -447,9 +440,8 @@ export class PembayaranService {
         }
       );
 
-      // Update refund status based on Midtrans response
       if (response.data && response.data.status_code === "200") {
-        await prisma.refund.update({
+        await this.prisma.refund.update({
           where: { id: refundId },
           data: {
             status_redund: response.data.refund_status || "PROCESSED"
@@ -461,15 +453,11 @@ export class PembayaranService {
         throw new Error(`Failed to check refund status: ${JSON.stringify(response.data)}`);
       }
     } catch (error) {
-      logger.error("Error checking refund status", { error, refundId });
+      this.handleError(error, 'checkRefundStatus');
       throw new BadRequestError("Gagal memeriksa status refund");
     }
   }
 
-  /**
-   * Helper method to automatically process refunds for rejected bookings
-   * This can be called from the PeminjamanService when a booking is rejected
-   */
   async autoProcessRefundForRejectedBooking(
     peminjamanId: string, 
     alasanPenolakan: string
@@ -478,9 +466,7 @@ export class PembayaranService {
       const alasanRefund = `Refund otomatis: Peminjaman ditolak. ${alasanPenolakan}`;
       return await this.processRefund(peminjamanId, alasanRefund);
     } catch (error) {
-      // Log the error but don't throw, so booking rejection can still proceed
-      // even if refund processing fails
-      logger.error("Auto refund processing failed", { error, peminjamanId });
+      this.logError("Auto refund processing failed", error, { peminjamanId });
       return false;
     }
   }

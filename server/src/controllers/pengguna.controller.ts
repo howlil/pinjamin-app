@@ -1,3 +1,4 @@
+// server/src/controllers/pengguna.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { PenggunaService } from "../services/pengguna.service";
 import { UnauthorizedError } from "../configs/error.config";
@@ -7,12 +8,13 @@ import {
   penggunaUpdateSchema,
 } from "../validations/pengguna.validation";
 import { ValidationUtil } from "../utils/validation.util";
-import { IController } from "../interfaces/controller.interface";
+import { BaseController } from "./base.controller";
 
-export class PenggunaController implements IController {
+export class PenggunaController extends BaseController {
   private penggunaService: PenggunaService;
 
   constructor() {
+    super('PenggunaController');
     this.penggunaService = new PenggunaService();
   }
 
@@ -23,15 +25,11 @@ export class PenggunaController implements IController {
   ): Promise<void> => {
     try {
       const validatedData = ValidationUtil.validateBody(req, penggunaSchema);
-
       const result = await this.penggunaService.register(validatedData);
-
-      res.status(201).json({
-        success: true,
-        message: "Pengguna berhasil terdaftar",
-        data: result,
-      });
+      
+      this.sendSuccess(res, "Pengguna berhasil terdaftar", result, 201);
     } catch (error) {
+      this.logError("Error registering user", error);
       next(error);
     }
   };
@@ -56,12 +54,9 @@ export class PenggunaController implements IController {
         validatedData
       );
 
-      res.status(200).json({
-        success: true,
-        message: "Profil berhasil diperbarui",
-        data: result,
-      });
+      this.sendSuccess(res, "Profil berhasil diperbarui", result);
     } catch (error) {
+      this.logError("Error updating profile", error);
       next(error);
     }
   };
@@ -77,13 +72,10 @@ export class PenggunaController implements IController {
       }
 
       const result = await this.penggunaService.getProfile(req.user.id);
-
-      res.status(200).json({
-        success: true,
-        message: "Profil berhasil diambil",
-        data: result,
-      });
+      
+      this.sendSuccess(res, "Profil berhasil diambil", result);
     } catch (error) {
+      this.logError("Error fetching profile", error);
       next(error);
     }
   };
@@ -100,13 +92,10 @@ export class PenggunaController implements IController {
       );
 
       const result = await this.penggunaService.login(validatedData);
-
-      res.status(200).json({
-        success: true,
-        message: "Login berhasil",
-        data: result,
-      });
+      
+      this.sendSuccess(res, "Login berhasil", result);
     } catch (error) {
+      this.logError("Error during login", error);
       next(error);
     }
   };
@@ -129,12 +118,9 @@ export class PenggunaController implements IController {
       const token = authHeader.split(" ")[1];
       await this.penggunaService.logout(token);
 
-      res.status(200).json({
-        success: true,
-        message: "Logout berhasil",
-        data: null,
-      });
+      this.sendSuccess(res, "Logout berhasil", null);
     } catch (error) {
+      this.logError("Error during logout", error);
       next(error);
     }
   };
