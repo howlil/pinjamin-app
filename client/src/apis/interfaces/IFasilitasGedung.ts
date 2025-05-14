@@ -1,19 +1,27 @@
-import { Gedung } from "./IGedung";
-
-export interface FasilitasGedung {
+export interface Fasilitas {
   id: string;
   nama_fasilitas: string;
-  icon_url: string;
-  gedung_id: string;
-  Gedung?: Gedung;
+  icon_url?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  FasilitasGedung?: FasilitasGedung[];
 }
 
-export interface FasilitasGedungCreate {
+export interface FasilitasCreate {
   nama_fasilitas: string;
-  icon_url: string;
+  icon_url?: string;
 }
 
-export interface FasilitasGedungUpdate {
+export interface FasilitasUpdate {
   nama_fasilitas?: string;
   icon_url?: string;
+}
+
+// Relation interface - if used elsewhere
+export interface FasilitasGedung {
+  id: string;
+  fasilitas_id: string;
+  gedung_id: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

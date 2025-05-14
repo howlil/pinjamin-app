@@ -3,7 +3,9 @@ import { Gedung } from "./IGedung";
 export interface TipeGedung {
   id: string;
   nama_tipe_gedung: string;
-  gedung?: Gedung[];
+  createdAt: Date;
+  updatedAt: Date;
+  Gedung?: Gedung[];
 }
 
 export interface TipeGedungCreate {
