@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "mysql"
+  url       = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(uuid())
+  fullName     String
+  email        String         @unique
+  password     String
+  phoneNumber  String
+  borrowerType USER_TYPE
+  role         ROLE
+  bankName     String
+  bankNumber   String
+  notification Notification[]
+  token        Token[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  booking      Booking[]
+}
+
+model Notification {
+  id               String             @id @default(uuid())
+  userId           String?
+  notificationType NOTIFICATION_TYPE
+  title            String
+  message          String
+  date             String
+  readStatus       Int
+  user             User?              @relation(fields: [userId], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model Token {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @db.Text
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Facility {
+  id               String             @id @default(uuid())
+  facilityName     String
+  iconUrl          String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  facilityBuilding FacilityBuilding[]
+}
+
+model FacilityBuilding {
+  facilityId String
+  buildingId String
+  facility   Facility @relation(fields: [facilityId], references: [id])
+  building   Building @relation(fields: [buildingId], references: [id])
+
+  @@id([facilityId, buildingId])
+}
+
+model Building {
+  id               String             @id @default(uuid())
+  buildingName     String
+  description      String             @db.Text
+  rentalPrice      Int
+  buildingPhoto    String?
+  capacity         Int
+  location         String
+  buildingManager  BuildingManager[]
+  buildingType     BUILDING_TYPE
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  booking          Booking[]
+  facilityBuilding FacilityBuilding[]
+}
+
+model BuildingManager {
+  id          String   @id @default(uuid())
+  managerName String
+  phoneNumber String
+  buildingId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  building    Building @relation(fields: [buildingId], references: [id])
+}
+
+enum BUILDING_TYPE {
+  CLASSROOM
+  PKM
+  LABORATORY
+  MULTIFUNCTION
+  SEMINAR
+}
+
+model Booking {
+  id              String         @id @default(uuid())
+  userId          String?
+  buildingId      String
+  activityName    String
+  startDate       String
+  endDate         String?
+  startTime       String
+  endTime         String
+  proposalLetter  String
+  rejectionReason String?
+  bookingStatus   BOOKING_STATUS
+  payment         Payment?       @relation()
+  user            User?          @relation(fields: [userId], references: [id])
+  building        Building       @relation(fields: [buildingId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Payment {
+  id                     String             @id @default(uuid())
+  xenditTransactionId  String
+  bookingId              String             @unique
+  invoiceNumber          String?
+  paymentDate            String
+  paymentAmount          Int
+  totalAmount            Int
+  paymentMethod          String
+  paymentUrl             String
+  snapToken              String
+  paymentStatus          TRANSACTION_STATUS
+  refund                 Refund?            @relation()
+  booking                Booking            @relation(fields: [bookingId], references: [id])
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+}
+
+model Refund {
+  id                          String   @id @default(uuid())
+  paymentId                   String   @unique
+  refundAmount                Int
+  refundStatus                REFUND_STATUS
+  refundReason                String
+  xenditRefundTransactionId String
+  refundDate                  String
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  payment                     Payment  @relation(fields: [paymentId], references: [id])
+}
+
+enum TRANSACTION_STATUS {
+  UNPAID
+  PAID
+  PENDING
+  SETTLED
+  EXPIRED
+  ACTIVE
+  STOPPED
+}
+
+enum REFUND_STATUS {
+  SUCCEEDED
+  FAILED
+  PENDING
+}
+
+enum BOOKING_STATUS {
+  PROCESSING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum NOTIFICATION_TYPE {
+  PAYMENT
+  BOOKING
+}
+
+enum USER_TYPE {
+  INTERNAL_UNAND
+  EXTERNAL_UNAND
+}
+
+enum ROLE {
+  BORROWER
+  ADMIN
+}
