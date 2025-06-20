@@ -8,15 +8,13 @@ import {
     Flex
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Download, FileText, Calendar } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { COLORS, SHADOWS } from '@/utils/designTokens';
 
 const HistoryHeader = ({
     title = "Riwayat Peminjaman",
     description = "Lihat riwayat dan audit trail peminjaman ruangan",
-    onRefresh,
-    onExport,
-    onGenerateReport
+    onExport
 }) => {
     return (
         <Box
@@ -47,54 +45,24 @@ const HistoryHeader = ({
                     </Text>
                 </Box>
 
-                <HStack spacing={3}>
-                    <Button
-                        leftIcon={<RefreshCw size={16} />}
-                        variant="outline"
-                        borderColor={`${COLORS.primary}30`}
-                        color={COLORS.primary}
-                        borderRadius="lg"
-                        _hover={{
-                            bg: `${COLORS.primary}10`,
-                            borderColor: COLORS.primary
-                        }}
-                        onClick={onRefresh}
-                    >
-                        Refresh
-                    </Button>
-                    {onGenerateReport && (
+                {onExport && (
+                    <HStack spacing={3}>
                         <Button
-                            leftIcon={<FileText size={16} />}
+                            leftIcon={<Download size={16} />}
                             variant="outline"
                             borderColor={`${COLORS.primary}30`}
                             color={COLORS.primary}
-                            borderRadius="lg"
+                            borderRadius="full"
                             _hover={{
                                 bg: `${COLORS.primary}10`,
                                 borderColor: COLORS.primary
                             }}
-                            onClick={onGenerateReport}
-                        >
-                            Laporan
-                        </Button>
-                    )}
-                    {onExport && (
-                        <Button
-                            leftIcon={<Download size={16} />}
-                            bg={COLORS.primary}
-                            color="white"
-                            borderRadius="lg"
-                            _hover={{
-                                bg: COLORS.primaryDark,
-                                transform: 'translateY(-1px)'
-                            }}
-                            transition="all 0.2s"
                             onClick={onExport}
                         >
                             Export
                         </Button>
-                    )}
-                </HStack>
+                    </HStack>
+                )}
             </Flex>
         </Box>
     );

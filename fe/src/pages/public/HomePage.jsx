@@ -7,14 +7,15 @@ import {
     HeroSection,
     HeroContent,
     SearchForm,
-    AvailableRoomsList,
+    TodayBookingsList,
     BuildingCardGrid,
     BuildingPagination,
-    FeaturesSection
+    AvailabilityModal,
 } from '@/components/home';
 
-// Import hook for buildings data
+// Import hooks for buildings data and availability check
 import { usePublicBuildings } from '@/hooks/usePublicBuildings';
+import { useAvailabilityCheck } from '@/hooks/useAvailabilityCheck';
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -34,8 +35,32 @@ const HomePage = () => {
         getBuildingTypes
     } = usePublicBuildings();
 
+    // Use availability check hook
+    const {
+        availableBuildings,
+        loading: availabilityLoading,
+        error: availabilityError,
+        searchCriteria,
+        isOpen: isAvailabilityModalOpen,
+        onClose: onAvailabilityModalClose,
+        checkAvailability,
+        formatCurrency: formatAvailabilityCurrency,
+        formatDisplayDate,
+        clearResults
+    } = useAvailabilityCheck();
+
     const handleRoomClick = (buildingId) => {
         navigate(`/room/${buildingId}`);
+    };
+
+    const handleViewDetails = (buildingId) => {
+        onAvailabilityModalClose();
+        navigate(`/room/${buildingId}`);
+    };
+
+    const handleSelectBuilding = (building) => {
+        onAvailabilityModalClose();
+        navigate(`/room/${building.id}`);
     };
 
     return (
@@ -45,10 +70,12 @@ const HomePage = () => {
                     <HeroContent />
                     <SearchForm
                         onSearch={handleSearch}
+                        onCheckAvailability={checkAvailability}
                         buildingTypes={getBuildingTypes()}
+                        loading={loading || availabilityLoading}
                     />
                 </Box>
-                <AvailableRoomsList onRoomClick={handleRoomClick} />
+                <TodayBookingsList />
             </HeroSection>
 
             <BuildingCardGrid
@@ -76,7 +103,20 @@ const HomePage = () => {
                 </Box>
             )}
 
-            <FeaturesSection />
+
+            {/* Availability Check Modal */}
+            <AvailabilityModal
+                isOpen={isAvailabilityModalOpen}
+                onClose={onAvailabilityModalClose}
+                buildings={availableBuildings}
+                loading={availabilityLoading}
+                error={availabilityError}
+                searchCriteria={searchCriteria}
+                formatCurrency={formatAvailabilityCurrency}
+                formatDisplayDate={formatDisplayDate}
+                onViewDetails={handleViewDetails}
+                onSelectBuilding={handleSelectBuilding}
+            />
         </Box>
     );
 };

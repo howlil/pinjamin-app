@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure } from '@chakra-ui/react';
-import { Calendar } from 'lucide-react';
+import { Box, useDisclosure, Flex } from '@chakra-ui/react';
+import { Calendar, Download } from 'lucide-react';
 
-import { GlassCard } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import { useBookings } from '@/hooks/useBookings';
-import { DataStateHandler, AdminSearchFilter } from '@/components/admin/common';
-import { BookingHeader, BookingTable } from '@/components/admin/booking';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
+import { BookingTable } from '@/components/admin/booking';
 
 // Booking status options for filter
 const BOOKING_STATUS_OPTIONS = [
@@ -35,8 +35,7 @@ const PeminjamanPage = () => {
         approveBooking,
         rejectBooking,
         completeBooking,
-        cancelBooking,
-        refreshData
+        cancelBooking
     } = useBookings();
 
     // Local state for UI interactions
@@ -88,11 +87,6 @@ const PeminjamanPage = () => {
         console.log('Export bookings');
     };
 
-    const handleViewCalendar = () => {
-        // Implementation for viewing calendar
-        console.log('View calendar');
-    };
-
     // Prepare filters for search component
     const filters = [
         {
@@ -105,52 +99,62 @@ const PeminjamanPage = () => {
     ];
 
     return (
-        <Box>
-            {/* Header Section */}
-            <BookingHeader
-                onRefresh={refreshData}
-                onExport={handleExport}
-                onViewCalendar={handleViewCalendar}
+        <PageWrapper>
+            {/* Page Header */}
+            <PageHeader
+                title="Kelola Peminjaman"
+                subtitle="Manajemen peminjaman ruangan"
+                icon={Calendar}
+                action={
+                    <PrimaryButton
+                        leftIcon={<Download size={18} />}
+                        onClick={handleExport}
+                        size="lg"
+                        variant="outline"
+                    >
+                        Export
+                    </PrimaryButton>
+                }
             />
 
             {/* Search and Filter Section */}
-            <AdminSearchFilter
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onSearch={handleSearch}
-                searchPlaceholder="Cari berdasarkan nama peminjam, gedung, atau kegiatan..."
-                filters={filters}
-                totalItems={totalBookings}
-                currentItems={bookings.length}
-                itemLabel="peminjaman"
-            />
+            <Box mb={6}>
+                <AdminSearchFilter
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    searchPlaceholder="Cari berdasarkan nama peminjam, gedung, atau kegiatan..."
+                    filters={filters}
+                    totalItems={totalBookings}
+                    currentItems={bookings.length}
+                    itemLabel="peminjaman"
+                />
+            </Box>
 
             {/* Content Section */}
-            <GlassCard p={6} mt={6}>
-                <DataStateHandler
-                    loading={loading}
-                    error={error}
-                    data={bookings}
-                    emptyMessage="Belum ada data peminjaman"
-                    emptySearchMessage="Tidak ada peminjaman yang sesuai dengan pencarian"
-                    loadingMessage="Memuat data peminjaman..."
-                    isSearching={Boolean(searchTerm || statusFilter)}
-                    EmptyIcon={Calendar}
-                >
-                    <BookingTable
-                        bookings={bookings}
-                        onView={handleView}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                        onComplete={handleComplete}
-                        onCancel={handleCancel}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalBookings}
-                        onPageChange={handlePageChange}
-                    />
-                </DataStateHandler>
-            </GlassCard>
+            <DataStateHandler
+                loading={loading}
+                error={error}
+                data={bookings}
+                emptyMessage="Belum ada data peminjaman"
+                emptySearchMessage="Tidak ada peminjaman yang sesuai dengan pencarian"
+                loadingMessage="Memuat data peminjaman..."
+                isSearching={Boolean(searchTerm || statusFilter)}
+                EmptyIcon={Calendar}
+            >
+                <BookingTable
+                    bookings={bookings}
+                    onView={handleView}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    onComplete={handleComplete}
+                    onCancel={handleCancel}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalBookings}
+                    onPageChange={handlePageChange}
+                />
+            </DataStateHandler>
 
             {/* Modals would go here */}
             {/* 
@@ -160,7 +164,7 @@ const PeminjamanPage = () => {
                 booking={selectedBooking}
             />
             */}
-        </Box>
+        </PageWrapper>
     );
 };
 

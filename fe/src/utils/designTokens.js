@@ -1,4 +1,3 @@
-// Design tokens for consistent styling across the application
 
 export const COLORS = {
     primary: '#749C73',

@@ -74,7 +74,7 @@ const FacilityDetailModal = ({
                 <ModalBody pb={6}>
                     {facility && (
                         <VStack spacing={6} align="stretch">
-                            <Box p={4} borderRadius="lg" bg={`${COLORS.primary}05`} border={`1px solid ${COLORS.primary}15`}>
+                            <Box p={4} borderRadius="xl" bg={`${COLORS.primary}05`} border={`1px solid ${COLORS.primary}15`}>
                                 <VStack spacing={4}>
                                     <Box
                                         p={6}

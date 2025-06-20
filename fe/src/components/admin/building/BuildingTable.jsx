@@ -104,7 +104,7 @@ const BuildingTable = ({
                                         alt={building.buildingName}
                                         boxSize="60px"
                                         objectFit="cover"
-                                        borderRadius="lg"
+                                        borderRadius="xl"
                                         fallbackSrc="https://via.placeholder.com/60x60?text=No+Image"
                                         border={`1px solid ${COLORS.primary}20`}
                                     />
@@ -160,14 +160,14 @@ const BuildingTable = ({
                                             icon={<MoreVertical size={16} />}
                                             variant="ghost"
                                             size="sm"
-                                            borderRadius="lg"
+                                            borderRadius="full"
                                             _hover={{ bg: `${COLORS.primary}10` }}
                                         />
                                         <MenuList
                                             bg="white"
                                             borderColor={`${COLORS.primary}20`}
                                             boxShadow={SHADOWS.lg}
-                                            borderRadius="lg"
+                                            borderRadius="xl"
                                             overflow="hidden"
                                         >
                                             <MenuItem

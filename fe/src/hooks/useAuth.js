@@ -32,7 +32,7 @@ export const useAuth = () => {
             storeLogin(user, token);
 
             // Determine redirect path based on role
-            const redirectPath = user.role === 'ADMIN' ? '/admin' : '/dashboard';
+            const redirectPath = user.role === 'ADMIN' ? '/admin' : '/';
 
             toast({
                 title: "Login Berhasil",
@@ -112,12 +112,113 @@ export const useAuth = () => {
         navigate('/login');
     };
 
+    // Role checking utilities
+    const hasRole = (requiredRole) => {
+        if (!isAuthenticated || !user) return false;
+        return user.role === requiredRole;
+    };
+
+    const hasAnyRole = (requiredRoles = []) => {
+        if (!isAuthenticated || !user) return false;
+        return requiredRoles.includes(user.role);
+    };
+
+    const isAdmin = () => hasRole('ADMIN');
+    const isBorrower = () => hasRole('BORROWER');
+    const isUser = () => hasRole('BORROWER'); // Legacy alias untuk kompatibilitas
+
+    // Permission checking
+    const canAccess = (resource, action = 'read') => {
+        if (!isAuthenticated || !user) return false;
+
+        const role = user.role;
+
+        // Define permissions based on role
+        const permissions = {
+            'ADMIN': {
+                // Admin can access everything
+                '*': ['*']
+            },
+            'BORROWER': {
+                'profile': ['read', 'update'],
+                'bookings': ['read', 'create', 'update'],
+                'transactions': ['read'],
+                'history': ['read'],
+                'settings': ['read', 'update']
+            }
+        };
+
+        const rolePermissions = permissions[role];
+        if (!rolePermissions) return false;
+
+        // Admin has access to everything
+        if (rolePermissions['*'] && rolePermissions['*'].includes('*')) {
+            return true;
+        }
+
+        // Check specific resource permissions
+        const resourcePermissions = rolePermissions[resource];
+        if (!resourcePermissions) return false;
+
+        return resourcePermissions.includes(action) || resourcePermissions.includes('*');
+    };
+
+    // Redirect to appropriate dashboard based on role
+    const redirectToDashboard = () => {
+        if (!isAuthenticated || !user) {
+            navigate('/login');
+            return;
+        }
+
+        const redirectPath = user.role === 'ADMIN' ? '/admin' : '/dashboard';
+        navigate(redirectPath);
+    };
+
     return {
         login,
         register,
         logout,
         isLoading,
         user,
-        isAuthenticated
+        isAuthenticated,
+        // Role checking utilities
+        hasRole,
+        hasAnyRole,
+        isAdmin,
+        isBorrower,
+        isUser,
+        canAccess,
+        redirectToDashboard
+    };
+};
+
+// Separate hook specifically for role checking (can be used independently)
+export const useRole = () => {
+    const { user, isAuthenticated } = useAuthStore();
+
+    const hasRole = (requiredRole) => {
+        if (!isAuthenticated || !user) return false;
+        return user.role === requiredRole;
+    };
+
+    const hasAnyRole = (requiredRoles = []) => {
+        if (!isAuthenticated || !user) return false;
+        return requiredRoles.includes(user.role);
+    };
+
+    const isAdmin = () => hasRole('ADMIN');
+    const isBorrower = () => hasRole('BORROWER');
+    const isUser = () => hasRole('BORROWER'); // Legacy alias
+
+    const getUserRole = () => user?.role || null;
+
+    return {
+        hasRole,
+        hasAnyRole,
+        isAdmin,
+        isBorrower,
+        isUser,
+        getUserRole,
+        currentRole: user?.role
     };
 }; 

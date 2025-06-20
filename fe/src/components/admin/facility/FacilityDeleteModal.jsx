@@ -89,7 +89,7 @@ const FacilityDeleteModal = ({
                             Apakah Anda yakin ingin menghapus fasilitas ini?
                         </Text>
                         {facility && (
-                            <Box p={4} borderRadius="lg" bg="red.50" border="1px solid red.200" w="full">
+                            <Box p={4} borderRadius="xl" bg="red.50" border="1px solid red.200" w="full">
                                 <HStack spacing={3}>
                                     <Icon
                                         as={getIconComponent(facility.iconUrl)}
@@ -114,7 +114,7 @@ const FacilityDeleteModal = ({
                         variant="outline"
                         mr={3}
                         onClick={onClose}
-                        borderRadius="lg"
+                        borderRadius="full"
                         isDisabled={isLoading}
                     >
                         Batal
@@ -126,7 +126,7 @@ const FacilityDeleteModal = ({
                         isLoading={isLoading}
                         loadingText="Menghapus..."
                         leftIcon={<Trash2 size={16} />}
-                        borderRadius="lg"
+                        borderRadius="full"
                         _hover={{ bg: 'red.600' }}
                     >
                         Hapus

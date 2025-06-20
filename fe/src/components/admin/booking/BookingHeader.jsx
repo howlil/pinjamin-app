@@ -8,15 +8,13 @@ import {
     Flex
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Download, Calendar } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { COLORS, SHADOWS } from '@/utils/designTokens';
 
 const BookingHeader = ({
     title = "Manajemen Peminjaman",
     description = "Kelola persetujuan dan status peminjaman ruangan",
-    onRefresh,
-    onExport,
-    onViewCalendar
+    onExport
 }) => {
     return (
         <Box
@@ -47,44 +45,14 @@ const BookingHeader = ({
                     </Text>
                 </Box>
 
-                <HStack spacing={3}>
-                    <Button
-                        leftIcon={<RefreshCw size={16} />}
-                        variant="outline"
-                        borderColor={`${COLORS.primary}30`}
-                        color={COLORS.primary}
-                        borderRadius="lg"
-                        _hover={{
-                            bg: `${COLORS.primary}10`,
-                            borderColor: COLORS.primary
-                        }}
-                        onClick={onRefresh}
-                    >
-                        Refresh
-                    </Button>
-                    {onViewCalendar && (
-                        <Button
-                            leftIcon={<Calendar size={16} />}
-                            variant="outline"
-                            borderColor={`${COLORS.primary}30`}
-                            color={COLORS.primary}
-                            borderRadius="lg"
-                            _hover={{
-                                bg: `${COLORS.primary}10`,
-                                borderColor: COLORS.primary
-                            }}
-                            onClick={onViewCalendar}
-                        >
-                            Kalender
-                        </Button>
-                    )}
-                    {onExport && (
+                {onExport && (
+                    <HStack spacing={3}>
                         <Button
                             leftIcon={<Download size={16} />}
                             variant="outline"
                             borderColor={`${COLORS.primary}30`}
                             color={COLORS.primary}
-                            borderRadius="lg"
+                            borderRadius="full"
                             _hover={{
                                 bg: `${COLORS.primary}10`,
                                 borderColor: COLORS.primary
@@ -93,8 +61,8 @@ const BookingHeader = ({
                         >
                             Export
                         </Button>
-                    )}
-                </HStack>
+                    </HStack>
+                )}
             </Flex>
         </Box>
     );

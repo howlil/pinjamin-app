@@ -201,6 +201,11 @@ export const buildingApi = {
         return apiService.get(`/api/v1/buildings${queryString ? `?${queryString}` : ''}`);
     },
 
+    // Check building availability
+    checkAvailability: (availabilityData) => {
+        return apiService.post('/api/v1/buildings/check-availability', availabilityData);
+    },
+
     // Get single building by ID
     getBuildingById: (id) => apiService.get(`/api/v1/buildings/${id}`),
 
@@ -219,6 +224,15 @@ export const buildingApi = {
     // Upload building photo
     uploadBuildingPhoto: (buildingId, formData) =>
         apiService.uploadFile(`/api/v1/buildings/${buildingId}/photo`, formData),
+
+    // Get building schedule for calendar
+    getBuildingSchedule: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.month) queryParams.append('month', params.month);
+        if (params.year) queryParams.append('year', params.year);
+        const queryString = queryParams.toString();
+        return apiService.get(`/api/v1/buildings/schedule${queryString ? `?${queryString}` : ''}`);
+    },
 };
 
 // Booking API methods
@@ -271,7 +285,10 @@ export const bookingApi = {
         if (params.format) queryParams.append('format', params.format);
         const queryString = queryParams.toString();
         return apiService.get(`/api/v1/bookings/export${queryString ? `?${queryString}` : ''}`);
-    }
+    },
+
+    // Get today's bookings for hero section
+    getTodayBookings: () => apiService.get('/api/v1/bookings/today'),
 };
 
 // Transaction API methods

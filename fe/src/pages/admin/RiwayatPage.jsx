@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Box } from '@chakra-ui/react';
-import { History } from 'lucide-react';
+import { Box, Flex } from '@chakra-ui/react';
+import { History, Download } from 'lucide-react';
 
-import { GlassCard } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import { useHistory } from '@/hooks/useHistory';
-import { DataStateHandler, AdminSearchFilter } from '@/components/admin/common';
-import { HistoryHeader, HistoryTable } from '@/components/admin/history';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
+import { HistoryTable } from '@/components/admin/history';
 
 // History status options for filter
 const HISTORY_STATUS_OPTIONS = [
@@ -40,8 +40,7 @@ const RiwayatPage = () => {
         handleSearch,
         handleFilterChange,
         handlePageChange,
-        exportHistory,
-        refreshData
+        exportHistory
     } = useHistory();
 
     // Handle actions
@@ -50,11 +49,6 @@ const RiwayatPage = () => {
         if (success) {
             // Could show additional feedback or download file
         }
-    };
-
-    const handleGenerateReport = () => {
-        // Implementation for generating detailed reports
-        console.log('Generate detailed report');
     };
 
     // Prepare filters for search component
@@ -76,48 +70,58 @@ const RiwayatPage = () => {
     ];
 
     return (
-        <Box>
-            {/* Header Section */}
-            <HistoryHeader
-                onRefresh={refreshData}
-                onExport={handleExport}
-                onGenerateReport={handleGenerateReport}
+        <PageWrapper>
+            {/* Page Header */}
+            <PageHeader
+                title="Riwayat Peminjaman"
+                subtitle="Data historis semua peminjaman"
+                icon={History}
+                action={
+                    <PrimaryButton
+                        leftIcon={<Download size={18} />}
+                        onClick={handleExport}
+                        size="lg"
+                        variant="outline"
+                    >
+                        Export
+                    </PrimaryButton>
+                }
             />
 
             {/* Search and Filter Section */}
-            <AdminSearchFilter
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onSearch={handleSearch}
-                searchPlaceholder="Cari berdasarkan nama peminjam, gedung, atau kegiatan..."
-                filters={filters}
-                totalItems={totalItems}
-                currentItems={historyItems.length}
-                itemLabel="riwayat"
-            />
+            <Box mb={6}>
+                <AdminSearchFilter
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    searchPlaceholder="Cari berdasarkan nama peminjam, gedung, atau kegiatan..."
+                    filters={filters}
+                    totalItems={totalItems}
+                    currentItems={historyItems.length}
+                    itemLabel="riwayat"
+                />
+            </Box>
 
             {/* Content Section */}
-            <GlassCard p={6} mt={6}>
-                <DataStateHandler
-                    loading={loading}
-                    error={error}
-                    data={historyItems}
-                    emptyMessage="Belum ada riwayat peminjaman"
-                    emptySearchMessage="Tidak ada riwayat yang sesuai dengan pencarian"
-                    loadingMessage="Memuat data riwayat..."
-                    isSearching={Boolean(searchTerm || statusFilter || dateFilter)}
-                    EmptyIcon={History}
-                >
-                    <HistoryTable
-                        historyItems={historyItems}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItems}
-                        onPageChange={handlePageChange}
-                    />
-                </DataStateHandler>
-            </GlassCard>
-        </Box>
+            <DataStateHandler
+                loading={loading}
+                error={error}
+                data={historyItems}
+                emptyMessage="Belum ada riwayat peminjaman"
+                emptySearchMessage="Tidak ada riwayat yang sesuai dengan pencarian"
+                loadingMessage="Memuat data riwayat..."
+                isSearching={Boolean(searchTerm || statusFilter || dateFilter)}
+                EmptyIcon={History}
+            >
+                <HistoryTable
+                    historyItems={historyItems}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    onPageChange={handlePageChange}
+                />
+            </DataStateHandler>
+        </PageWrapper>
     );
 };
 

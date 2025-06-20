@@ -65,8 +65,10 @@ const RoomCalendar = ({
 
     // Check if date has booking
     const getBookingForDate = (day) => {
+        if (!reservations || !Array.isArray(reservations)) return null;
+
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        return reservations.find(res => res.date === dateStr);
+        return reservations.find(res => res && res.date === dateStr);
     };
 
     // Generate calendar days

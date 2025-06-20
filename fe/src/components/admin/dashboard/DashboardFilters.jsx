@@ -29,7 +29,7 @@ const DashboardFilters = ({
                         borderColor: COLORS.primary,
                         boxShadow: `0 0 0 1px ${COLORS.primary}`
                     }}
-                    borderRadius="lg"
+                    borderRadius="full"
                 >
                     <option value="">Semua Bulan</option>
                     {monthOptions.map(month => (
@@ -49,7 +49,7 @@ const DashboardFilters = ({
                         borderColor: COLORS.primary,
                         boxShadow: `0 0 0 1px ${COLORS.primary}`
                     }}
-                    borderRadius="lg"
+                    borderRadius="full"
                     minW="100px"
                 >
                     {yearOptions.map(year => (

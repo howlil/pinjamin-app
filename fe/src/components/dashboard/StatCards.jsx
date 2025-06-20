@@ -1,139 +1,163 @@
 import React from 'react';
-import { SimpleGrid, Box, Text, HStack, Icon } from '@chakra-ui/react';
-import { Building, Calendar, CreditCard, TrendingUp } from 'lucide-react';
+import {
+    SimpleGrid,
+    Box,
+    Text,
+    Flex,
+    Icon
+} from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { COLORS, SHADOWS, RADII, ANIMATIONS } from '@/utils/designTokens';
+import {
+    Users,
+    Building,
+    Calendar,
+    DollarSign,
+    TrendingUp,
+    Clock
+} from 'lucide-react';
 import { GlassCard } from '@/components/ui';
+import { COLORS } from '@/utils/designTokens';
 
-// Default stat data - would typically come from props or a data hook
-const defaultStats = [
-    {
-        id: 1,
-        label: 'Total Gedung',
-        value: 24,
-        icon: Building,
-        change: '+4% dari bulan lalu',
-        color: 'blue.500',
-        bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))'
-    },
-    {
-        id: 2,
-        label: 'Total Peminjaman',
-        value: 147,
-        icon: Calendar,
-        change: '+12% dari bulan lalu',
-        color: COLORS.primary,
-        bgGradient: `linear-gradient(135deg, ${COLORS.primary}20, ${COLORS.primary}10)`
-    },
-    {
-        id: 3,
-        label: 'Total Transaksi',
-        value: 4,
-        icon: CreditCard,
-        change: '+12% dari bulan lalu',
-        color: 'purple.500',
-        bgGradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.05))'
-    },
-    {
-        id: 4,
-        label: 'Total Pendapatan',
-        value: 'Rp 6.6jt',
-        icon: TrendingUp,
-        change: '+23% dari bulan lalu',
-        color: 'orange.500',
-        bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))'
-    }
-];
-
-const StatCard = ({ stat, index }) => {
+const StatCard = ({ title, value, icon: IconComponent, subtitle, color = COLORS.primary, delay = 0 }) => {
     return (
-        <motion.div
+        <Box
+            as={motion.div}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
+            transition={{ delay, duration: 0.5 }}
         >
-            <GlassCard
-                p={6}
-                h="140px"
-                position="relative"
-                overflow="hidden"
-                _hover={{
-                    transform: 'translateY(-4px)',
-                    boxShadow: SHADOWS.lg,
-                }}
-                transition="all 0.3s ease"
-                cursor="pointer"
-            >
-                {/* Background Gradient */}
-                <Box
-                    position="absolute"
-                    top={0}
-                    right={0}
-                    w="80px"
-                    h="80px"
-                    borderRadius="full"
-                    bg={stat.bgGradient}
-                    opacity={0.6}
-                    transform="translate(20px, -20px)"
-                />
-
-                <Box position="relative" zIndex={2}>
-                    <HStack justify="space-between" align="start" mb={4}>
-                        <Box>
-                            <Text
-                                fontSize="sm"
-                                color={COLORS.gray[600]}
-                                fontWeight="medium"
-                                mb={1}
-                            >
-                                {stat.label}
-                            </Text>
-                            <Text
-                                fontSize="2xl"
-                                fontWeight="bold"
-                                color={COLORS.black}
-                                lineHeight="1.2"
-                            >
-                                {stat.value}
-                            </Text>
-                        </Box>
-
-                        <Box
-                            p={2.5}
-                            borderRadius="lg"
-                            bg={`${stat.color}15`}
-                            border={`1px solid ${stat.color}20`}
+            <GlassCard p={6} hoverEffect={true}>
+                <Flex align="center" justify="space-between">
+                    <Box flex={1}>
+                        <Text
+                            fontSize="sm"
+                            fontWeight="medium"
+                            color={COLORS.gray[600]}
+                            mb={2}
+                            textTransform="uppercase"
+                            letterSpacing="wide"
                         >
-                            <Icon
-                                as={stat.icon}
-                                boxSize={5}
-                                color={stat.color}
-                            />
-                        </Box>
-                    </HStack>
+                            {title}
+                        </Text>
+                        <Text
+                            fontSize="3xl"
+                            fontWeight="bold"
+                            color={COLORS.black}
+                            lineHeight="1"
+                            mb={1}
+                        >
+                            {value}
+                        </Text>
+                        {subtitle && (
+                            <Text
+                                fontSize="xs"
+                                color={COLORS.gray[500]}
+                                fontWeight="medium"
+                            >
+                                {subtitle}
+                            </Text>
+                        )}
+                    </Box>
 
-                    <Text
-                        fontSize="xs"
-                        color={COLORS.primary}
-                        fontWeight="medium"
+                    <Box
+                        w="60px"
+                        h="60px"
+                        borderRadius="full"
+                        bg={`${color}15`}
+                        border={`2px solid ${color}30`}
+                        display="flex"
+                        align="center"
+                        justify="center"
+                        flexShrink={0}
                     >
-                        {stat.change}
-                    </Text>
-                </Box>
+                        <Icon as={IconComponent} boxSize={6} color={color} />
+                    </Box>
+                </Flex>
             </GlassCard>
-        </motion.div>
+        </Box>
     );
 };
 
-const StatCards = ({ stats = defaultStats }) => {
+const StatCards = ({ stats = {} }) => {
+    const {
+        totalUsers = 0,
+        totalBuildings = 0,
+        totalBookings = 0,
+        totalRevenue = 0,
+        monthlyBookings = 0,
+        activeBookings = 0
+    } = stats;
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
+
+    const cardData = [
+        {
+            title: 'Total Pengguna',
+            value: totalUsers.toLocaleString(),
+            icon: Users,
+            color: COLORS.primary,
+            subtitle: 'Pengguna terdaftar'
+        },
+        {
+            title: 'Total Gedung',
+            value: totalBuildings.toLocaleString(),
+            icon: Building,
+            color: '#3182CE',
+            subtitle: 'Gedung tersedia'
+        },
+        {
+            title: 'Total Peminjaman',
+            value: totalBookings.toLocaleString(),
+            icon: Calendar,
+            color: '#38A169',
+            subtitle: 'Semua waktu'
+        },
+        {
+            title: 'Pendapatan',
+            value: formatCurrency(totalRevenue),
+            icon: DollarSign,
+            color: '#D69E2E',
+            subtitle: 'Total pendapatan'
+        },
+        {
+            title: 'Bulan Ini',
+            value: monthlyBookings.toLocaleString(),
+            icon: TrendingUp,
+            color: '#9F7AEA',
+            subtitle: 'Peminjaman bulan ini'
+        },
+        {
+            title: 'Sedang Berlangsung',
+            value: activeBookings.toLocaleString(),
+            icon: Clock,
+            color: '#F56565',
+            subtitle: 'Peminjaman aktif'
+        }
+    ];
+
     return (
         <SimpleGrid
-            columns={{ base: 1, md: 2, lg: 4 }}
-            spacing={6}
-            mb={8}
+            columns={{ base: 1, sm: 2, lg: 3, xl: 6 }}
+            spacing={4}
+            w="full"
         >
-            {stats.map((stat, index) => (
-                <StatCard key={stat.id} stat={stat} index={index} />
+            {cardData.map((card, index) => (
+                <StatCard
+                    key={card.title}
+                    title={card.title}
+                    value={card.value}
+                    icon={card.icon}
+                    color={card.color}
+                    subtitle={card.subtitle}
+                    delay={index * 0.1}
+                />
             ))}
         </SimpleGrid>
     );

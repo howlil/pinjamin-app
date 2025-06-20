@@ -116,7 +116,7 @@ const FacilityTable = ({
                                         <Flex align="center" justify="center">
                                             <Box
                                                 p={3}
-                                                borderRadius="lg"
+                                                borderRadius="xl"
                                                 bg={`${COLORS.primary}15`}
                                                 border={`1px solid ${COLORS.primary}30`}
                                                 display="flex"
@@ -157,14 +157,14 @@ const FacilityTable = ({
                                                 icon={<MoreVertical size={16} />}
                                                 variant="ghost"
                                                 size="sm"
-                                                borderRadius="lg"
+                                                borderRadius="full"
                                                 _hover={{ bg: `${COLORS.primary}10` }}
                                             />
                                             <MenuList
                                                 bg="white"
                                                 borderColor={`${COLORS.primary}20`}
                                                 boxShadow={SHADOWS.lg}
-                                                borderRadius="lg"
+                                                borderRadius="xl"
                                                 overflow="hidden"
                                             >
                                                 <MenuItem
@@ -208,7 +208,7 @@ const FacilityTable = ({
                             variant="outline"
                             onClick={() => onPageChange(currentPage - 1)}
                             isDisabled={currentPage === 1}
-                            borderRadius="lg"
+                            borderRadius="full"
                             borderColor={`${COLORS.primary}30`}
                             _hover={{
                                 bg: `${COLORS.primary}10`,
@@ -227,7 +227,7 @@ const FacilityTable = ({
                                 color={currentPage === i + 1 ? "white" : COLORS.primary}
                                 borderColor={`${COLORS.primary}30`}
                                 onClick={() => onPageChange(i + 1)}
-                                borderRadius="lg"
+                                borderRadius="full"
                                 _hover={{
                                     bg: currentPage === i + 1 ? COLORS.primaryDark : `${COLORS.primary}10`,
                                     borderColor: COLORS.primary
@@ -242,7 +242,7 @@ const FacilityTable = ({
                             variant="outline"
                             onClick={() => onPageChange(currentPage + 1)}
                             isDisabled={currentPage === totalPages}
-                            borderRadius="lg"
+                            borderRadius="full"
                             borderColor={`${COLORS.primary}30`}
                             _hover={{
                                 bg: `${COLORS.primary}10`,

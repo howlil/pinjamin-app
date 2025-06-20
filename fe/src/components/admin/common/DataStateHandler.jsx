@@ -8,11 +8,11 @@ import {
     AlertIcon,
     AlertTitle,
     AlertDescription,
-    Box,
-    Button
+    Box
 } from '@chakra-ui/react';
 import { Plus } from 'lucide-react';
 import { COLORS } from '@/utils/designTokens';
+import { PrimaryButton } from '@/components/ui';
 
 const DataStateHandler = ({
     loading,
@@ -71,15 +71,12 @@ const DataStateHandler = ({
                         {isSearching ? emptySearchMessage : emptyMessage}
                     </Text>
                     {!isSearching && onAddNew && (
-                        <Button
+                        <PrimaryButton
                             leftIcon={<Plus size={16} />}
-                            bg={COLORS.primary}
-                            color="white"
                             onClick={onAddNew}
-                            borderRadius="lg"
                         >
                             {addNewLabel}
-                        </Button>
+                        </PrimaryButton>
                     )}
                 </VStack>
             </Center>

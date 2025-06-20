@@ -141,7 +141,7 @@ const FacilityFormModal = ({
                                     borderColor: COLORS.primary,
                                     boxShadow: `0 0 0 1px ${COLORS.primary}`
                                 }}
-                                borderRadius="lg"
+                                borderRadius="full"
                             />
                         </FormControl>
 
@@ -156,7 +156,7 @@ const FacilityFormModal = ({
                                     borderColor: COLORS.primary,
                                     boxShadow: `0 0 0 1px ${COLORS.primary}`
                                 }}
-                                borderRadius="lg"
+                                borderRadius="full"
                             >
                                 {AVAILABLE_ICONS.map((iconOption) => (
                                     <option key={iconOption.value} value={iconOption.value}>
@@ -170,10 +170,10 @@ const FacilityFormModal = ({
                         {formData.iconUrl && (
                             <Box>
                                 <FormLabel color={COLORS.black}>Preview Ikon</FormLabel>
-                                <Flex align="center" justify="center" p={4} bg={`${COLORS.primary}05`} borderRadius="lg">
+                                <Flex align="center" justify="center" p={4} bg={`${COLORS.primary}05`} borderRadius="xl">
                                     <Box
                                         p={4}
-                                        borderRadius="lg"
+                                        borderRadius="xl"
                                         bg={`${COLORS.primary}15`}
                                         border={`1px solid ${COLORS.primary}30`}
                                     >
@@ -193,7 +193,7 @@ const FacilityFormModal = ({
                         variant="outline"
                         mr={3}
                         onClick={onClose}
-                        borderRadius="lg"
+                        borderRadius="full"
                         isDisabled={isLoading}
                     >
                         Batal
@@ -204,7 +204,7 @@ const FacilityFormModal = ({
                         onClick={handleSubmit}
                         isLoading={isLoading}
                         loadingText={isEditing ? "Memperbarui..." : "Menambahkan..."}
-                        borderRadius="lg"
+                        borderRadius="full"
                         _hover={{ bg: COLORS.primaryDark }}
                     >
                         {isEditing ? 'Perbarui' : 'Tambah'}

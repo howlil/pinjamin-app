@@ -21,7 +21,7 @@ export const useRoomDetail = () => {
             setError(null);
 
             const response = await buildingApi.getBuildingById(roomId);
-            
+
             if (response.status === 'success') {
                 setBuildingData(response.data);
             } else {
@@ -31,7 +31,7 @@ export const useRoomDetail = () => {
             console.error('Error fetching building details:', err);
             const errorMessage = err.message || 'Gagal memuat detail gedung';
             setError(errorMessage);
-            
+
             toast({
                 title: 'Error',
                 description: errorMessage,
@@ -117,38 +117,56 @@ export const useRoomDetail = () => {
     // Transform booking schedule for calendar
     const getCalendarReservations = () => {
         if (!buildingData?.bookingSchedule) return [];
-        
+
         return buildingData.bookingSchedule.map(booking => {
+            // Add null checks for date strings
+            if (!booking.startDate || !booking.endDate) {
+                console.warn('Booking with missing dates:', booking);
+                return [];
+            }
+
             const [startDay, startMonth, startYear] = booking.startDate.split('-');
             const [endDay, endMonth, endYear] = booking.endDate.split('-');
-            
+
+            // Validate date parts
+            if (!startDay || !startMonth || !startYear || !endDay || !endMonth || !endYear) {
+                console.warn('Invalid date format in booking:', booking);
+                return [];
+            }
+
             const startDate = new Date(`${startYear}-${startMonth}-${startDay}`);
             const endDate = new Date(`${endYear}-${endMonth}-${endDay}`);
-            
+
+            // Validate date objects
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                console.warn('Invalid dates in booking:', booking);
+                return [];
+            }
+
             // Generate all dates between start and end
             const dates = [];
             const currentDate = new Date(startDate);
-            
+
             while (currentDate <= endDate) {
                 dates.push({
                     date: currentDate.toISOString().split('T')[0],
-                    status: booking.status.toLowerCase(),
+                    status: booking.status ? booking.status.toLowerCase() : 'unknown',
                     booking: booking
                 });
                 currentDate.setDate(currentDate.getDate() + 1);
             }
-            
+
             return dates;
-        }).flat();
+        }).flat().filter(item => Array.isArray(item) ? item.length > 0 : item); // Filter out empty arrays
     };
 
     // Check if room is available for booking
     const isRoomAvailable = (selectedDate) => {
         const reservations = getCalendarReservations();
         const selectedDateStr = selectedDate.toISOString().split('T')[0];
-        
-        return !reservations.some(reservation => 
-            reservation.date === selectedDateStr && 
+
+        return !reservations.some(reservation =>
+            reservation.date === selectedDateStr &&
             reservation.status === 'approved'
         );
     };
@@ -175,7 +193,7 @@ export const useRoomDetail = () => {
         getCalendarReservations,
         isRoomAvailable,
         refetch: fetchBuildingDetail,
-        
+
         // Legacy props for backward compatibility
         roomData: buildingData ? {
             id: buildingData.id,
@@ -191,6 +209,13 @@ export const useRoomDetail = () => {
             location: buildingData.location,
             buildingType: buildingData.buildingType
         } : null,
-        reservations: getCalendarReservations()
+        reservations: (() => {
+            try {
+                return loading || !buildingData ? [] : getCalendarReservations();
+            } catch (error) {
+                console.error('Error getting calendar reservations:', error);
+                return [];
+            }
+        })()
     };
 }; 

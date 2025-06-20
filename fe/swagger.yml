@@ -1,0 +1,3594 @@
+openapi: 3.0.0
+info:
+  title: Building Rental API
+  version: 1.0.0
+  description: RESTful API for Building Rental Management System
+  contact:
+    name: API Support
+    email: support@buildingrental.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: General
+    description: General API information and health checks
+  - name: Authentication
+    description: User authentication and profile management
+  - name: Buildings
+    description: Building management and information
+  - name: Admin - Buildings
+    description: Admin building management operations (requires admin authentication)
+  - name: Bookings
+    description: Booking management operations
+  - name: Dashboard
+    description: Dashboard statistics operations (requires admin authentication)
+  - name: Admin - Bookings
+    description: Admin booking management operations (requires admin authentication)
+  - name: Admin - Transactions
+    description: Admin transaction management operations (requires admin authentication)
+  - name: Transactions
+    description: User transaction operations
+  - name: Notifications
+    description: User notification operations
+  - name: Facilities
+    description: Facility management operations
+  - name: BuildingManagers
+    description: Building manager management operations
+
+paths:
+  /api/v1:
+    get:
+      summary: Get API information
+      tags: [General]
+      responses:
+        '200':
+          description: API information retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: "Building Rental API"
+                          version:
+                            type: string
+                            example: "1.0.0"
+                          description:
+                            type: string
+                            example: "RESTful API for Building Rental Management System"
+                          timestamp:
+                            type: string
+                            format: date-time
+
+  # Test endpoints for API Testing
+  /api/v1/test:
+    get:
+      summary: Test endpoint to verify API is working
+      tags: [General]
+      responses:
+        '200':
+          description: API is working properly
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "API is working properly"
+                          timestamp:
+                            type: string
+                            format: date-time
+                            example: "2023-06-25T10:00:00Z"
+    
+  /api/v1/test/secured:
+    get:
+      summary: Test endpoint to verify authentication is working
+      tags: [General]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authentication is working properly
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "Authentication is working properly"
+                          user:
+                            $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+  /api/v1/test/admin:
+    get:
+      summary: Test endpoint to verify admin authorization is working
+      tags: [General]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Admin authorization is working properly
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "Admin authorization is working properly"
+                          user:
+                            $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                          token:
+                            type: string
+                            description: JWT authentication token
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      summary: Login user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                          token:
+                            type: string
+                            description: JWT authentication token
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/profile:
+    get:
+      summary: Get user profile
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Update user profile
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: "John Doe Updated"
+                email:
+                  type: string
+                  format: email
+                  example: "john.updated@example.com"
+                phoneNumber:
+                  type: string
+                  pattern: '^[0-9+\-\s()]+$'
+                  minLength: 10
+                  maxLength: 20
+                  example: "+62812345679"
+                borrowerType:
+                  type: string
+                  enum: ['INTERNAL_UNAND', 'EXTERNAL_UNAND']
+                bankName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  example: "Bank Mandiri"
+                bankNumber:
+                  type: string
+                  pattern: '^[0-9]+$'
+                  minLength: 8
+                  maxLength: 20
+                  example: "0987654321"
+              minProperties: 1
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/logout:
+    post:
+      summary: Logout user
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/change-password:
+    post:
+      summary: Change user password
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Validation error or incorrect current password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Request password reset
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Password reset token generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          resetToken:
+                            type: string
+                            description: Password reset token (for testing purposes)
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/reset-password:
+    post:
+      summary: Reset password using token
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Validation error or invalid/expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings:
+    get:
+      summary: Get all buildings with optional filters
+      tags: [Buildings]
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: Search buildings by name or description
+          example: "Conference Room"
+        - in: query
+          name: buildingType
+          schema:
+            type: string
+            enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+          description: Filter by building type
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of buildings per page
+      responses:
+        '200':
+          description: Buildings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          buildings:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Building'
+                          pagination:
+                            type: object
+                            properties:
+                              page:
+                                type: integer
+                              limit:
+                                type: integer
+                              total:
+                                type: integer
+                              totalPages:
+                                type: integer
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings/{id}:
+    get:
+      summary: Get building by ID
+      tags: [Buildings]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Building ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Building retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Building'
+        '400':
+          description: Invalid building ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings/check-availability:
+    post:
+      summary: Check building availability for a specific date and time
+      tags: [Buildings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckAvailabilityRequest'
+      responses:
+        '200':
+          description: Availability check completed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          availableBuildings:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Building'
+                          requestedDateTime:
+                            type: object
+                            properties:
+                              date:
+                                type: string
+                                example: "15-12-2024"
+                              time:
+                                type: string
+                                example: "10:00"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings/schedule:
+    get:
+      summary: Get monthly booking schedule for all buildings
+      tags: [Buildings]
+      description: Retrieve booking history and schedule for all buildings in a specific month. Shows historical booking data for the current month by default.
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month (1-12). Defaults to current month.
+          example: 12
+        - in: query
+          name: year
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2030
+          description: Year. Defaults to current year.
+          example: 2024
+      responses:
+        '200':
+          description: Buildings schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          month:
+                            type: integer
+                            description: Target month
+                            example: 12
+                          year:
+                            type: integer
+                            description: Target year
+                            example: 2024
+                          totalBookings:
+                            type: integer
+                            description: Total number of bookings in the period
+                            example: 15
+                          schedule:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                  description: Booking ID
+                                startDate:
+                                  type: string
+                                  description: Start date in DD-MM-YYYY format
+                                  example: "15-12-2024"
+                                endDate:
+                                  type: string
+                                  description: End date in DD-MM-YYYY format
+                                  example: "16-12-2024"
+                                activityName:
+                                  type: string
+                                  description: Name of the activity
+                                  example: "Annual Meeting"
+                                startTime:
+                                  type: string
+                                  description: Start time in HH:MM format
+                                  example: "09:00"
+                                endTime:
+                                  type: string
+                                  description: End time in HH:MM format
+                                  example: "17:00"
+                                status:
+                                  type: string
+                                  enum: ['APPROVED', 'PROCESSING', 'COMPLETED']
+                                  description: Booking status
+                                borrowerDetail:
+                                  type: object
+                                  properties:
+                                    borrowerName:
+                                      type: string
+                                      description: Name of the person who made the booking
+                                      example: "John Doe"
+                                buildingDetail:
+                                  type: object
+                                  properties:
+                                    buildingId:
+                                      type: string
+                                      format: uuid
+                                      description: Building ID
+                                    buildingName:
+                                      type: string
+                                      description: Name of the building
+                                      example: "Conference Room A"
+                                    buildingPhoto:
+                                      type: string
+                                      description: URL of building photo
+                                      example: "https://example.com/photo.jpg"
+                                    location:
+                                      type: string
+                                      description: Building location
+                                      example: "Floor 2, Building A"
+                                    buildingType:
+                                      type: string
+                                      enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+                                      description: Type of building
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings/admin:
+    get:
+      summary: Get all buildings (Admin view with additional details)
+      tags: [Admin - Buildings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: Search buildings by name or description
+          example: "Conference Room"
+        - in: query
+          name: buildingType
+          schema:
+            type: string
+            enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+          description: Filter by building type
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of buildings per page
+      responses:
+        '200':
+          description: Buildings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          buildings:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Building'
+                          pagination:
+                            type: object
+                            properties:
+                              page:
+                                type: integer
+                              limit:
+                                type: integer
+                              total:
+                                type: integer
+                              totalPages:
+                                type: integer
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create a new building
+      tags: [Admin - Buildings]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: ['buildingName', 'description', 'rentalPrice', 'capacity', 'location', 'buildingType']
+              properties:
+                buildingName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: "Conference Room A"
+                description:
+                  type: string
+                  minLength: 10
+                  maxLength: 500
+                  example: "Modern conference room with projector and air conditioning"
+                rentalPrice:
+                  type: number
+                  minimum: 0
+                  example: 500000
+                capacity:
+                  type: integer
+                  minimum: 1
+                  example: 50
+                location:
+                  type: string
+                  minLength: 5
+                  maxLength: 200
+                  example: "Floor 2, Building A"
+                buildingType:
+                  type: string
+                  enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+                image:
+                  type: string
+                  format: binary
+                  description: Building image file (jpg, jpeg, png, gif)
+                facilities:
+                  type: string
+                  description: JSON string of facilities array
+                  example: '[{"facilityName":"Projector","iconUrl":"https://example.com/icon.png"}]'
+                buildingManagers:
+                  type: string
+                  description: JSON string of building managers array
+                  example: '[{"managerName":"Jane Smith","phoneNumber":"+62812345679"}]'
+      responses:
+        '201':
+          description: Building created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Building'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings/admin/{id}:
+    patch:
+      summary: Update a building
+      tags: [Admin - Buildings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Building ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                buildingName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: "Updated Conference Room A"
+                description:
+                  type: string
+                  minLength: 10
+                  maxLength: 500
+                  example: "Updated modern conference room with projector and air conditioning"
+                rentalPrice:
+                  type: number
+                  minimum: 0
+                  example: 600000
+                capacity:
+                  type: integer
+                  minimum: 1
+                  example: 60
+                location:
+                  type: string
+                  minLength: 5
+                  maxLength: 200
+                  example: "Floor 3, Building A"
+                buildingType:
+                  type: string
+                  enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+                image:
+                  type: string
+                  format: binary
+                  description: Building image file (jpg, jpeg, png, gif)
+                facilities:
+                  type: string
+                  description: JSON string of facilities array
+                  example: '[{"id":"uuid","facilityName":"Projector","iconUrl":"https://example.com/icon.png"}]'
+                buildingManagers:
+                  type: string
+                  description: JSON string of building managers array
+                  example: '[{"id":"uuid","managerName":"Jane Smith","phoneNumber":"+62812345679"}]'
+      responses:
+        '200':
+          description: Building updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Building'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a building
+      tags: [Admin - Buildings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Building ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Building deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Invalid building ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/today:
+    get:
+      summary: Get today's bookings (public)
+      tags: [Bookings]
+      responses:
+        '200':
+          description: Today's bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            bookingId:
+                              type: string
+                              format: uuid
+                            buildingName:
+                              type: string
+                            activityName:
+                              type: string
+                            startTime:
+                              type: string
+                            endTime:
+                              type: string
+                            borrowerName:
+                              type: string
+
+  /api/v1/bookings:
+    post:
+      summary: Create a new booking
+      tags: [Bookings]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: ['buildingId', 'activityName', 'startDate', 'startTime', 'endTime', 'proposalLetter']
+              properties:
+                buildingId:
+                  type: string
+                  format: uuid
+                  description: Building ID to book
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                activityName:
+                  type: string
+                  minLength: 3
+                  maxLength: 200
+                  description: Name of the activity
+                  example: "Annual Company Meeting"
+                startDate:
+                  type: string
+                  pattern: '^\d{2}-\d{2}-\d{4}$'
+                  description: Start date in DD-MM-YYYY format
+                  example: "25-12-2024"
+                endDate:
+                  type: string
+                  pattern: '^\d{2}-\d{2}-\d{4}$'
+                  description: End date in DD-MM-YYYY format (optional)
+                  example: "26-12-2024"
+                startTime:
+                  type: string
+                  pattern: '^\d{2}:\d{2}$'
+                  description: Start time in HH:MM format
+                  example: "09:00"
+                endTime:
+                  type: string
+                  pattern: '^\d{2}:\d{2}$'
+                  description: End time in HH:MM format
+                  example: "17:00"
+                proposalLetter:
+                  type: string
+                  format: binary
+                  description: Proposal letter in PDF format
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          bookingId:
+                            type: string
+                            format: uuid
+                            description: Unique identifier for the booking
+                          buildingName:
+                            type: string
+                            description: Name of the booked building
+                          startDate:
+                            type: string
+                            description: Start date in DD-MM-YYYY format
+                          endDate:
+                            type: string
+                            description: End date in DD-MM-YYYY format
+                          startTime:
+                            type: string
+                            description: Start time in HH:MM format
+                          endTime:
+                            type: string
+                            description: End time in HH:MM format
+                          status:
+                            type: string
+                            enum: ['PROCESSING']
+                            description: Booking status
+                          payment:
+                            type: object
+                            properties:
+                              paymentUrl:
+                                type: string
+                                description: Xendit payment URL
+                                example: "https://checkout.xendit.co/web/..."
+        '400':
+          description: Validation error or building not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin users cannot create bookings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/history:
+    get:
+      summary: Get booking history for authenticated user
+      tags: [Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: ['PROCESSING', 'APPROVED', 'REJECTED', 'COMPLETED']
+          description: Filter by booking status
+          example: 'APPROVED'
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Booking history retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            bookingId:
+                              type: string
+                              format: uuid
+                              description: Unique identifier for the booking
+                            buildingName:
+                              type: string
+                              description: Name of the booked building
+                            activityName:
+                              type: string
+                              description: Name of the activity
+                            startDate:
+                              type: string
+                              description: Start date in DD-MM-YYYY format
+                              example: "25-12-2024"
+                            endDate:
+                              type: string
+                              description: End date in DD-MM-YYYY format
+                              example: "26-12-2024"
+                            startTime:
+                              type: string
+                              description: Start time in HH:MM format
+                              example: "09:00"
+                            endTime:
+                              type: string
+                              description: End time in HH:MM format
+                              example: "17:00"
+                            status:
+                              type: string
+                              enum: ['APPROVED', 'PROCESSING', 'REJECTED', 'COMPLETED']
+                              description: Current booking status
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of bookings
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                            example: 1
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+                            example: 10
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{id}/payment:
+    post:
+      summary: Process payment for a booking
+      tags: [Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Booking ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          paymentUrl:
+                            type: string
+                            description: Xendit payment URL
+                            example: "https://checkout.xendit.co/web/..."
+        '400':
+          description: Invalid booking ID or booking not eligible for payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{id}/invoice:
+    get:
+      summary: Generate invoice for a booking
+      tags: [Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Booking ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Invoice generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          invoiceUrl:
+                            type: string
+                            description: URL to download invoice
+                            example: "/uploads/exports/invoice_123e4567.pdf"
+        '400':
+          description: Invalid booking ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/dashboard/statistics/bookings:
+    get:
+      summary: Get booking statistics for dashboard
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month (1-12)
+          example: 12
+        - in: query
+          name: year
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+          description: Year
+          example: 2024
+      responses:
+        '200':
+          description: Booking statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            buildingName:
+                              type: string
+                              description: Name of the building
+                              example: "Conference Room A"
+                            totalBookings:
+                              type: integer
+                              description: Total number of bookings for this building
+                              example: 15
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/dashboard/statistics/transactions:
+    get:
+      summary: Get transaction statistics for dashboard
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month (1-12)
+          example: 12
+        - in: query
+          name: year
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+          description: Year
+          example: 2024
+      responses:
+        '200':
+          description: Transaction statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              description: Month in MM-YYYY format
+                              example: "12-2024"
+                            totalTransactions:
+                              type: integer
+                              description: Total number of transactions
+                              example: 25
+                            totalRevenue:
+                              type: integer
+                              description: Total revenue amount
+                              example: 12500000
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/admin:
+    get:
+      summary: Get pending bookings (Admin) - Only shows PROCESSING status bookings
+      tags: [Admin - Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Pending bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            bookingId:
+                              type: string
+                              format: uuid
+                              description: Unique identifier for the booking
+                            buildingName:
+                              type: string
+                              description: Name of the booked building
+                            activityName:
+                              type: string
+                              description: Name of the activity
+                            startDate:
+                              type: string
+                              description: Start date in DD-MM-YYYY format
+                              example: "25-12-2024"
+                            endDate:
+                              type: string
+                              description: End date in DD-MM-YYYY format
+                              example: "26-12-2024"
+                            startTime:
+                              type: string
+                              description: Start time in HH:MM format
+                              example: "09:00"
+                            endTime:
+                              type: string
+                              description: End time in HH:MM format
+                              example: "17:00"
+                            status:
+                              type: string
+                              enum: ['PROCESSING']
+                              description: Current booking status (always PROCESSING for this endpoint)
+                            borrowerName:
+                              type: string
+                              description: Name of the borrower
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of bookings
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                            example: 1
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+                            example: 10
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{id}/approval:
+    patch:
+      summary: Approve or reject a booking (Admin)
+      tags: [Admin - Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Booking ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ['bookingStatus']
+              properties:
+                bookingStatus:
+                  type: string
+                  enum: ['APPROVED', 'REJECTED']
+                  description: New booking status
+                  example: 'APPROVED'
+                rejectionReason:
+                  type: string
+                  description: Reason for rejection (required if status is REJECTED)
+                  example: 'Building maintenance scheduled'
+      responses:
+        '200':
+          description: Booking status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          bookingId:
+                            type: string
+                            format: uuid
+                            description: Unique identifier for the booking
+                          buildingName:
+                            type: string
+                            description: Name of the booked building
+                          startDate:
+                            type: string
+                            description: Start date in DD-MM-YYYY format
+                          endDate:
+                            type: string
+                            description: End date in DD-MM-YYYY format
+                          startTime:
+                            type: string
+                            description: Start time in HH:MM format
+                          endTime:
+                            type: string
+                            description: End time in HH:MM format
+                          status:
+                            type: string
+                            description: Updated booking status
+        '400':
+          description: Invalid request data or booking status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/transactions/admin:
+    get:
+      summary: Get all transactions (Admin)
+      tags: [Admin - Transactions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            transactionId:
+                              type: string
+                              format: uuid
+                              description: Unique identifier for the transaction
+                            buildingName:
+                              type: string
+                              description: Name of the building
+                            paymentDate:
+                              type: string
+                              description: Payment date in DD-MM-YYYY format
+                            totalAmount:
+                              type: number
+                              description: Total payment amount
+                            paymentStatus:
+                              type: string
+                              description: Payment status
+                            paymentMethod:
+                              type: string
+                              description: Payment method used
+                            invoiceNumber:
+                              type: string
+                              description: Invoice number
+                            borrowerName:
+                              type: string
+                              description: Name of the borrower
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of transactions
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/transactions/admin/export:
+    get:
+      summary: Export transactions to Excel (Admin)
+      tags: [Admin - Transactions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Month (1-12)
+          example: 12
+        - in: query
+          name: year
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+          description: Year
+          example: 2024
+      responses:
+        '200':
+          description: Transactions exported successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          fileUrl:
+                            type: string
+                            description: URL to download Excel file
+                            example: "/uploads/exports/transactions_12_2024.xlsx"
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/admin/history:
+    get:
+      summary: Get booking history with filters (Admin)
+      tags: [Admin - Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: buildingId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by building ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Filter by start date (DD-MM-YYYY)
+          example: "01-12-2024"
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Filter by end date (DD-MM-YYYY)
+          example: "31-12-2024"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Booking history retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            bookingId:
+                              type: string
+                              format: uuid
+                              description: Unique identifier for the booking
+                            buildingName:
+                              type: string
+                              description: Name of the booked building
+                            activityName:
+                              type: string
+                              description: Name of the activity
+                            startDate:
+                              type: string
+                              description: Start date in DD-MM-YYYY format
+                            endDate:
+                              type: string
+                              description: End date in DD-MM-YYYY format
+                            startTime:
+                              type: string
+                              description: Start time in HH:MM format
+                            endTime:
+                              type: string
+                              description: End time in HH:MM format
+                            status:
+                              type: string
+                              description: Current booking status
+                            borrowerName:
+                              type: string
+                              description: Name of the borrower
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of bookings
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/transactions/callback/xendit:
+    post:
+      summary: Xendit payment callback webhook
+      tags: [Transactions]
+      description: Endpoint for Xendit to send payment notifications. This endpoint is called by Xendit when a payment status changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Xendit transaction ID
+                  example: "5f9a3d5701f09e00173a4519"
+                external_id:
+                  type: string
+                  description: Booking ID (passed to Xendit during payment creation)
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                status:
+                  type: string
+                  description: Payment status
+                  example: "PAID"
+                payment_method:
+                  type: string
+                  description: Payment method used
+                  example: "CREDIT_CARD"
+                paid_amount:
+                  type: number
+                  description: Amount paid
+                  example: 500000
+                paid_at:
+                  type: string
+                  format: date-time
+                  description: Payment timestamp
+                  example: "2023-06-25T10:00:00Z"
+      responses:
+        '200':
+          description: Callback processed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          received:
+                            type: boolean
+                            example: true
+        '400':
+          description: Invalid callback data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/transactions/callback/refund:
+    post:
+      summary: Xendit refund callback webhook
+      tags: [Transactions]
+      description: Endpoint for Xendit to send refund status notifications. This endpoint is called by Xendit when a refund status changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Xendit refund transaction ID
+                  example: "xrd_f9a0fb4a-db69-4f8b-88f8-a921dbcc1138"
+                status:
+                  type: string
+                  description: Refund status
+                  enum: ['SUCCEEDED', 'FAILED', 'PENDING']
+                  example: "SUCCEEDED"
+                reference_id:
+                  type: string
+                  format: uuid
+                  description: Refund ID in our system
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                amount:
+                  type: number
+                  description: Refund amount
+                  example: 500000
+                created:
+                  type: string
+                  format: date-time
+                  description: Refund creation timestamp
+                  example: "2023-06-26T10:00:00Z"
+                payment_id:
+                  type: string
+                  description: Xendit payment ID that was refunded
+                  example: "5f9a3d5701f09e00173a4519"
+      responses:
+        '200':
+          description: Refund callback processed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          received:
+                            type: boolean
+                            example: true
+        '400':
+          description: Invalid callback data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Refund record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/facilities:
+    get:
+      summary: Get all facilities
+      tags: [Facilities]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Facilities retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Facility'
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of facilities
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new facility
+      tags: [Facilities]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ['facilityName']
+              properties:
+                facilityName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  example: "Projector"
+                iconUrl:
+                  type: string
+                  format: uri
+                  description: URL of the facility icon
+                  example: "https://example.com/icons/projector.png"
+      responses:
+        '201':
+          description: Facility created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Facility'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/facilities/{id}:
+    patch:
+      summary: Update facility
+      tags: [Facilities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Facility ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                facilityName:
+                  type: string
+                  minLength: 2
+                  maxLength: 50
+                  example: "Updated Projector"
+                iconUrl:
+                  type: string
+                  format: uri
+                  description: URL of the facility icon
+                  example: "https://example.com/icons/updated-projector.png"
+      responses:
+        '200':
+          description: Facility updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Facility'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Facility not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      summary: Delete facility
+      tags: [Facilities]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Facility ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Facility deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: ID of the deleted facility
+        '400':
+          description: Validation error or facility is in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Facility not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Building Manager endpoints
+  /api/v1/building-managers:
+    get:
+      summary: Get all building managers
+      tags: [BuildingManagers]
+      parameters:
+        - in: query
+          name: buildingId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by building ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Building managers retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BuildingManager'
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of building managers
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new building manager
+      tags: [BuildingManagers]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ['managerName', 'phoneNumber']
+              properties:
+                managerName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: "John Manager"
+                phoneNumber:
+                  type: string
+                  minLength: 10
+                  maxLength: 20
+                  example: "+62812345678"
+                buildingId:
+                  type: string
+                  format: uuid
+                  description: Optional building ID to assign manager to
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '201':
+          description: Building manager created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BuildingManager'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/building-managers/available:
+    get:
+      summary: Get available building managers (not assigned to any building)
+      tags: [BuildingManagers]
+      responses:
+        '200':
+          description: Available building managers retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BuildingManager'
+
+  /api/v1/building-managers/assign:
+    post:
+      summary: Assign a building manager to a building
+      tags: [BuildingManagers]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ['managerId', 'buildingId']
+              properties:
+                managerId:
+                  type: string
+                  format: uuid
+                  description: Building manager ID
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                buildingId:
+                  type: string
+                  format: uuid
+                  description: Building ID
+                  example: "456e7890-e89b-12d3-a456-426614174001"
+      responses:
+        '200':
+          description: Building manager assigned successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BuildingManager'
+        '400':
+          description: Validation error or manager already assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Manager or building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/building-managers/{id}:
+    patch:
+      summary: Update building manager (can also unassign by setting buildingId to null)
+      tags: [BuildingManagers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Building Manager ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                managerName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: "John Updated Manager"
+                phoneNumber:
+                  type: string
+                  minLength: 10
+                  maxLength: 20
+                  example: "+62812345679"
+                buildingId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: Building ID to assign manager to, or null to unassign
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Building manager updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BuildingManager'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building manager or building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      summary: Delete building manager
+      tags: [BuildingManagers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Building Manager ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Building manager deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: ID of the deleted building manager
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Building manager not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/notifications:
+    get:
+      summary: Get user notifications
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of notifications
+                            example: 25
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                            example: 3
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                            example: 1
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+                            example: 10
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/notifications/unread-count:
+    get:
+      summary: Get unread notification count
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread notification count retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          unreadCount:
+                            type: integer
+                            description: Number of unread notifications
+                            example: 5
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/notifications/{notificationId}/read:
+    patch:
+      summary: Mark a notification as read
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Notification ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+                            example: true
+        '400':
+          description: Invalid notification ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+  /api/v1/transactions/history:
+    get:
+      summary: Get user transaction history
+      tags: [Transactions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+          example: 10
+      responses:
+        '200':
+          description: Transaction history retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            transactionId:
+                              type: string
+                              format: uuid
+                              description: Unique identifier for the transaction
+                            buildingName:
+                              type: string
+                              description: Name of the building
+                            paymentDate:
+                              type: string
+                              description: Payment date in DD-MM-YYYY format
+                            totalAmount:
+                              type: number
+                              description: Total payment amount
+                            paymentStatus:
+                              type: string
+                              description: Payment status
+                            paymentMethod:
+                              type: string
+                              description: Payment method used
+                      pagination:
+                        type: object
+                        properties:
+                          totalItems:
+                            type: integer
+                            description: Total number of transactions
+                            example: 25
+                          totalPages:
+                            type: integer
+                            description: Total number of pages
+                            example: 3
+                          currentPage:
+                            type: integer
+                            description: Current page number
+                            example: 1
+                          itemsPerPage:
+                            type: integer
+                            description: Number of items per page
+                            example: 10
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{id}/refund:
+    post:
+      summary: Process refund for a booking (Admin)
+      tags: [Admin - Bookings]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Booking ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ['refundReason']
+              properties:
+                refundReason:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                  description: Reason for the refund
+                  example: "Event cancelled due to unforeseen circumstances"
+      responses:
+        '200':
+          description: Refund processed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          refundId:
+                            type: string
+                            format: uuid
+                            description: Unique identifier for the refund
+                          paymentId:
+                            type: string
+                            format: uuid
+                            description: Payment ID that was refunded
+                          refundAmount:
+                            type: number
+                            description: Amount refunded
+                          refundStatus:
+                            type: string
+                            enum: ['SUCCEEDED', 'FAILED', 'PENDING']
+                            description: Status of the refund
+                          refundDate:
+                            type: string
+                            description: Refund date in DD-MM-YYYY format
+        '400':
+          description: Invalid request data or refund not eligible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+        fullName:
+          type: string
+          description: Full name of the user
+          example: 'John Doe'
+        email:
+          type: string
+          format: email
+          description: Email address of the user
+          example: 'john.doe@example.com'
+        borrowerType:
+          type: string
+          enum: ['INTERNAL_UNAND', 'EXTERNAL_UNAND']
+          description: Type of borrower
+        phoneNumber:
+          type: string
+          description: Phone number of the user
+          example: '+62812345678'
+        bankName:
+          type: string
+          description: Bank name for payment
+          example: 'Bank BCA'
+        bankNumber:
+          type: string
+          description: Bank account number
+          example: '1234567890'
+        role:
+          type: string
+          enum: ['BORROWER', 'ADMIN']
+          description: User role
+        createdAt:
+          type: string
+          format: date-time
+          description: User creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: User last update timestamp
+
+    Building:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the building
+        buildingName:
+          type: string
+          description: Name of the building
+          example: 'Conference Room A'
+        description:
+          type: string
+          description: Description of the building
+          example: 'Modern conference room with projector and air conditioning'
+        rentalPrice:
+          type: number
+          description: Rental price per session
+          example: 500000
+        capacity:
+          type: integer
+          description: Maximum capacity of the building
+          example: 50
+        location:
+          type: string
+          description: Location of the building
+          example: 'Floor 2, Building A'
+        buildingType:
+          type: string
+          enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+          description: Type of building
+        imageUrl:
+          type: string
+          description: URL of building image
+          example: 'https://example.com/image.jpg'
+        facilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facility'
+        buildingManagers:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildingManager'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Facility:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the facility
+        facilityName:
+          type: string
+          description: Name of the facility
+          example: 'Projector'
+        iconUrl:
+          type: string
+          description: URL of facility icon
+          example: 'https://example.com/projector-icon.png'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BuildingManager:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the building manager
+        managerName:
+          type: string
+          description: Name of the building manager
+          example: 'Jane Smith'
+        phoneNumber:
+          type: string
+          description: Phone number of the manager
+          example: '+62812345679'
+        buildingId:
+          type: string
+          format: uuid
+          description: ID of the associated building
+        buildingName:
+          type: string
+          description: Name of the associated building
+          example: 'Conference Room A'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the notification
+        notificationType:
+          type: string
+          enum: ['PAYMENT', 'BOOKING']
+          description: Type of notification
+        title:
+          type: string
+          description: Notification title
+          example: 'Payment Confirmation'
+        message:
+          type: string
+          description: Notification message
+          example: 'Your payment for Conference Room A has been confirmed.'
+        date:
+          type: string
+          description: Notification date in DD-MM-YYYY format
+          example: '15-12-2024'
+        readStatus:
+          type: integer
+          description: Whether notification has been read (0 = unread, 1 = read)
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+          description: Notification creation timestamp 
+
+    ApiResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+          description: Response status
+          example: 'success'
+        message:
+          type: string
+          description: Response message
+          example: 'Operation completed successfully'
+        data:
+          type: object
+          description: Response data - varies based on endpoint
+      required:
+        - status
+        - message
+        
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: 'error'
+        message:
+          type: string
+          description: Error message
+          example: 'Validation failed'
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field that caused the error
+              message:
+                type: string
+                description: Detailed error message
+          description: Detailed validation errors
+          example:
+            - field: 'email'
+              message: 'Email is required'
+            - field: 'password'
+              message: 'Password must be at least 8 characters'
+      required:
+        - status
+        - message
+
+    RegisterRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 3
+          maxLength: 100
+          example: 'John Doe'
+        email:
+          type: string
+          format: email
+          example: 'john.doe@example.com'
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: 'Password123!'
+        borrowerType:
+          type: string
+          enum: ['INTERNAL_UNAND', 'EXTERNAL_UNAND']
+          example: 'INTERNAL_UNAND'
+        phoneNumber:
+          type: string
+          example: '+62812345678'
+        bankName:
+          type: string
+          example: 'Bank BCA'
+        bankNumber:
+          type: string
+          example: '1234567890'
+      required:
+        - fullName
+        - email
+        - password
+        - borrowerType
+        - phoneNumber
+        - bankName
+        - bankNumber
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: 'john.doe@example.com'
+        password:
+          type: string
+          format: password
+          example: 'Password123!'
+      required:
+        - email
+        - password
+        
+    CheckAvailabilityRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          example: '25-12-2024'
+        time:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+          example: '10:00'
+      required:
+        - date
+        - time
+        
+    BookingRequest:
+      type: object
+      properties:
+        buildingId:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        activityName:
+          type: string
+          example: 'Annual Company Meeting'
+        startDate:
+          type: string
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          example: '25-12-2024'
+        endDate:
+          type: string
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          example: '26-12-2024'
+        startTime:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+          example: '09:00'
+        endTime:
+          type: string
+          pattern: '^\d{2}:\d{2}$'
+          example: '17:00'
+      required:
+        - buildingId
+        - activityName
+        - startDate
+        - startTime
+        - endTime
+
+    PaymentCallbackRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '5f9a3d5701f09e00173a4519'
+        external_id:
+          type: string
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        status:
+          type: string
+          example: 'PAID'
+        payment_method:
+          type: string
+          example: 'CREDIT_CARD'
+        paid_amount:
+          type: number
+          example: 500000
+        paid_at:
+          type: string
+          format: date-time
+          example: '2023-06-25T10:00:00Z'
+      required:
+        - id
+        - external_id
+        - status
+        
+    RefundRequest:
+      type: object
+      properties:
+        refundReason:
+          type: string
+          minLength: 3
+          maxLength: 500
+          example: 'Event cancelled due to unforeseen circumstances'
+      required:
+        - refundReason
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          example: 'CurrentPassword123!'
+        newPassword:
+          type: string
+          format: password
+          minLength: 6
+          example: 'NewPassword123!'
+        confirmPassword:
+          type: string
+          format: password
+          example: 'NewPassword123!'
+      required:
+        - currentPassword
+        - newPassword
+        - confirmPassword
+
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: 'john.doe@example.com'
+      required:
+        - email
+
+    ResetPasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        newPassword:
+          type: string
+          format: password
+          minLength: 6
+          example: 'NewPassword123!'
+        confirmPassword:
+          type: string
+          format: password
+          example: 'NewPassword123!'
+      required:
+        - token
+        - newPassword
+        - confirmPassword
+        
+    BookingApprovalRequest:
+      type: object
+      properties:
+        bookingStatus:
+          type: string
+          enum: ['APPROVED', 'REJECTED']
+          example: 'APPROVED'
+        rejectionReason:
+          type: string
+          example: 'Building maintenance scheduled'
+      required:
+        - bookingStatus
+
+    FacilityRequest:
+      type: object
+      properties:
+        facilityName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: 'Projector'
+        iconUrl:
+          type: string
+          format: uri
+          example: 'https://example.com/icons/projector.png'
+      required:
+        - facilityName
+        
+    BuildingManagerRequest:
+      type: object
+      properties:
+        managerName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: 'John Manager'
+        phoneNumber:
+          type: string
+          minLength: 10
+          maxLength: 20
+          example: '+62812345678'
+        buildingId:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+      required:
+        - managerName
+        - phoneNumber
+        - buildingId
+        
+    TestBuilding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        buildingName:
+          type: string
+          example: 'Test Conference Room'
+        description:
+          type: string
+          example: 'Test room for API testing'
+        rentalPrice:
+          type: number
+          example: 500000
+        capacity:
+          type: integer
+          example: 50
+        location:
+          type: string
+          example: 'Test Location'
+        buildingType:
+          type: string
+          enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
+          example: 'MULTIFUNCTION'
+        imageUrl:
+          type: string
+          example: 'https://example.com/test-image.jpg'
+          
+    TestBooking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '223e4567-e89b-12d3-a456-426614174001'
+        buildingId:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        userId:
+          type: string
+          format: uuid
+          example: '323e4567-e89b-12d3-a456-426614174002'
+        activityName:
+          type: string
+          example: 'Test Activity'
+        startDate:
+          type: string
+          example: '25-12-2024'
+        endDate:
+          type: string
+          example: '26-12-2024'
+        startTime:
+          type: string
+          example: '09:00'
+        endTime:
+          type: string
+          example: '17:00'
+        status:
+          type: string
+          enum: ['PROCESSING', 'APPROVED', 'REJECTED', 'COMPLETED']
+          example: 'PROCESSING'
+          
+    TestPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '423e4567-e89b-12d3-a456-426614174003'
+        bookingId:
+          type: string
+          format: uuid
+          example: '223e4567-e89b-12d3-a456-426614174001'
+        amount:
+          type: number
+          example: 500000
+        status:
+          type: string
+          enum: ['UNPAID', 'PAID', 'PENDING', 'SETTLED', 'EXPIRED']
+          example: 'PAID'
+        paymentMethod:
+          type: string
+          example: 'CREDIT_CARD'
+        paymentDate:
+          type: string
+          example: '25-12-2024'

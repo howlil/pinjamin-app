@@ -19,42 +19,60 @@ import {
     Badge
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, Menu as MenuIcon, X, Settings, Users, Building } from 'lucide-react';
+import { Bell, Menu as MenuIcon, X, Settings, Users, Building, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../utils/store';
-import { useRole, useAuth } from '../hooks/useAuth';
+import { useRole } from '../hooks/useAuth';
 import { AdminOnly, UserOnly, AuthenticatedOnly, GuestOnly, RoleGuard } from './auth/RoleGuard';
 import logoUnand from '../assets/logo.png';
 
-const Navbar = () => {
+const NavbarWithRoles = () => {
     const { isOpen, onToggle } = useDisclosure();
     const navigate = useNavigate();
     const location = useLocation();
     const { isAuthenticated, user, logout } = useAuthStore();
-    const { isAdmin, isBorrower } = useRole();
-    const { canAccess } = useAuth();
+    const { isAdmin, isUser, currentRole } = useRole();
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
-    // Define all possible navigation links with their role requirements
-    const allNavLinks = [
-        // Public links (guest users)
-        { name: 'Beranda', path: '/', roles: ['ADMIN', 'BORROWER'], showWhen: !isAuthenticated },
-        { name: 'Jadwal', path: '/schedule', roles: ['ADMIN', 'BORROWER'], showWhen: true },
+    // Define navigation links based on authentication status and roles
+    const getNavLinks = () => {
+        if (!isAuthenticated) {
+            return [
+                { name: 'Beranda', path: '/', icon: null },
+                { name: 'Jadwal', path: '/schedule', icon: null }
+            ];
+        }
 
-        // User-specific links
-        { name: 'Dashboard', path: '/dashboard', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() },
-        { name: 'Peminjaman', path: '/bookings', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() && canAccess('bookings', 'read') },
-        { name: 'Riwayat', path: '/history', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() && canAccess('history', 'read') },
-        { name: 'Transaksi', path: '/transactions', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() && canAccess('transactions', 'read') },
+        const baseLinks = [
+            { name: 'Dashboard', path: isAdmin() ? '/admin' : '/dashboard', icon: null }
+        ];
 
+        if (isAdmin()) {
+            return [
+                ...baseLinks,
+                { name: 'Gedung', path: '/admin/gedung', icon: Building },
+                { name: 'Fasilitas', path: '/admin/fasilitas', icon: Settings },
+                { name: 'Peminjaman', path: '/admin/peminjaman', icon: BookOpen },
+                { name: 'Transaksi', path: '/admin/transaksi', icon: null },
+                { name: 'Riwayat', path: '/admin/riwayat', icon: null }
+            ];
+        } else if (currentRole === 'BORROWER') { // Explicitly check for BORROWER
+            return [
+                ...baseLinks,
+                { name: 'Jadwal', path: '/schedule', icon: null },
+                { name: 'Peminjaman', path: '/bookings', icon: BookOpen },
+                { name: 'Riwayat', path: '/history', icon: null },
+                { name: 'Transaksi', path: '/transactions', icon: null }
+            ];
+        }
 
-    ];
+        return baseLinks;
+    };
 
-    // Filter navigation links based on user role and permissions
-    const navLinks = allNavLinks.filter(link => link.showWhen);
+    const navLinks = getNavLinks();
 
     const isActiveLink = (path) => {
         return location.pathname === path;
@@ -73,7 +91,7 @@ const Navbar = () => {
         >
             <Container maxW="7xl">
                 <Flex h={16} alignItems="center" justifyContent="space-between">
-                    {/* Logo and Role Badge */}
+                    {/* Logo */}
                     <Flex alignItems="center">
                         <Link
                             as={RouterLink}
@@ -83,6 +101,19 @@ const Navbar = () => {
                             <img src={logoUnand} alt="Logo" width={50} height={50} />
                         </Link>
 
+                        {/* Role Badge */}
+                        <AuthenticatedOnly>
+                            <Badge
+                                ml={3}
+                                colorScheme={isAdmin() ? 'red' : 'green'}
+                                variant="subtle"
+                                borderRadius="full"
+                                px={2}
+                                fontSize="xs"
+                            >
+                                {currentRole}
+                            </Badge>
+                        </AuthenticatedOnly>
                     </Flex>
 
                     {/* Desktop Navigation */}
@@ -102,6 +133,9 @@ const Navbar = () => {
                                 fontWeight="medium"
                                 color={isActiveLink(link.path) ? '#749C73' : '#444444'}
                                 position="relative"
+                                display="flex"
+                                alignItems="center"
+                                gap={1}
                                 _hover={{
                                     textDecoration: 'none',
                                     color: '#749C73'
@@ -118,6 +152,7 @@ const Navbar = () => {
                                     transition: 'transform 0.2s ease-in-out'
                                 }}
                             >
+                                {link.icon && <link.icon size={16} />}
                                 {link.name}
                             </Link>
                         ))}
@@ -174,7 +209,7 @@ const Navbar = () => {
                                 </Menu>
                             </AdminOnly>
 
-                            {/* Notification */}
+                            {/* Notification Bell */}
                             <Box position="relative">
                                 <IconButton
                                     bg="rgba(255, 255, 255, 0.3)"
@@ -191,18 +226,20 @@ const Navbar = () => {
                                     }}
                                     transition="all 0.3s ease"
                                 />
-                                <Badge
-                                    position="absolute"
-                                    top="0"
-                                    right="0"
-                                    bg="#749C73"
-                                    color="white"
-                                    borderRadius="full"
-                                    fontSize="xs"
-                                    px={1.5}
-                                >
-                                    {isAdmin() ? '8' : '3'}
-                                </Badge>
+                                <RoleGuard requiredRoles={['ADMIN', 'USER', 'MEMBER']}>
+                                    <Badge
+                                        position="absolute"
+                                        top="0"
+                                        right="0"
+                                        bg="#749C73"
+                                        color="white"
+                                        borderRadius="full"
+                                        fontSize="xs"
+                                        px={1.5}
+                                    >
+                                        {isAdmin() ? '5' : '3'}
+                                    </Badge>
+                                </RoleGuard>
                             </Box>
 
                             {/* User Menu */}
@@ -225,8 +262,8 @@ const Navbar = () => {
                                 >
                                     <Avatar
                                         size="sm"
-                                        name={user?.name || 'User'}
-                                        bg="#749C73"
+                                        name={user?.name || user?.fullName || 'User'}
+                                        bg={isAdmin() ? "#dc2626" : "#749C73"}
                                         color="white"
                                     />
                                 </MenuButton>
@@ -237,7 +274,7 @@ const Navbar = () => {
                                     borderRadius="20px"
                                     boxShadow="0 8px 32px rgba(116, 156, 115, 0.15)"
                                 >
-                                    {/* User-specific menu items */}
+                                    {/* Role-specific menu items */}
                                     <UserOnly>
                                         <MenuItem
                                             onClick={() => navigate('/profile')}
@@ -257,7 +294,6 @@ const Navbar = () => {
                                         </MenuItem>
                                     </UserOnly>
 
-                                    {/* Admin-specific menu items */}
                                     <AdminOnly>
                                         <MenuItem
                                             onClick={() => navigate('/admin/profile')}
@@ -365,17 +401,20 @@ const Navbar = () => {
                                 fontWeight="medium"
                                 color={isActiveLink(link.path) ? '#749C73' : '#444444'}
                                 onClick={onToggle}
+                                display="flex"
+                                alignItems="center"
+                                gap={2}
                                 _hover={{
                                     textDecoration: 'none',
                                     color: '#749C73'
                                 }}
                             >
+                                {link.icon && <link.icon size={16} />}
                                 {link.name}
                             </Link>
                         ))}
 
                         <AuthenticatedOnly>
-                            {/* User-specific mobile menu items */}
                             <UserOnly>
                                 <Link
                                     as={RouterLink}
@@ -392,24 +431,6 @@ const Navbar = () => {
                                     Profil Saya
                                 </Link>
                             </UserOnly>
-
-                            {/* Admin-specific mobile menu items */}
-                            <AdminOnly>
-                                <Link
-                                    as={RouterLink}
-                                    to="/admin/profile"
-                                    fontSize="sm"
-                                    fontWeight="medium"
-                                    color="#444444"
-                                    onClick={onToggle}
-                                    _hover={{
-                                        textDecoration: 'none',
-                                        color: '#749C73'
-                                    }}
-                                >
-                                    Admin Profile
-                                </Link>
-                            </AdminOnly>
 
                             <Button
                                 size="sm"
@@ -455,4 +476,4 @@ const Navbar = () => {
     );
 };
 
-export default Navbar; 
+export default NavbarWithRoles; 

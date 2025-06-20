@@ -24,7 +24,7 @@ import AdminFasilitasPage from '../pages/admin/FasilitasPage';
 import AdminRiwayatPage from '../pages/admin/RiwayatPage';
 
 // Layouts
-import ProtectedRoute from './ProtectedRoute';
+import ProtectedRoute, { AdminProtectedRoute, BorrowerProtectedRoute } from './ProtectedRoute';
 import Layout from '../components/Layout/Layout';
 import PublicLayout from '../components/Layout/PublicLayout';
 import AdminLayout from '../components/Layout/AdminLayout';
@@ -43,8 +43,8 @@ const AppRouter = () => {
                 <Route path="schedule" element={<SchedulePage />} />
             </Route>
 
-            {/* User Protected Routes */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            {/* Borrower Protected Routes - Only accessible by BORROWER role */}
+            <Route path="/" element={<BorrowerProtectedRoute><Layout /></BorrowerProtectedRoute>}>
                 <Route path="dashboard" element={<UserDashboardPage />} />
                 <Route path="profile" element={<UserProfilePage />} />
                 <Route path="settings" element={<SettingsPage />} />
@@ -53,13 +53,14 @@ const AppRouter = () => {
                 <Route path="history" element={<HistoryPage />} />
             </Route>
 
-            {/* Admin Routes */}
-            <Route path="admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+            {/* Admin Routes - Only accessible by ADMIN role */}
+            <Route path="admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
                 <Route index element={<AdminDashboardPage />} />
+                <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="gedung" element={<AdminGedungPage />} />
+                <Route path="fasilitas" element={<AdminFasilitasPage />} />
                 <Route path="peminjaman" element={<AdminPeminjamanPage />} />
                 <Route path="transaksi" element={<AdminTransaksiPage />} />
-                <Route path="fasilitas" element={<AdminFasilitasPage />} />
                 <Route path="riwayat" element={<AdminRiwayatPage />} />
             </Route>
 

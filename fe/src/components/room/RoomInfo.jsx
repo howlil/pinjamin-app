@@ -259,7 +259,6 @@ const RoomInfo = ({
                           transform: 'translateY(-2px)',
                           boxShadow: SHADOWS.lg
                         }}
-                        transition="all 0.2s"
                       >
                         <HStack spacing={3}>
                           <Box
@@ -338,7 +337,6 @@ const RoomInfo = ({
                               bg: `${COLORS.primary}30`,
                               transform: 'scale(1.05)'
                             }}
-                            transition="all 0.2s"
                             cursor="pointer"
                           >
                             <Icon as={Phone} size="16" color={COLORS.primary} />

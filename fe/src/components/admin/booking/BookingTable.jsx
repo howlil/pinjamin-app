@@ -241,14 +241,14 @@ const BookingTable = ({
                                                 icon={<MoreVertical size={16} />}
                                                 variant="ghost"
                                                 size="sm"
-                                                borderRadius="lg"
+                                                borderRadius="full"
                                                 _hover={{ bg: `${COLORS.primary}10` }}
                                             />
                                             <MenuList
                                                 bg="white"
                                                 borderColor={`${COLORS.primary}20`}
                                                 boxShadow={SHADOWS.lg}
-                                                borderRadius="lg"
+                                                borderRadius="xl"
                                                 overflow="hidden"
                                             >
                                                 {actions.map((action, actionIndex) => (

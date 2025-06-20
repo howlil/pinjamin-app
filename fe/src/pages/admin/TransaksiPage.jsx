@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure } from '@chakra-ui/react';
-import { CreditCard } from 'lucide-react';
+import { Box, useDisclosure, Flex } from '@chakra-ui/react';
+import { DollarSign, Download } from 'lucide-react';
 
-import { GlassCard } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import { useTransactions } from '@/hooks/useTransactions';
-import { DataStateHandler, AdminSearchFilter } from '@/components/admin/common';
-import { TransactionHeader, TransactionTable } from '@/components/admin/transaction';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
+import { TransactionTable } from '@/components/admin/transaction';
 
 // Payment status options for filter
 const PAYMENT_STATUS_OPTIONS = [
@@ -44,8 +44,7 @@ const TransaksiPage = () => {
         confirmPayment,
         cancelTransaction,
         processRefund,
-        sendPaymentReminder,
-        refreshData
+        sendPaymentReminder
     } = useTransactions();
 
     // Local state for UI interactions
@@ -114,51 +113,62 @@ const TransaksiPage = () => {
     ];
 
     return (
-        <Box>
-            {/* Header Section */}
-            <TransactionHeader
-                onRefresh={refreshData}
-                onExport={handleExport}
+        <PageWrapper>
+            {/* Page Header */}
+            <PageHeader
+                title="Kelola Transaksi"
+                subtitle="Manajemen transaksi pembayaran"
+                icon={DollarSign}
+                action={
+                    <PrimaryButton
+                        leftIcon={<Download size={18} />}
+                        onClick={handleExport}
+                        size="lg"
+                        variant="outline"
+                    >
+                        Export
+                    </PrimaryButton>
+                }
             />
 
             {/* Search and Filter Section */}
-            <AdminSearchFilter
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onSearch={handleSearch}
-                searchPlaceholder="Cari berdasarkan nama peminjam, gedung, atau invoice..."
-                filters={filters}
-                totalItems={totalTransactions}
-                currentItems={transactions.length}
-                itemLabel="transaksi"
-            />
+            <Box mb={6}>
+                <AdminSearchFilter
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    searchPlaceholder="Cari berdasarkan nama peminjam, gedung, atau invoice..."
+                    filters={filters}
+                    totalItems={totalTransactions}
+                    currentItems={transactions.length}
+                    itemLabel="transaksi"
+                />
+            </Box>
 
             {/* Content Section */}
-            <GlassCard p={6} mt={6}>
-                <DataStateHandler
-                    loading={loading}
-                    error={error}
-                    data={transactions}
-                    emptyMessage="Belum ada data transaksi"
-                    emptySearchMessage="Tidak ada transaksi yang sesuai dengan pencarian"
-                    loadingMessage="Memuat data transaksi..."
-                    isSearching={Boolean(searchTerm || paymentStatusFilter || paymentMethodFilter)}
-                    EmptyIcon={CreditCard}
-                >
-                    <TransactionTable
-                        transactions={transactions}
-                        onView={handleView}
-                        onConfirmPayment={handleConfirmPayment}
-                        onCancelTransaction={handleCancelTransaction}
-                        onProcessRefund={handleProcessRefund}
-                        onSendReminder={handleSendReminder}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalTransactions}
-                        onPageChange={handlePageChange}
-                    />
-                </DataStateHandler>
-            </GlassCard>
+            <DataStateHandler
+                loading={loading}
+                error={error}
+                data={transactions}
+                emptyMessage="Belum ada data transaksi"
+                emptySearchMessage="Tidak ada transaksi yang sesuai dengan pencarian"
+                loadingMessage="Memuat data transaksi..."
+                isSearching={Boolean(searchTerm || paymentStatusFilter || paymentMethodFilter)}
+                EmptyIcon={DollarSign}
+            >
+                <TransactionTable
+                    transactions={transactions}
+                    onView={handleView}
+                    onConfirmPayment={handleConfirmPayment}
+                    onCancelTransaction={handleCancelTransaction}
+                    onProcessRefund={handleProcessRefund}
+                    onSendReminder={handleSendReminder}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalTransactions}
+                    onPageChange={handlePageChange}
+                />
+            </DataStateHandler>
 
             {/* Modals would go here */}
             {/* 
@@ -168,7 +178,7 @@ const TransaksiPage = () => {
                 transaction={selectedTransaction}
             />
             */}
-        </Box>
+        </PageWrapper>
     );
 };
 

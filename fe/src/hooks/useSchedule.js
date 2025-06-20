@@ -1,70 +1,141 @@
-import { useState } from 'react';
-import { useDisclosure } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
+import { useDisclosure, useToast } from '@chakra-ui/react';
+import { buildingApi } from '../services/apiService';
 
 export const useSchedule = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const [currentDate, setCurrentDate] = useState(new Date(2024, 2, 1)); // March 2024
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [scheduleData, setScheduleData] = useState({});
+    const [isLoading, setIsLoading] = useState(true); // Start with loading true
+    const [apiData, setApiData] = useState(null);
+    const toast = useToast();
 
-    // Mock data untuk jadwal peminjaman
-    const scheduleData = {
-        '2024-03-01': [
-            { id: 1, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'diproses', room: 'Gedung A' },
-            { id: 2, title: 'Rapat Peminjaman', time: '10:00 - 12:00', status: 'diproses', room: 'Gedung B' }
-        ],
-        '2024-03-02': [
-            { id: 3, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'diproses', room: 'Gedung C' },
-            { id: 4, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'diproses', room: 'Gedung D' }
-        ],
-        '2024-03-03': [
-            { id: 5, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'diproses', room: 'Gedung E' }
-        ],
-        '2024-03-07': [
-            { id: 6, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'disetujui', room: 'Seminar Gedung F' },
-            { id: 7, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'disetujui', room: 'Gedung G' }
-        ],
-        '2024-03-12': [
-            { id: 8, title: 'Rapat Peminjaman', time: '10:00 - 12:00', status: 'disetujui', room: 'Gedung H' }
-        ],
-        '2024-03-17': [
-            { id: 9, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'disetujui', room: 'Gedung I' }
-        ],
-        '2024-03-19': [
-            { id: 10, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'disetujui', room: 'Gedung J' },
-            { id: 11, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'disetujui', room: 'Gedung K' }
-        ],
-        '2024-03-22': [
-            { id: 12, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'disetujui', room: 'Gedung L' }
-        ],
-        '2024-03-27': [
-            { id: 13, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'selesai', room: 'Gedung M' },
-            { id: 14, title: 'Rapat Peminjaman', time: '07:30 - 10:00', status: 'selesai', room: 'Gedung N' }
-        ]
+    // Fetch schedule data from API
+    const fetchScheduleData = async (month, year) => {
+        setIsLoading(true);
+        try {
+            const response = await buildingApi.getBuildingSchedule({ month, year });
+
+            if (response.status === 'success') {
+                setApiData(response.data);
+                // Transform API data to calendar format
+                const transformedData = transformApiDataToCalendar(response.data.schedule);
+                setScheduleData(transformedData);
+            }
+        } catch (error) {
+            console.error('Failed to fetch schedule:', error);
+            toast({
+                title: "Error",
+                description: "Gagal memuat jadwal. Silakan coba lagi.",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+            // Fallback to empty data
+            setScheduleData({});
+        } finally {
+            setIsLoading(false);
+        }
     };
 
+    // Transform API data to calendar format
+    const transformApiDataToCalendar = (apiSchedule) => {
+        const calendarData = {};
+
+        if (!apiSchedule || !Array.isArray(apiSchedule)) return calendarData;
+
+        apiSchedule.forEach(item => {
+            // Convert DD-MM-YYYY to YYYY-MM-DD for consistency
+            const formattedStartDate = convertDateFormat(item.startDate);
+            const formattedEndDate = item.endDate ? convertDateFormat(item.endDate) : formattedStartDate;
+
+            // Create event object
+            const event = {
+                id: item.id,
+                title: item.activityName,
+                time: `${item.startTime} - ${item.endTime}`,
+                status: item.status?.toLowerCase(),
+                room: item.buildingDetail?.buildingName,
+                buildingType: item.buildingDetail?.buildingType,
+                location: item.buildingDetail?.location,
+                borrowerName: item.borrowerDetail?.borrowerName,
+                buildingPhoto: item.buildingDetail?.buildingPhoto,
+                startDate: item.startDate,
+                endDate: item.endDate,
+                originalData: item
+            };
+
+            // If it's a multi-day event, add to all dates in the range
+            if (formattedEndDate && formattedEndDate !== formattedStartDate) {
+                const start = new Date(formattedStartDate);
+                const end = new Date(formattedEndDate);
+
+                for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+                    const dateKey = formatDateToKey(date);
+                    if (!calendarData[dateKey]) {
+                        calendarData[dateKey] = [];
+                    }
+                    calendarData[dateKey].push(event);
+                }
+            } else {
+                // Single day event
+                if (!calendarData[formattedStartDate]) {
+                    calendarData[formattedStartDate] = [];
+                }
+                calendarData[formattedStartDate].push(event);
+            }
+        });
+
+        return calendarData;
+    };
+
+    // Convert DD-MM-YYYY to YYYY-MM-DD
+    const convertDateFormat = (dateStr) => {
+        if (!dateStr) return '';
+        const [day, month, year] = dateStr.split('-');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    };
+
+    // Format date object to YYYY-MM-DD
+    const formatDateToKey = (date) => {
+        return date.toISOString().split('T')[0];
+    };
+
+    // Load data when component mounts or date changes
+    useEffect(() => {
+        const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+        const year = currentDate.getFullYear();
+        fetchScheduleData(month, year);
+    }, [currentDate]);
+
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'disetujui':
+        switch (status?.toLowerCase()) {
+            case 'approved':
                 return '#749C73';
-            case 'diproses':
+            case 'processing':
                 return '#FFA500';
-            case 'selesai':
+            case 'completed':
                 return '#888888';
+            case 'rejected':
+                return '#dc3545';
             default:
                 return '#888888';
         }
     };
 
     const getStatusText = (status) => {
-        switch (status) {
-            case 'disetujui':
+        switch (status?.toLowerCase()) {
+            case 'approved':
                 return 'Disetujui';
-            case 'diproses':
+            case 'processing':
                 return 'Diproses';
-            case 'selesai':
+            case 'completed':
                 return 'Selesai';
+            case 'rejected':
+                return 'Ditolak';
             default:
-                return '';
+                return status || '';
         }
     };
 
@@ -100,6 +171,8 @@ export const useSchedule = () => {
         selectedEvent,
         currentDate,
         scheduleData,
+        apiData,
+        isLoading,
         getStatusColor,
         getStatusText,
         getDaysInMonth,

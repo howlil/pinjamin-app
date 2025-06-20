@@ -3,16 +3,15 @@ import {
     VStack,
     HStack,
     Input,
-    Button,
     InputGroup,
     InputLeftElement,
     Text,
     Select,
     Wrap,
-    WrapItem
+    WrapItem,
+    Box
 } from '@chakra-ui/react';
 import { Search } from 'lucide-react';
-import { GlassCard } from '@/components/ui';
 import { COLORS } from '@/utils/designTokens';
 
 const AdminSearchFilter = ({
@@ -32,7 +31,7 @@ const AdminSearchFilter = ({
     };
 
     return (
-        <GlassCard p={6}>
+        <Box>
             <VStack spacing={4} align="stretch">
                 {/* Search and Filters Row */}
                 <Wrap spacing={4} align="center">
@@ -47,13 +46,14 @@ const AdminSearchFilter = ({
                                 value={searchTerm}
                                 onChange={(e) => onSearchChange(e.target.value)}
                                 onKeyPress={handleKeyPress}
-                                bg="white"
-                                borderColor={`${COLORS.primary}30`}
+                                bg="gray.50"
+                                borderColor={`${COLORS.primary}20`}
                                 _focus={{
                                     borderColor: COLORS.primary,
-                                    boxShadow: `0 0 0 1px ${COLORS.primary}`
+                                    boxShadow: `0 0 0 1px ${COLORS.primary}`,
+                                    bg: "white"
                                 }}
-                                borderRadius="lg"
+                                borderRadius="full"
                             />
                         </InputGroup>
                     </WrapItem>
@@ -65,13 +65,14 @@ const AdminSearchFilter = ({
                                 placeholder={filter.label}
                                 value={filter.value}
                                 onChange={(e) => filter.onChange(e.target.value)}
-                                bg="white"
-                                borderColor={`${COLORS.primary}30`}
+                                bg="gray.50"
+                                borderColor={`${COLORS.primary}20`}
                                 _focus={{
                                     borderColor: COLORS.primary,
-                                    boxShadow: `0 0 0 1px ${COLORS.primary}`
+                                    boxShadow: `0 0 0 1px ${COLORS.primary}`,
+                                    bg: "white"
                                 }}
-                                borderRadius="lg"
+                                borderRadius="full"
                                 size="md"
                             >
                                 {filter.options.map((option) => (
@@ -82,37 +83,10 @@ const AdminSearchFilter = ({
                             </Select>
                         </WrapItem>
                     ))}
-
-                    {/* Search Button */}
-                    <WrapItem>
-                        <Button
-                            onClick={onSearch}
-                            bg={COLORS.primary}
-                            color="white"
-                            leftIcon={<Search size={16} />}
-                            borderRadius="lg"
-                            _hover={{
-                                bg: COLORS.primaryDark,
-                                transform: 'translateY(-1px)'
-                            }}
-                            transition="all 0.2s"
-                        >
-                            Cari
-                        </Button>
-                    </WrapItem>
                 </Wrap>
 
-                {/* Results Summary */}
-                <HStack justify="space-between" align="center" pt={2}>
-                    <Text color={COLORS.gray[600]} fontSize="sm">
-                        Menampilkan {currentItems} dari {totalItems} {itemLabel}
-                    </Text>
-                    <Text color={COLORS.primary} fontSize="sm" fontWeight="medium">
-                        Total: {totalItems} {itemLabel}
-                    </Text>
-                </HStack>
             </VStack>
-        </GlassCard>
+        </Box>
     );
 };
 

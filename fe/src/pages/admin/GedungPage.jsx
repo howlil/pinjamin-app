@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure } from '@chakra-ui/react';
-import { Building } from 'lucide-react';
+import { Box, useDisclosure, Flex } from '@chakra-ui/react';
+import { Building, Plus } from 'lucide-react';
 
-import { GlassCard } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import { useBuildings } from '@/hooks/useBuildings';
-import { DataStateHandler, AdminSearchFilter } from '@/components/admin/common';
-import { BuildingHeader, BuildingTable } from '@/components/admin/building';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
+import { BuildingTable } from '@/components/admin/building';
 
 // Building type options for filter
 const BUILDING_TYPE_OPTIONS = [
@@ -33,8 +33,7 @@ const GedungPage = () => {
         handlePageChange,
         createBuilding,
         updateBuilding,
-        deleteBuilding,
-        refreshData
+        deleteBuilding
     } = useBuildings();
 
     // Local state for UI interactions
@@ -68,16 +67,6 @@ const GedungPage = () => {
         onFormOpen();
     };
 
-    const handleExport = () => {
-        // Implementation for exporting building data
-        console.log('Export buildings');
-    };
-
-    const handleViewMap = () => {
-        // Implementation for viewing building map
-        console.log('View building map');
-    };
-
     // Prepare filters for search component
     const filters = [
         {
@@ -90,53 +79,61 @@ const GedungPage = () => {
     ];
 
     return (
-        <Box>
-            {/* Header Section */}
-            <BuildingHeader
-                onRefresh={refreshData}
-                onAddNew={handleAddNew}
-                onExport={handleExport}
-                onViewMap={handleViewMap}
+        <PageWrapper>
+            {/* Page Header */}
+            <PageHeader
+                title="Kelola Gedung"
+                subtitle="Manajemen data gedung dan fasilitas"
+                icon={Building}
+                action={
+                    <PrimaryButton
+                        leftIcon={<Plus size={18} />}
+                        onClick={handleAddNew}
+                        size="lg"
+                    >
+                        Tambah Gedung
+                    </PrimaryButton>
+                }
             />
 
             {/* Search and Filter Section */}
-            <AdminSearchFilter
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onSearch={handleSearch}
-                searchPlaceholder="Cari gedung berdasarkan nama atau deskripsi..."
-                filters={filters}
-                totalItems={totalBuildings}
-                currentItems={buildings.length}
-                itemLabel="gedung"
-            />
+            <Box mb={6}>
+                <AdminSearchFilter
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    searchPlaceholder="Cari gedung berdasarkan nama atau deskripsi..."
+                    filters={filters}
+                    totalItems={totalBuildings}
+                    currentItems={buildings.length}
+                    itemLabel="gedung"
+                />
+            </Box>
 
             {/* Content Section */}
-            <GlassCard p={6} mt={6}>
-                <DataStateHandler
-                    loading={loading}
-                    error={error}
-                    data={buildings}
-                    emptyMessage="Belum ada data gedung"
-                    emptySearchMessage="Tidak ada gedung yang sesuai dengan pencarian"
-                    loadingMessage="Memuat data gedung..."
-                    isSearching={Boolean(searchTerm || buildingTypeFilter)}
-                    onAddNew={handleAddNew}
-                    addNewLabel="Tambah Gedung Pertama"
-                    EmptyIcon={Building}
-                >
-                    <BuildingTable
-                        buildings={buildings}
-                        onView={handleView}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalBuildings}
-                        onPageChange={handlePageChange}
-                    />
-                </DataStateHandler>
-            </GlassCard>
+            <DataStateHandler
+                loading={loading}
+                error={error}
+                data={buildings}
+                emptyMessage="Belum ada data gedung"
+                emptySearchMessage="Tidak ada gedung yang sesuai dengan pencarian"
+                loadingMessage="Memuat data gedung..."
+                isSearching={Boolean(searchTerm || buildingTypeFilter)}
+                onAddNew={handleAddNew}
+                addNewLabel="Tambah Gedung Pertama"
+                EmptyIcon={Building}
+            >
+                <BuildingTable
+                    buildings={buildings}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalBuildings}
+                    onPageChange={handlePageChange}
+                />
+            </DataStateHandler>
 
             {/* Modals would go here */}
             {/* 
@@ -152,7 +149,7 @@ const GedungPage = () => {
                 onSubmit={selectedBuilding ? updateBuilding : createBuilding}
             />
             */}
-        </Box>
+        </PageWrapper>
     );
 };
 

@@ -34,13 +34,16 @@ const CalendarGrid = ({
             days.push(
                 <Box
                     key={day}
-                    minH="120px"
+                    minH="140px"
+                    maxH="140px"
                     p={2}
                     border="1px solid rgba(255, 255, 255, 0.3)"
                     position="relative"
                     bg={isToday ? "rgba(116, 156, 115, 0.1)" : "transparent"}
+                    display="flex"
+                    flexDirection="column"
                 >
-                    <HStack justify="space-between" mb={2}>
+                    <HStack justify="space-between" mb={2} flexShrink={0}>
                         <Text fontSize="sm" color="#444444" fontWeight={isToday ? "bold" : "normal"}>
                             {day}
                         </Text>
@@ -61,33 +64,89 @@ const CalendarGrid = ({
                         )}
                     </HStack>
 
-                    <VStack spacing={1} align="stretch">
-                        {dayEvents.slice(0, 2).map((event) => (
-                            <Box
-                                key={event.id}
-                                bg={getStatusColor(event.status)}
-                                color="white"
-                                p={1}
-                                borderRadius="4px"
-                                fontSize="xs"
-                                cursor="pointer"
-                                onClick={() => handleEventClick(event)}
-                                _hover={{ opacity: 0.8 }}
-                            >
-                                <Text fontWeight="medium" noOfLines={1}>
-                                    {event.title}
-                                </Text>
-                                <Text fontSize="10px" opacity={0.9}>
-                                    {event.time}
-                                </Text>
-                            </Box>
-                        ))}
-                        {dayEvents.length > 2 && (
-                            <Text fontSize="10px" color="#444444" opacity={0.7}>
-                                +{dayEvents.length - 2} lainnya
-                            </Text>
-                        )}
-                    </VStack>
+                    {/* Scrollable Events Container */}
+                    <Box
+                        flex={1}
+                        overflowY="auto"
+                        overflowX="hidden"
+                        pr={1}
+                        css={{
+                            // Custom scrollbar styling
+                            '&::-webkit-scrollbar': {
+                                width: '3px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'transparent',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: 'rgba(116, 156, 115, 0.3)',
+                                borderRadius: '3px',
+                            },
+                            '&::-webkit-scrollbar-thumb:hover': {
+                                background: 'rgba(116, 156, 115, 0.5)',
+                            },
+                        }}
+                    >
+                        <VStack spacing={1} align="stretch">
+                            {dayEvents.map((event, index) => (
+                                <Box
+                                    key={`${event.id}-${index}`}
+                                    bg={getStatusColor(event.status)}
+                                    color="white"
+                                    p={1.5}
+                                    borderRadius="4px"
+                                    fontSize="xs"
+                                    cursor="pointer"
+                                    onClick={() => handleEventClick(event)}
+                                    _hover={{
+                                        opacity: 0.8,
+                                        transform: "scale(1.02)",
+                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                                    }}
+                                    transition="all 0.2s ease"
+                                    minH="32px"
+                                    display="flex"
+                                    flexDirection="column"
+                                    justifyContent="center"
+                                >
+                                    <Text
+                                        fontWeight="medium"
+                                        noOfLines={1}
+                                        lineHeight="1.2"
+                                    >
+                                        {event.title}
+                                    </Text>
+                                    <Text
+                                        fontSize="10px"
+                                        opacity={0.9}
+                                        lineHeight="1"
+                                        mt={0.5}
+                                    >
+                                        {event.time}
+                                    </Text>
+                                </Box>
+                            ))}
+
+                            {/* Show total count if more than 3 events */}
+                            {dayEvents.length > 3 && (
+                                <Box
+                                    p={1}
+                                    textAlign="center"
+                                    bg="rgba(116, 156, 115, 0.1)"
+                                    borderRadius="4px"
+                                    border="1px solid rgba(116, 156, 115, 0.2)"
+                                >
+                                    <Text
+                                        fontSize="10px"
+                                        color="#749C73"
+                                        fontWeight="medium"
+                                    >
+                                        {dayEvents.length} event total
+                                    </Text>
+                                </Box>
+                            )}
+                        </VStack>
+                    </Box>
                 </Box>
             );
         }

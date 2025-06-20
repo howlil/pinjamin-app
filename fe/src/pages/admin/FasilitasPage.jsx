@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure } from '@chakra-ui/react';
-import { Settings } from 'lucide-react';
+import { Box, useDisclosure, Flex } from '@chakra-ui/react';
+import { Settings, Plus } from 'lucide-react';
 
-import { GlassCard } from '@/components/ui';
+import { PrimaryButton } from '@/components/ui';
 import { useFacilities } from '@/hooks/useFacilities';
-import DataStateHandler from '@/components/admin/common/DataStateHandler';
+import { DataStateHandler, PageHeader, PageWrapper } from '@/components/admin/common';
 import {
-    FacilityHeader,
     FacilitySearchBar,
     FacilityTable,
     FacilityFormModal,
@@ -30,8 +29,7 @@ const FasilitasPage = () => {
         handlePageChange,
         createFacility,
         updateFacility,
-        deleteFacility,
-        refreshData
+        deleteFacility
     } = useFacilities();
 
     // Local state for UI interactions
@@ -76,47 +74,57 @@ const FasilitasPage = () => {
     };
 
     return (
-        <Box>
-            {/* Header Section */}
-            <FacilityHeader
-                onRefresh={refreshData}
-                onAddNew={handleAddNew}
+        <PageWrapper>
+            {/* Page Header */}
+            <PageHeader
+                title="Kelola Fasilitas"
+                subtitle="Manajemen fasilitas gedung"
+                icon={Settings}
+                action={
+                    <PrimaryButton
+                        leftIcon={<Plus size={18} />}
+                        onClick={handleAddNew}
+                        size="lg"
+                    >
+                        Tambah Fasilitas
+                    </PrimaryButton>
+                }
             />
 
             {/* Search Section */}
-            <FacilitySearchBar
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onSearch={handleSearch}
-                totalItems={totalFacilities}
-                currentItems={facilities.length}
-            />
+            <Box mb={6}>
+                <FacilitySearchBar
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    totalItems={totalFacilities}
+                    currentItems={facilities.length}
+                />
+            </Box>
 
             {/* Content Section */}
-            <GlassCard p={6} mt={6}>
-                <DataStateHandler
-                    loading={loading}
-                    error={error}
-                    data={facilities}
-                    emptyMessage="Belum ada data fasilitas"
-                    emptySearchMessage="Tidak ada fasilitas yang sesuai dengan pencarian"
-                    loadingMessage="Memuat data fasilitas..."
-                    isSearching={Boolean(searchTerm)}
-                    onAddNew={handleAddNew}
-                    addNewLabel="Tambah Fasilitas Pertama"
-                    EmptyIcon={Settings}
-                >
-                    <FacilityTable
-                        facilities={facilities}
-                        onView={handleView}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
-                </DataStateHandler>
-            </GlassCard>
+            <DataStateHandler
+                loading={loading}
+                error={error}
+                data={facilities}
+                emptyMessage="Belum ada data fasilitas"
+                emptySearchMessage="Tidak ada fasilitas yang sesuai dengan pencarian"
+                loadingMessage="Memuat data fasilitas..."
+                isSearching={Boolean(searchTerm)}
+                onAddNew={handleAddNew}
+                addNewLabel="Tambah Fasilitas Pertama"
+                EmptyIcon={Settings}
+            >
+                <FacilityTable
+                    facilities={facilities}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+            </DataStateHandler>
 
             {/* Modals */}
             <FacilityFormModal
@@ -140,7 +148,7 @@ const FasilitasPage = () => {
                 onClose={onViewClose}
                 facility={selectedFacility}
             />
-        </Box>
+        </PageWrapper>
     );
 };
 

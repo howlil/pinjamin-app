@@ -8,16 +8,13 @@ import {
     Flex
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { Plus, RefreshCw, Download, Map } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { COLORS, SHADOWS } from '@/utils/designTokens';
 
 const BuildingHeader = ({
     title = "Manajemen Gedung",
     description = "Kelola data gedung dan ruangan untuk peminjaman",
-    onRefresh,
-    onAddNew,
-    onExport,
-    onViewMap
+    onAddNew
 }) => {
     return (
         <Box
@@ -49,52 +46,6 @@ const BuildingHeader = ({
                 </Box>
 
                 <HStack spacing={3}>
-                    <Button
-                        leftIcon={<RefreshCw size={16} />}
-                        variant="outline"
-                        borderColor={`${COLORS.primary}30`}
-                        color={COLORS.primary}
-                        borderRadius="lg"
-                        _hover={{
-                            bg: `${COLORS.primary}10`,
-                            borderColor: COLORS.primary
-                        }}
-                        onClick={onRefresh}
-                    >
-                        Refresh
-                    </Button>
-                    {onViewMap && (
-                        <Button
-                            leftIcon={<Map size={16} />}
-                            variant="outline"
-                            borderColor={`${COLORS.primary}30`}
-                            color={COLORS.primary}
-                            borderRadius="lg"
-                            _hover={{
-                                bg: `${COLORS.primary}10`,
-                                borderColor: COLORS.primary
-                            }}
-                            onClick={onViewMap}
-                        >
-                            Peta
-                        </Button>
-                    )}
-                    {onExport && (
-                        <Button
-                            leftIcon={<Download size={16} />}
-                            variant="outline"
-                            borderColor={`${COLORS.primary}30`}
-                            color={COLORS.primary}
-                            borderRadius="lg"
-                            _hover={{
-                                bg: `${COLORS.primary}10`,
-                                borderColor: COLORS.primary
-                            }}
-                            onClick={onExport}
-                        >
-                            Export
-                        </Button>
-                    )}
                     <Button
                         leftIcon={<Plus size={18} />}
                         bg={COLORS.primary}
