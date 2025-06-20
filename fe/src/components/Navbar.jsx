@@ -37,6 +37,7 @@ const Navbar = () => {
     const navLinks = isAuthenticated ? [
         { name: 'Beranda', path: '/dashboard' },
         { name: 'Jadwal', path: '/schedule' },
+        { name: 'Peminjaman', path: '/bookings' },
         { name: 'Riwayat', path: '/history' },
         { name: 'Transaksi', path: '/transactions' }
     ] : [

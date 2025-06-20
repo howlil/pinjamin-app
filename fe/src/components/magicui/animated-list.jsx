@@ -1,56 +1,80 @@
-import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Box } from '@chakra-ui/react';
 
-export function AnimatedList({
-    className,
+export function AnimatedListItem({
     children,
-    delay = 1000,
+    position
 }) {
-    const [index, setIndex] = useState(0);
-    const items = React.Children.toArray(children);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setIndex((prevIndex) => (prevIndex + 1) % items.length);
-        }, delay);
-
-        return () => clearInterval(interval);
-    }, [items.length, delay]);
-
-    const itemsToShow = 3;
-    const visibleItems = [];
-
-    for (let i = 0; i < itemsToShow; i++) {
-        const itemIndex = (index - i + items.length) % items.length;
-        visibleItems.unshift(items[itemIndex]);
-    }
+    const animations = {
+        initial: { y: -50, opacity: 0 },
+        animate: {
+            y: position * 90,
+            opacity: 1
+        },
+        exit: { y: 400, opacity: 0 },
+        transition: { type: "spring", stiffness: 350, damping: 40 },
+    };
 
     return (
-        <div className={cn('relative flex flex-col gap-2 overflow-hidden', className)}>
-            <AnimatePresence>
-                {visibleItems.map((item, idx) => (
-                    <motion.div
-                        key={`${index}-${idx}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{
-                            opacity: idx === 0 ? 0 : 1,
-                            y: 0,
-                            transition: {
-                                duration: 0.3,
-                                delay: idx * 0.05,
-                            }
-                        }}
-                        exit={{
-                            opacity: 0,
-                            y: -20,
-                            transition: { duration: 0.3 }
-                        }}
+        <motion.div
+            {...animations}
+            style={{
+                margin: "0 auto",
+                width: "100%",
+                position: "absolute",
+                top: 0
+            }}
+        >
+            {children}
+        </motion.div>
+    );
+}
+
+export const AnimatedList = React.memo(({
+    children,
+    className,
+    delay = 3000,
+    ...props
+}) => {
+    const [activeIndices, setActiveIndices] = useState([0]);
+    const childrenArray = useMemo(() => React.Children.toArray(children), [children]);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setActiveIndices(prev => {
+                const nextIndex = (prev[0] + 1) % childrenArray.length;
+                return [nextIndex, ...prev].slice(0, childrenArray.length);
+            });
+        }, delay);
+
+        return () => clearTimeout(timeout);
+    }, [activeIndices, delay, childrenArray.length]);
+
+    return (
+        <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            position="relative"
+            height="24rem"
+            className={className}
+            {...props}
+        >
+            <AnimatePresence mode="popLayout">
+                {activeIndices.map((itemIndex, position) => (
+                    <AnimatedListItem
+                        key={childrenArray[itemIndex].key}
+                        position={position}
                     >
-                        {item}
-                    </motion.div>
+                        {childrenArray[itemIndex]}
+                    </AnimatedListItem>
                 ))}
             </AnimatePresence>
-        </div>
+        </Box>
     );
-} 
+});
+
+AnimatedList.displayName = "AnimatedList";
+
+export default AnimatedList; 
