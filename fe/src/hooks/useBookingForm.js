@@ -1,14 +1,15 @@
 import { useState, useRef } from 'react';
 import { useToast } from '@chakra-ui/react';
+import { bookingApi } from '@/services/apiService';
 
-export const useBookingForm = (onClose) => {
+export const useBookingForm = (onClose, buildingId) => {
     const [formData, setFormData] = useState({
         activityName: '',
         startDate: '',
         endDate: '',
         startTime: '',
         endTime: '',
-        applicationLetter: null
+        proposalLetter: null
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [fileName, setFileName] = useState('');
@@ -26,9 +27,36 @@ export const useBookingForm = (onClose) => {
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!allowedTypes.includes(file.type)) {
+                toast({
+                    title: "File Tidak Valid",
+                    description: "Hanya file PDF, DOC, dan DOCX yang diperbolehkan",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                toast({
+                    title: "File Terlalu Besar",
+                    description: "Ukuran file tidak boleh melebihi 5MB",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
+
             setFormData(prev => ({
                 ...prev,
-                applicationLetter: file
+                proposalLetter: file
             }));
             setFileName(file.name);
         }
@@ -40,8 +68,11 @@ export const useBookingForm = (onClose) => {
 
     const validateForm = () => {
         // Required fields validation
-        if (!formData.activityName) {
-            throw new Error('Nama kegiatan harus diisi');
+        if (!buildingId) {
+            throw new Error('Building ID tidak ditemukan');
+        }
+        if (!formData.activityName || formData.activityName.trim().length < 3) {
+            throw new Error('Nama kegiatan harus diisi minimal 3 karakter');
         }
         if (!formData.startDate) {
             throw new Error('Tanggal mulai harus diisi');
@@ -52,19 +83,24 @@ export const useBookingForm = (onClose) => {
         if (!formData.endTime) {
             throw new Error('Jam selesai harus diisi');
         }
-        if (!formData.applicationLetter) {
+        if (!formData.proposalLetter) {
             throw new Error('Surat pengajuan harus diunggah');
         }
 
         // Date and time validation
-        const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-        if (isNaN(startDateTime.getTime())) {
-            throw new Error('Tanggal atau jam mulai tidak valid');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(formData.startDate);
+        if (startDate < today) {
+            throw new Error('Tanggal mulai tidak boleh di masa lalu');
         }
 
+        const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
         const endDateTime = new Date(`${formData.startDate}T${formData.endTime}`);
-        if (isNaN(endDateTime.getTime())) {
-            throw new Error('Tanggal atau jam selesai tidak valid');
+
+        if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+            throw new Error('Format tanggal atau jam tidak valid');
         }
 
         if (endDateTime <= startDateTime) {
@@ -74,14 +110,23 @@ export const useBookingForm = (onClose) => {
         // If endDate is provided, validate it
         if (formData.endDate) {
             const endDate = new Date(formData.endDate);
-            const startDate = new Date(formData.startDate);
+            const startDateOnly = new Date(formData.startDate);
 
-            if (endDate < startDate) {
+            if (endDate < startDateOnly) {
                 throw new Error('Tanggal selesai harus setelah tanggal mulai');
             }
         }
 
         return true;
+    };
+
+    const formatDateForAPI = (dateString) => {
+        // Convert from YYYY-MM-DD to DD-MM-YYYY format required by API
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
     };
 
     const handleSubmit = async (e) => {
@@ -92,30 +137,77 @@ export const useBookingForm = (onClose) => {
             // Validate form
             validateForm();
 
-            // In a real app, this would be an API call
-            // const formDataToSend = new FormData();
-            // Object.entries(formData).forEach(([key, value]) => {
-            //   formDataToSend.append(key, value);
-            // });
-            // await apiService.post('/bookings', formDataToSend);
+            // Prepare booking data
+            const bookingData = {
+                buildingId: buildingId,
+                activityName: formData.activityName.trim(),
+                startDate: formatDateForAPI(formData.startDate),
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                proposalLetter: formData.proposalLetter
+            };
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Add endDate if provided
+            if (formData.endDate) {
+                bookingData.endDate = formatDateForAPI(formData.endDate);
+            }
 
-            toast({
-                title: "Pengajuan Berhasil",
-                description: "Pengajuan peminjaman ruangan sedang diproses",
-                status: "success",
-                duration: 5000,
-                isClosable: true,
-            });
+            console.log('Submitting booking data:', bookingData);
 
-            onClose && onClose();
-            resetForm();
+            // Call API to create booking
+            const response = await bookingApi.createBooking(bookingData);
+
+            if (response.status === 'success') {
+                toast({
+                    title: "Booking Berhasil Dibuat",
+                    description: "Anda akan diarahkan ke halaman pembayaran",
+                    status: "success",
+                    duration: 3000,
+                    isClosable: true,
+                });
+
+                // Close modal first
+                onClose && onClose();
+                resetForm();
+
+                // Redirect to payment URL if available
+                if (response.data?.payment?.paymentUrl) {
+                    // Small delay to let toast show
+                    setTimeout(() => {
+                        window.open(response.data.payment.paymentUrl, '_blank');
+                    }, 1000);
+                } else {
+                    console.warn('Payment URL not found in response:', response.data);
+                    toast({
+                        title: "Booking Berhasil",
+                        description: "Booking berhasil dibuat, silakan cek riwayat peminjaman untuk melakukan pembayaran",
+                        status: "info",
+                        duration: 7000,
+                        isClosable: true,
+                    });
+                }
+            } else {
+                throw new Error(response.message || 'Gagal membuat booking');
+            }
+
         } catch (error) {
+            console.error('Booking submission error:', error);
+
+            let errorMessage = 'Terjadi kesalahan saat membuat booking';
+
+            if (error.message) {
+                errorMessage = error.message;
+            } else if (error.data?.message) {
+                if (Array.isArray(error.data.message)) {
+                    errorMessage = error.data.message.join(', ');
+                } else {
+                    errorMessage = error.data.message;
+                }
+            }
+
             toast({
-                title: "Pengajuan Gagal",
-                description: error.message,
+                title: "Booking Gagal",
+                description: errorMessage,
                 status: "error",
                 duration: 5000,
                 isClosable: true,
@@ -132,7 +224,7 @@ export const useBookingForm = (onClose) => {
             endDate: '',
             startTime: '',
             endTime: '',
-            applicationLetter: null
+            proposalLetter: null
         });
         setFileName('');
     };

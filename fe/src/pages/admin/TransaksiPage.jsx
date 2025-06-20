@@ -1,5 +1,22 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure, Flex } from '@chakra-ui/react';
+import {
+    Box,
+    useDisclosure,
+    Flex,
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalFooter,
+    ModalBody,
+    ModalCloseButton,
+    Button,
+    Select,
+    VStack,
+    Text,
+    FormControl,
+    FormLabel
+} from '@chakra-ui/react';
 import { DollarSign, Download } from 'lucide-react';
 
 import { PrimaryButton } from '@/components/ui';
@@ -44,14 +61,18 @@ const TransaksiPage = () => {
         confirmPayment,
         cancelTransaction,
         processRefund,
-        sendPaymentReminder
+        sendPaymentReminder,
+        exportTransactions
     } = useTransactions();
 
     // Local state for UI interactions
     const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [exportMonth, setExportMonth] = useState('');
+    const [exportYear, setExportYear] = useState(new Date().getFullYear().toString());
 
     // Modal states - implement these later with specific modals
     const { isOpen: isViewOpen, onOpen: onViewOpen, onClose: onViewClose } = useDisclosure();
+    const { isOpen: isExportOpen, onOpen: onExportOpen, onClose: onExportClose } = useDisclosure();
 
     // Handle actions
     const handleView = (transaction) => {
@@ -90,8 +111,19 @@ const TransaksiPage = () => {
     };
 
     const handleExport = () => {
-        // Implementation for exporting transaction data
-        console.log('Export transactions');
+        onExportOpen();
+    };
+
+    const handleConfirmExport = async () => {
+        const month = exportMonth ? parseInt(exportMonth) : null;
+        const year = exportYear ? parseInt(exportYear) : null;
+
+        const success = await exportTransactions(month, year);
+        if (success) {
+            onExportClose();
+            setExportMonth('');
+            setExportYear(new Date().getFullYear().toString());
+        }
     };
 
     // Prepare filters for search component
@@ -170,7 +202,74 @@ const TransaksiPage = () => {
                 />
             </DataStateHandler>
 
-            {/* Modals would go here */}
+            {/* Export Modal */}
+            <Modal isOpen={isExportOpen} onClose={onExportClose}>
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalHeader>Export Data Transaksi</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        <VStack spacing={4} align="stretch">
+                            <Text fontSize="sm" color="gray.600">
+                                Pilih periode untuk mengekspor data transaksi ke file Excel
+                            </Text>
+
+                            <FormControl>
+                                <FormLabel>Bulan (Opsional)</FormLabel>
+                                <Select
+                                    value={exportMonth}
+                                    onChange={(e) => setExportMonth(e.target.value)}
+                                    placeholder="Semua bulan"
+                                >
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl>
+                                <FormLabel>Tahun</FormLabel>
+                                <Select
+                                    value={exportYear}
+                                    onChange={(e) => setExportYear(e.target.value)}
+                                >
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                    <option value="2020">2020</option>
+                                </Select>
+                            </FormControl>
+                        </VStack>
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button variant="ghost" mr={3} onClick={onExportClose}>
+                            Batal
+                        </Button>
+                        <Button
+                            colorScheme="green"
+                            onClick={handleConfirmExport}
+                            isLoading={actionLoading}
+                            loadingText="Mengekspor..."
+                            leftIcon={<Download size={16} />}
+                        >
+                            Export
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Other Modals would go here */}
             {/* 
             <TransactionDetailModal
                 isOpen={isViewOpen}

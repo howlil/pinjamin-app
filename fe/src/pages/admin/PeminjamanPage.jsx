@@ -1,6 +1,27 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure, Flex } from '@chakra-ui/react';
-import { Calendar, Download } from 'lucide-react';
+import {
+    Box,
+    useDisclosure,
+    Flex,
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalFooter,
+    ModalBody,
+    ModalCloseButton,
+    Button,
+    Textarea,
+    VStack,
+    Text,
+    FormControl,
+    FormLabel,
+    Alert,
+    AlertIcon,
+    HStack,
+    Badge
+} from '@chakra-ui/react';
+import { Calendar, Download, Check, X, AlertTriangle } from 'lucide-react';
 
 import { PrimaryButton } from '@/components/ui';
 import { useBookings } from '@/hooks/useBookings';
@@ -40,9 +61,12 @@ const PeminjamanPage = () => {
 
     // Local state for UI interactions
     const [selectedBooking, setSelectedBooking] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
 
-    // Modal states - implement these later with specific modals
+    // Modal states
     const { isOpen: isViewOpen, onOpen: onViewOpen, onClose: onViewClose } = useDisclosure();
+    const { isOpen: isApprovalOpen, onOpen: onApprovalOpen, onClose: onApprovalClose } = useDisclosure();
+    const { isOpen: isRejectionOpen, onOpen: onRejectionOpen, onClose: onRejectionClose } = useDisclosure();
 
     // Handle actions
     const handleView = (booking) => {
@@ -50,19 +74,35 @@ const PeminjamanPage = () => {
         onViewOpen();
     };
 
-    const handleApprove = async (booking) => {
-        const success = await approveBooking(booking.id);
+    const handleApprove = (booking) => {
+        setSelectedBooking(booking);
+        onApprovalOpen();
+    };
+
+    const handleReject = (booking) => {
+        setSelectedBooking(booking);
+        setRejectionReason('');
+        onRejectionOpen();
+    };
+
+    const handleConfirmApproval = async () => {
+        if (!selectedBooking) return;
+
+        const success = await approveBooking(selectedBooking.bookingId);
         if (success) {
-            // Could show success feedback
+            onApprovalClose();
+            setSelectedBooking(null);
         }
     };
 
-    const handleReject = async (booking) => {
-        // This would open a rejection modal in a real implementation
-        const reason = 'Admin rejected the booking';
-        const success = await rejectBooking(booking.id, reason);
+    const handleConfirmRejection = async () => {
+        if (!selectedBooking || !rejectionReason.trim()) return;
+
+        const success = await rejectBooking(selectedBooking.bookingId, rejectionReason.trim());
         if (success) {
-            // Could show success feedback
+            onRejectionClose();
+            setSelectedBooking(null);
+            setRejectionReason('');
         }
     };
 
@@ -156,7 +196,146 @@ const PeminjamanPage = () => {
                 />
             </DataStateHandler>
 
-            {/* Modals would go here */}
+            {/* Approval Confirmation Modal */}
+            <Modal isOpen={isApprovalOpen} onClose={onApprovalClose}>
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalHeader>
+                        <HStack spacing={2}>
+                            <Check size={20} color="green" />
+                            <Text>Konfirmasi Persetujuan</Text>
+                        </HStack>
+                    </ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        {selectedBooking && (
+                            <VStack spacing={4} align="stretch">
+                                <Alert status="info">
+                                    <AlertIcon />
+                                    Anda akan menyetujui peminjaman berikut:
+                                </Alert>
+
+                                <Box p={4} bg="gray.50" borderRadius="md">
+                                    <VStack spacing={2} align="stretch">
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Peminjam:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">{selectedBooking.borrowerName}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Gedung:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">{selectedBooking.buildingName}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Kegiatan:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">{selectedBooking.activityName}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Tanggal:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">
+                                                {selectedBooking.startDate}
+                                                {selectedBooking.endDate && selectedBooking.endDate !== selectedBooking.startDate &&
+                                                    ` - ${selectedBooking.endDate}`
+                                                }
+                                            </Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Waktu:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">
+                                                {selectedBooking.startTime} - {selectedBooking.endTime}
+                                            </Text>
+                                        </HStack>
+                                    </VStack>
+                                </Box>
+                            </VStack>
+                        )}
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button variant="ghost" mr={3} onClick={onApprovalClose}>
+                            Batal
+                        </Button>
+                        <Button
+                            colorScheme="green"
+                            onClick={handleConfirmApproval}
+                            isLoading={actionLoading}
+                            loadingText="Menyetujui..."
+                            leftIcon={<Check size={16} />}
+                        >
+                            Setujui Peminjaman
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Rejection Modal */}
+            <Modal isOpen={isRejectionOpen} onClose={onRejectionClose}>
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalHeader>
+                        <HStack spacing={2}>
+                            <X size={20} color="red" />
+                            <Text>Tolak Peminjaman</Text>
+                        </HStack>
+                    </ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        {selectedBooking && (
+                            <VStack spacing={4} align="stretch">
+                                <Alert status="warning">
+                                    <AlertIcon />
+                                    Anda akan menolak peminjaman berikut. Berikan alasan penolakan:
+                                </Alert>
+
+                                <Box p={4} bg="gray.50" borderRadius="md">
+                                    <VStack spacing={2} align="stretch">
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Peminjam:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">{selectedBooking.borrowerName}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Gedung:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">{selectedBooking.buildingName}</Text>
+                                        </HStack>
+                                        <HStack justify="space-between">
+                                            <Text fontSize="sm" color="gray.600">Kegiatan:</Text>
+                                            <Text fontSize="sm" fontWeight="medium">{selectedBooking.activityName}</Text>
+                                        </HStack>
+                                    </VStack>
+                                </Box>
+
+                                <FormControl isRequired>
+                                    <FormLabel>Alasan Penolakan</FormLabel>
+                                    <Textarea
+                                        value={rejectionReason}
+                                        onChange={(e) => setRejectionReason(e.target.value)}
+                                        placeholder="Masukkan alasan penolakan peminjaman..."
+                                        rows={4}
+                                        resize="vertical"
+                                    />
+                                </FormControl>
+                            </VStack>
+                        )}
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button variant="ghost" mr={3} onClick={onRejectionClose}>
+                            Batal
+                        </Button>
+                        <Button
+                            colorScheme="red"
+                            onClick={handleConfirmRejection}
+                            isLoading={actionLoading}
+                            loadingText="Menolak..."
+                            leftIcon={<X size={16} />}
+                            isDisabled={!rejectionReason.trim()}
+                        >
+                            Tolak Peminjaman
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Other Modals would go here */}
             {/* 
             <BookingDetailModal
                 isOpen={isViewOpen}

@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-    Box, 
-    VStack, 
-    Heading, 
-    Text, 
-    HStack, 
+import {
+    Box,
+    VStack,
+    Heading,
+    Text,
+    HStack,
     Icon
 } from '@chakra-ui/react';
 import { Building, Clock, User } from 'lucide-react';
@@ -45,7 +45,7 @@ const EmptyStateAnimation = () => {
                     scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
                 }}
             />
-            
+
             <MotionBox
                 position="absolute"
                 w="80px"
@@ -75,10 +75,10 @@ const EmptyStateAnimation = () => {
                     ease: "easeInOut"
                 }}
             >
-                <Icon 
-                    as={Building} 
-                    w={12} 
-                    h={12} 
+                <Icon
+                    as={Building}
+                    w={12}
+                    h={12}
                     color={COLORS.primary}
                 />
             </MotionBox>
@@ -102,7 +102,9 @@ const BookingItem = ({ booking, index }) => {
                 transform: "translateY(-2px)",
                 boxShadow: "0 12px 40px rgba(116, 156, 115, 0.25)"
             }}
-            transition="all 0.3s ease"
+            style={{
+                transition: "all 0.3s ease"
+            }}
             cursor="pointer"
             w="full"
         >
@@ -118,34 +120,34 @@ const BookingItem = ({ booking, index }) => {
                 >
                     <Icon as={Building} w={5} h={5} />
                 </Box>
-                
+
                 <VStack align="start" spacing={1} flex={1}>
                     <HStack justify="space-between" w="full" align="start">
                         <VStack align="start" spacing={1} flex={1}>
-                            <Text 
-                                fontWeight="bold" 
-                                color={COLORS.black} 
+                            <Text
+                                fontWeight="bold"
+                                color={COLORS.black}
                                 fontSize="md"
                                 noOfLines={1}
                             >
                                 {booking.buildingName}
                             </Text>
-                            <Text 
-                                fontSize="sm" 
-                                color={COLORS.black} 
+                            <Text
+                                fontSize="sm"
+                                color={COLORS.black}
                                 opacity={0.8}
                                 noOfLines={1}
                             >
                                 {booking.activityName}
                             </Text>
                         </VStack>
-                        
+
                         <VStack align="end" spacing={1} minW="120px">
                             <HStack spacing={1}>
                                 <Icon as={Clock} w={3} h={3} color={COLORS.primary} />
-                                <Text 
-                                    fontSize="sm" 
-                                    color={COLORS.primary} 
+                                <Text
+                                    fontSize="sm"
+                                    color={COLORS.primary}
                                     fontWeight="medium"
                                 >
                                     {booking.startTime} - {booking.endTime}
@@ -153,8 +155,8 @@ const BookingItem = ({ booking, index }) => {
                             </HStack>
                             <HStack spacing={1}>
                                 <Icon as={User} w={3} h={3} color={COLORS.gray[500]} />
-                                <Text 
-                                    fontSize="xs" 
+                                <Text
+                                    fontSize="xs"
                                     color={COLORS.gray[600]}
                                     noOfLines={1}
                                 >
@@ -178,14 +180,14 @@ const EmptyState = () => (
         py={8}
     >
         <EmptyStateAnimation />
-        
+
         <VStack spacing={4} mt={4}>
             <VStack spacing={2}>
                 <Heading size="md" color={COLORS.black} fontWeight="600">
                     Belum Ada Peminjaman Hari Ini
                 </Heading>
                 <Text color={COLORS.black} opacity={0.7} fontSize="sm" maxW="300px">
-                    Tidak ada jadwal peminjaman gedung untuk hari ini. 
+                    Tidak ada jadwal peminjaman gedung untuk hari ini.
                     Periksa kembali nanti atau buat peminjaman baru.
                 </Text>
             </VStack>
@@ -199,11 +201,11 @@ const TodayBookingsList = () => {
     // Get current date for display
     const getCurrentDate = () => {
         const today = new Date();
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         };
         return today.toLocaleDateString('id-ID', options);
     };
@@ -232,8 +234,8 @@ const TodayBookingsList = () => {
             {/* Content */}
             <Box w="full" minH="300px">
                 {isLoading ? (
-                    <ListSkeleton 
-                        count={3} 
+                    <ListSkeleton
+                        count={3}
                         ItemSkeleton={BookingSkeleton}
                         spacing={3}
                     />
@@ -242,9 +244,9 @@ const TodayBookingsList = () => {
                 ) : (
                     <AnimatedList delay={2000} showItemsCount={3} initialDelay={300}>
                         {bookings.map((booking, index) => (
-                            <BookingItem 
-                                key={booking.bookingId} 
-                                booking={booking} 
+                            <BookingItem
+                                key={booking.bookingId}
+                                booking={booking}
                                 index={index}
                             />
                         ))}

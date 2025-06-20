@@ -1,215 +1,236 @@
 import React from 'react';
 import {
     Box,
-    Heading,
     Text,
     HStack,
+    VStack,
+    Select,
+    Button,
     IconButton,
     Tooltip,
-    SimpleGrid,
-    Stat,
-    StatLabel,
-    StatNumber,
-    StatHelpText
+    Badge
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Download, FileText } from 'lucide-react';
-import { COLORS, GLASS, SHADOWS } from '@/utils/designTokens';
+import { Calendar, Filter, RefreshCw, Clock } from 'lucide-react';
+import { COLORS, SHADOWS } from '@/utils/designTokens';
 
-const MotionBox = motion(Box);
-
-const HistoryHeader = ({
-    stats,
-    formatCurrency,
-    onRefresh,
-    onExport,
-    onGenerateReport
+const BookingHistoryHeader = ({
+    totalItems = 0,
+    statusFilter = '',
+    onStatusFilter,
+    onRefresh
 }) => {
+    // Status options for filter
+    const statusOptions = [
+        { value: '', label: 'Semua Status' },
+        { value: 'PROCESSING', label: 'Diproses' },
+        { value: 'APPROVED', label: 'Disetujui' },
+        { value: 'REJECTED', label: 'Ditolak' },
+        { value: 'COMPLETED', label: 'Selesai' }
+    ];
+
+    // Get status counts (mock data - in real app this would come from API)
+    const getStatusCounts = () => ({
+        total: totalItems,
+        processing: Math.floor(totalItems * 0.2),
+        approved: Math.floor(totalItems * 0.3),
+        completed: Math.floor(totalItems * 0.4),
+        rejected: Math.floor(totalItems * 0.1)
+    });
+
+    const statusCounts = getStatusCounts();
+
     return (
-        <MotionBox
+        <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            {/* Header */}
             <Box
-                bg={GLASS.background}
-                backdropFilter={GLASS.backdropFilter}
-                border={GLASS.border}
-                borderRadius="20px"
-                boxShadow={SHADOWS.glass}
+                bg="white"
+                rounded="20px"
+                shadow={SHADOWS.soft}
                 p={6}
                 mb={6}
             >
-                <HStack justify="space-between" align="start">
-                    <Box>
-                        <Heading size="lg" color={COLORS.black} mb={2}>
-                            Riwayat Peminjaman
-                        </Heading>
-                        <Text color={COLORS.gray[600]} fontSize="md">
-                            Kelola dan pantau semua aktivitas peminjaman Anda
-                        </Text>
-                    </Box>
+                {/* Title and Actions */}
+                <HStack justify="space-between" align="center" mb={6}>
+                    <VStack align="start" spacing={1}>
+                        <HStack spacing={2}>
+                            <Box
+                                w={10}
+                                h={10}
+                                bg={`${COLORS.primary}20`}
+                                rounded="full"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                            >
+                                <Calendar size={20} color={COLORS.primary} />
+                            </Box>
+                            <VStack align="start" spacing={0}>
+                                <Text fontSize="xl" fontWeight="bold" color={COLORS.black}>
+                                    Riwayat Peminjaman
+                                </Text>
+                                <Text fontSize="sm" color={COLORS.gray[500]}>
+                                    Kelola dan pantau riwayat peminjaman Anda
+                                </Text>
+                            </VStack>
+                        </HStack>
+                    </VStack>
 
                     <HStack spacing={2}>
-                        <Tooltip label="Refresh Data">
+                        <Tooltip label="Refresh data">
                             <IconButton
-                                icon={<RefreshCw size={18} />}
+                                icon={<RefreshCw size={16} />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="green"
                                 onClick={onRefresh}
-                                variant="ghost"
-                                size="sm"
-                                borderRadius="lg"
-                                _hover={{ bg: `${COLORS.primary}20` }}
-                            />
-                        </Tooltip>
-                        <Tooltip label="Export Data">
-                            <IconButton
-                                icon={<Download size={18} />}
-                                onClick={onExport}
-                                variant="ghost"
-                                size="sm"
-                                borderRadius="lg"
-                                _hover={{ bg: `${COLORS.primary}20` }}
-                            />
-                        </Tooltip>
-                        <Tooltip label="Generate Report">
-                            <IconButton
-                                icon={<FileText size={18} />}
-                                onClick={onGenerateReport}
-                                variant="ghost"
-                                size="sm"
-                                borderRadius="lg"
-                                _hover={{ bg: `${COLORS.primary}20` }}
                             />
                         </Tooltip>
                     </HStack>
                 </HStack>
+
+                {/* Stats Cards */}
+                <HStack spacing={4} mb={6} wrap="wrap">
+                    <Box
+                        bg={`${COLORS.primary}10`}
+                        rounded="lg"
+                        p={4}
+                        minW="140px"
+                    >
+                        <VStack spacing={1}>
+                            <Text fontSize="2xl" fontWeight="bold" color={COLORS.primary}>
+                                {statusCounts.total}
+                            </Text>
+                            <Text fontSize="sm" color={COLORS.gray[600]}>
+                                Total Peminjaman
+                            </Text>
+                        </VStack>
+                    </Box>
+
+                    <Box
+                        bg="orange.50"
+                        rounded="lg"
+                        p={4}
+                        minW="120px"
+                    >
+                        <VStack spacing={1}>
+                            <Text fontSize="xl" fontWeight="bold" color="orange.600">
+                                {statusCounts.processing}
+                            </Text>
+                            <Text fontSize="sm" color="orange.600">
+                                Diproses
+                            </Text>
+                        </VStack>
+                    </Box>
+
+                    <Box
+                        bg="green.50"
+                        rounded="lg"
+                        p={4}
+                        minW="120px"
+                    >
+                        <VStack spacing={1}>
+                            <Text fontSize="xl" fontWeight="bold" color="green.600">
+                                {statusCounts.approved}
+                            </Text>
+                            <Text fontSize="sm" color="green.600">
+                                Disetujui
+                            </Text>
+                        </VStack>
+                    </Box>
+
+                    <Box
+                        bg="blue.50"
+                        rounded="lg"
+                        p={4}
+                        minW="120px"
+                    >
+                        <VStack spacing={1}>
+                            <Text fontSize="xl" fontWeight="bold" color="blue.600">
+                                {statusCounts.completed}
+                            </Text>
+                            <Text fontSize="sm" color="blue.600">
+                                Selesai
+                            </Text>
+                        </VStack>
+                    </Box>
+
+                    <Box
+                        bg="red.50"
+                        rounded="lg"
+                        p={4}
+                        minW="120px"
+                    >
+                        <VStack spacing={1}>
+                            <Text fontSize="xl" fontWeight="bold" color="red.600">
+                                {statusCounts.rejected}
+                            </Text>
+                            <Text fontSize="sm" color="red.600">
+                                Ditolak
+                            </Text>
+                        </VStack>
+                    </Box>
+                </HStack>
+
+                {/* Filters */}
+                <HStack spacing={4} align="center">
+                    <HStack spacing={2}>
+                        <Filter size={16} color={COLORS.gray[500]} />
+                        <Text fontSize="sm" color={COLORS.gray[600]} fontWeight="medium">
+                            Filter:
+                        </Text>
+                    </HStack>
+
+                    <Select
+                        value={statusFilter}
+                        onChange={(e) => onStatusFilter(e.target.value)}
+                        size="sm"
+                        maxW="200px"
+                        bg="white"
+                        borderColor={COLORS.gray[300]}
+                        _focus={{
+                            borderColor: COLORS.primary,
+                            boxShadow: `0 0 0 1px ${COLORS.primary}`
+                        }}
+                    >
+                        {statusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </Select>
+
+                    {statusFilter && (
+                        <Badge
+                            colorScheme="green"
+                            variant="subtle"
+                            rounded="full"
+                            px={2}
+                            py={1}
+                            fontSize="xs"
+                        >
+                            Filter Aktif
+                        </Badge>
+                    )}
+
+                    {statusFilter && (
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="gray"
+                            onClick={() => onStatusFilter('')}
+                            fontSize="xs"
+                        >
+                            Reset
+                        </Button>
+                    )}
+                </HStack>
             </Box>
-
-            {/* Stats Grid */}
-            <SimpleGrid columns={{ base: 2, md: 5 }} spacing={4}>
-                <MotionBox
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 }}
-                    bg={GLASS.background}
-                    backdropFilter={GLASS.backdropFilter}
-                    border={GLASS.border}
-                    borderRadius="16px"
-                    boxShadow={SHADOWS.glass}
-                    p={4}
-                >
-                    <Stat>
-                        <StatLabel color={COLORS.gray[600]} fontSize="sm">
-                            Total Peminjaman
-                        </StatLabel>
-                        <StatNumber color={COLORS.black} fontSize="2xl">
-                            {stats.total}
-                        </StatNumber>
-                        <StatHelpText color={COLORS.gray[500]}>
-                            Sepanjang masa
-                        </StatHelpText>
-                    </Stat>
-                </MotionBox>
-
-                <MotionBox
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    bg={GLASS.background}
-                    backdropFilter={GLASS.backdropFilter}
-                    border={GLASS.border}
-                    borderRadius="16px"
-                    boxShadow={SHADOWS.glass}
-                    p={4}
-                >
-                    <Stat>
-                        <StatLabel color={COLORS.gray[600]} fontSize="sm">
-                            Sedang Aktif
-                        </StatLabel>
-                        <StatNumber color="blue.500" fontSize="2xl">
-                            {stats.active}
-                        </StatNumber>
-                        <StatHelpText color={COLORS.gray[500]}>
-                            Saat ini
-                        </StatHelpText>
-                    </Stat>
-                </MotionBox>
-
-                <MotionBox
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    bg={GLASS.background}
-                    backdropFilter={GLASS.backdropFilter}
-                    border={GLASS.border}
-                    borderRadius="16px"
-                    boxShadow={SHADOWS.glass}
-                    p={4}
-                >
-                    <Stat>
-                        <StatLabel color={COLORS.gray[600]} fontSize="sm">
-                            Selesai
-                        </StatLabel>
-                        <StatNumber color="green.500" fontSize="2xl">
-                            {stats.returned}
-                        </StatNumber>
-                        <StatHelpText color={COLORS.gray[500]}>
-                            Dikembalikan
-                        </StatHelpText>
-                    </Stat>
-                </MotionBox>
-
-                <MotionBox
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 }}
-                    bg={GLASS.background}
-                    backdropFilter={GLASS.backdropFilter}
-                    border={GLASS.border}
-                    borderRadius="16px"
-                    boxShadow={SHADOWS.glass}
-                    p={4}
-                >
-                    <Stat>
-                        <StatLabel color={COLORS.gray[600]} fontSize="sm">
-                            Terlambat
-                        </StatLabel>
-                        <StatNumber color="red.500" fontSize="2xl">
-                            {stats.overdue}
-                        </StatNumber>
-                        <StatHelpText color={COLORS.gray[500]}>
-                            Perlu perhatian
-                        </StatHelpText>
-                    </Stat>
-                </MotionBox>
-
-                <MotionBox
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 }}
-                    bg={GLASS.background}
-                    backdropFilter={GLASS.backdropFilter}
-                    border={GLASS.border}
-                    borderRadius="16px"
-                    boxShadow={SHADOWS.glass}
-                    p={4}
-                >
-                    <Stat>
-                        <StatLabel color={COLORS.gray[600]} fontSize="sm">
-                            Total Biaya
-                        </StatLabel>
-                        <StatNumber color={COLORS.primary} fontSize="lg">
-                            {formatCurrency(stats.totalCost)}
-                        </StatNumber>
-                        <StatHelpText color={COLORS.gray[500]}>
-                            Keseluruhan
-                        </StatHelpText>
-                    </Stat>
-                </MotionBox>
-            </SimpleGrid>
-        </MotionBox>
+        </motion.div>
     );
 };
 
-export default HistoryHeader; 
+export default BookingHistoryHeader; 

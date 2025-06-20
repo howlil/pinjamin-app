@@ -153,9 +153,20 @@ export const authApi = {
 
 // User API methods  
 export const userApi = {
-    getProfile: () => apiService.get('/user/profile'),
-    updateProfile: (userData) => apiService.put('/user/profile', userData),
-    changePassword: (passwords) => apiService.put('/user/change-password', passwords),
+    getProfile: () => {
+        console.log('=== GET USER PROFILE ===');
+        return apiService.get('/api/v1/auth/profile');
+    },
+    updateProfile: (userData) => {
+        console.log('=== UPDATE USER PROFILE ===');
+        console.log('Profile data:', userData);
+        return apiService.patch('/api/v1/auth/profile', userData);
+    },
+    changePassword: (passwords) => {
+        console.log('=== CHANGE PASSWORD ===');
+        console.log('Password change request');
+        return apiService.post('/api/v1/auth/change-password', passwords);
+    },
     uploadAvatar: (formData) => apiService.uploadFile('/user/avatar', formData),
 };
 
@@ -209,14 +220,120 @@ export const buildingApi = {
     // Get single building by ID
     getBuildingById: (id) => apiService.get(`/api/v1/buildings/${id}`),
 
-    // Create new building
-    createBuilding: (buildingData) => apiService.post('/api/v1/buildings', buildingData),
+    // Create new building (ADMIN)
+    createBuilding: (buildingData) => {
+        // Check if we have an image - use different approach based on this
+        if (buildingData.image) {
+            // Use FormData for multipart/form-data when image is present
+            const formData = new FormData();
 
-    // Update building
-    updateBuilding: (id, buildingData) => apiService.put(`/api/v1/buildings/${id}`, buildingData),
+            // Required fields
+            formData.append('buildingName', buildingData.buildingName || '');
+            formData.append('description', buildingData.description || '');
+            formData.append('rentalPrice', String(buildingData.rentalPrice || 0));
+            formData.append('capacity', String(buildingData.capacity || 0));
+            formData.append('location', buildingData.location || '');
+            formData.append('buildingType', buildingData.buildingType || '');
 
-    // Delete building
-    deleteBuilding: (id) => apiService.delete(`/api/v1/buildings/${id}`),
+            // Handle arrays as JSON strings
+            const facilityIds = Array.isArray(buildingData.facilityIds) ? buildingData.facilityIds : [];
+            const buildingManagerIds = Array.isArray(buildingData.buildingManagerIds) ? buildingData.buildingManagerIds : [];
+
+            formData.append('facilityIds', JSON.stringify(facilityIds));
+            formData.append('buildingManagerIds', JSON.stringify(buildingManagerIds));
+            formData.append('image', buildingData.image);
+
+            console.log('=== CREATE BUILDING (WITH IMAGE) ===');
+            console.log('Using FormData with image');
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    console.log(`  ${key}: [File] ${value.name}`);
+                } else {
+                    console.log(`  ${key}: ${value}`);
+                }
+            }
+
+            return apiService.uploadFile('/api/v1/buildings/admin', formData);
+        } else {
+            // Use JSON payload when no image
+            const payload = {
+                buildingName: buildingData.buildingName || '',
+                description: buildingData.description || '',
+                rentalPrice: parseInt(buildingData.rentalPrice) || 0,
+                capacity: parseInt(buildingData.capacity) || 0,
+                location: buildingData.location || '',
+                buildingType: buildingData.buildingType || '',
+                facilityIds: Array.isArray(buildingData.facilityIds) ? buildingData.facilityIds : [],
+                buildingManagerIds: Array.isArray(buildingData.buildingManagerIds) ? buildingData.buildingManagerIds : []
+            };
+
+            console.log('=== CREATE BUILDING (NO IMAGE) ===');
+            console.log('Using JSON payload');
+            console.log('Payload:', JSON.stringify(payload, null, 2));
+            console.log('facilityIds type:', typeof payload.facilityIds, 'isArray:', Array.isArray(payload.facilityIds));
+            console.log('buildingManagerIds type:', typeof payload.buildingManagerIds, 'isArray:', Array.isArray(payload.buildingManagerIds));
+
+            return apiService.post('/api/v1/buildings/admin', payload);
+        }
+    },
+
+    // Update building (ADMIN)
+    updateBuilding: (id, buildingData) => {
+        // Convert to FormData for multipart/form-data
+        const formData = new FormData();
+
+        // Only append fields that are provided
+        if (buildingData.buildingName !== undefined) {
+            formData.append('buildingName', buildingData.buildingName);
+        }
+        if (buildingData.description !== undefined) {
+            formData.append('description', buildingData.description);
+        }
+        if (buildingData.rentalPrice !== undefined) {
+            formData.append('rentalPrice', buildingData.rentalPrice);
+        }
+        if (buildingData.capacity !== undefined) {
+            formData.append('capacity', buildingData.capacity);
+        }
+        if (buildingData.location !== undefined) {
+            formData.append('location', buildingData.location);
+        }
+        if (buildingData.buildingType !== undefined) {
+            formData.append('buildingType', buildingData.buildingType);
+        }
+        if (buildingData.image) {
+            formData.append('image', buildingData.image);
+        }
+
+        // Handle arrays - always send as JSON string arrays if provided
+        if (buildingData.facilityIds !== undefined) {
+            const facilityIds = Array.isArray(buildingData.facilityIds) ? buildingData.facilityIds : [];
+            formData.append('facilityIds', JSON.stringify(facilityIds));
+            console.log('Update - facilityIds:', facilityIds, 'JSON:', JSON.stringify(facilityIds));
+        }
+
+        if (buildingData.buildingManagerIds !== undefined) {
+            const buildingManagerIds = Array.isArray(buildingData.buildingManagerIds) ? buildingData.buildingManagerIds : [];
+            formData.append('buildingManagerIds', JSON.stringify(buildingManagerIds));
+            console.log('Update - buildingManagerIds:', buildingManagerIds, 'JSON:', JSON.stringify(buildingManagerIds));
+        }
+
+        // Use PATCH method for admin update
+        const headers = {};
+        const token = apiService.getAuthToken();
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        return fetch(`${apiService.baseURL}/api/v1/buildings/admin/${id}`, {
+            method: 'PATCH',
+            headers,
+            body: formData,
+        }).then(response => apiService.handleResponse(response));
+    },
+
+    // Delete building (ADMIN)
+    deleteBuilding: (id) => apiService.delete(`/api/v1/buildings/admin/${id}`),
 
     // Get building types (for filter dropdown)
     getBuildingTypes: () => apiService.get('/api/v1/buildings/types'),
@@ -237,58 +354,141 @@ export const buildingApi = {
 
 // Booking API methods
 export const bookingApi = {
-    // Get all bookings with filter/pagination for admin
-    getBookings: (params = {}) => {
+    // Get today's bookings (public)
+    getTodayBookings: () => {
+        console.log('=== GET TODAY\'S BOOKINGS ===');
+        return apiService.get('/api/v1/bookings/today');
+    },
+
+    // Create a new booking (user)
+    createBooking: (bookingData) => {
+        console.log('=== CREATE BOOKING ===');
+        console.log('Booking data:', bookingData);
+
+        // Convert to FormData for multipart/form-data (proposal letter upload)
+        const formData = new FormData();
+        formData.append('buildingId', bookingData.buildingId);
+        formData.append('activityName', bookingData.activityName);
+        formData.append('startDate', bookingData.startDate);
+        if (bookingData.endDate) formData.append('endDate', bookingData.endDate);
+        formData.append('startTime', bookingData.startTime);
+        formData.append('endTime', bookingData.endTime);
+        if (bookingData.proposalLetter) formData.append('proposalLetter', bookingData.proposalLetter);
+
+        return apiService.uploadFile('/api/v1/bookings', formData);
+    },
+
+    // Get booking history for authenticated user
+    getUserBookingHistory: (params = {}) => {
         const queryParams = new URLSearchParams();
         if (params.status) queryParams.append('status', params.status);
-        if (params.search) queryParams.append('search', params.search);
         if (params.page) queryParams.append('page', params.page);
         if (params.limit) queryParams.append('limit', params.limit);
-        if (params.startDate) queryParams.append('startDate', params.startDate);
-        if (params.endDate) queryParams.append('endDate', params.endDate);
         const queryString = queryParams.toString();
+
+        console.log('=== GET USER BOOKING HISTORY ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/bookings/history${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Process payment for a booking
+    processPayment: (bookingId) => {
+        console.log('=== PROCESS PAYMENT ===');
+        console.log('Booking ID:', bookingId);
+        return apiService.post(`/api/v1/bookings/${bookingId}/payment`);
+    },
+
+    // Generate invoice for a booking
+    generateInvoice: (bookingId) => {
+        console.log('=== GENERATE INVOICE ===');
+        console.log('Booking ID:', bookingId);
+        return apiService.get(`/api/v1/bookings/${bookingId}/invoice`);
+    },
+
+    // Admin: Get pending bookings (PROCESSING status only)
+    getAdminBookings: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
+        const queryString = queryParams.toString();
+
+        console.log('=== GET ADMIN BOOKINGS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
         return apiService.get(`/api/v1/bookings/admin${queryString ? `?${queryString}` : ''}`);
     },
 
-    // Get single booking by ID
-    getBookingById: (id) => apiService.get(`/api/v1/bookings/${id}`),
+    // Admin: Approve or reject a booking
+    updateBookingApproval: (bookingId, bookingStatus, rejectionReason = null) => {
+        console.log('=== UPDATE BOOKING APPROVAL ===');
+        console.log('Booking ID:', bookingId);
+        console.log('Status:', bookingStatus);
+        console.log('Rejection reason:', rejectionReason);
 
-    // Update booking status (approve/reject)
-    updateBookingStatus: (id, status, reason = null) =>
-        apiService.put(`/api/v1/bookings/${id}/status`, { status, reason }),
+        const payload = { bookingStatus };
+        if (rejectionReason) payload.rejectionReason = rejectionReason;
 
-    // Create new booking (admin can create bookings)
-    createBooking: (bookingData) => apiService.post('/api/v1/bookings', bookingData),
-
-    // Update booking details
-    updateBooking: (id, bookingData) => apiService.put(`/api/v1/bookings/${id}`, bookingData),
-
-    // Delete booking
-    deleteBooking: (id) => apiService.delete(`/api/v1/bookings/${id}`),
-
-    // Get booking statistics
-    getBookingStats: (params = {}) => {
-        const queryParams = new URLSearchParams();
-        if (params.period) queryParams.append('period', params.period);
-        if (params.year) queryParams.append('year', params.year);
-        if (params.month) queryParams.append('month', params.month);
-        const queryString = queryParams.toString();
-        return apiService.get(`/api/v1/bookings/statistics${queryString ? `?${queryString}` : ''}`);
+        return apiService.patch(`/api/v1/bookings/${bookingId}/approval`, payload);
     },
 
-    // Export bookings data
-    exportBookings: (params = {}) => {
+    // Admin: Get booking history with filters
+    getAdminBookingHistory: (params = {}) => {
         const queryParams = new URLSearchParams();
-        if (params.status) queryParams.append('status', params.status);
+        if (params.buildingId) queryParams.append('buildingId', params.buildingId);
         if (params.startDate) queryParams.append('startDate', params.startDate);
         if (params.endDate) queryParams.append('endDate', params.endDate);
-        if (params.format) queryParams.append('format', params.format);
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
         const queryString = queryParams.toString();
-        return apiService.get(`/api/v1/bookings/export${queryString ? `?${queryString}` : ''}`);
+
+        console.log('=== GET ADMIN BOOKING HISTORY ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/bookings/admin/history${queryString ? `?${queryString}` : ''}`);
     },
 
-    // Get today's bookings for hero section
-    getTodayBookings: () => apiService.get('/api/v1/bookings/today'),
+    // Admin: Process refund for a booking
+    processRefund: (bookingId, refundData) => {
+        console.log('=== PROCESS BOOKING REFUND ===');
+        console.log('Booking ID:', bookingId);
+        console.log('Refund data:', refundData);
+
+        return apiService.post(`/api/v1/bookings/${bookingId}/refund`, refundData);
+    },
+
+    // Get booking statistics for dashboard
+    getBookingStats: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.month) queryParams.append('month', params.month);
+        if (params.year) queryParams.append('year', params.year);
+        const queryString = queryParams.toString();
+
+        console.log('=== GET BOOKING STATISTICS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/dashboard/statistics/bookings${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Legacy methods for backward compatibility
+    getBookings: (params = {}) => {
+        // Redirect to admin bookings
+        return bookingApi.getAdminBookings(params);
+    },
+
+    updateBookingStatus: (id, status, reason = null) => {
+        // Convert old status format to new approval format
+        const statusMap = {
+            'APPROVED': 'APPROVED',
+            'REJECTED': 'REJECTED'
+        };
+        const bookingStatus = statusMap[status] || status;
+        return bookingApi.updateBookingApproval(id, bookingStatus, reason);
+    }
 };
 
 // Transaction API methods
@@ -296,60 +496,111 @@ export const transactionApi = {
     // Get all transactions with filter/pagination for admin
     getTransactions: (params = {}) => {
         const queryParams = new URLSearchParams();
-        if (params.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
-        if (params.paymentMethod) queryParams.append('paymentMethod', params.paymentMethod);
-        if (params.search) queryParams.append('search', params.search);
         if (params.page) queryParams.append('page', params.page);
         if (params.limit) queryParams.append('limit', params.limit);
-        if (params.startDate) queryParams.append('startDate', params.startDate);
-        if (params.endDate) queryParams.append('endDate', params.endDate);
         const queryString = queryParams.toString();
+
+        console.log('=== GET ADMIN TRANSACTIONS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
         return apiService.get(`/api/v1/transactions/admin${queryString ? `?${queryString}` : ''}`);
     },
 
-    // Get single transaction by ID
-    getTransactionById: (id) => apiService.get(`/api/v1/transactions/${id}`),
-
-    // Update transaction status
-    updateTransactionStatus: (id, status, notes = null) =>
-        apiService.put(`/api/v1/transactions/${id}/status`, { status, notes }),
-
-    // Create manual transaction (admin)
-    createTransaction: (transactionData) => apiService.post('/api/v1/transactions', transactionData),
-
-    // Update transaction details
-    updateTransaction: (id, transactionData) => apiService.put(`/api/v1/transactions/${id}`, transactionData),
-
-    // Delete transaction
-    deleteTransaction: (id) => apiService.delete(`/api/v1/transactions/${id}`),
-
-    // Get transaction statistics
-    getTransactionStats: (params = {}) => {
+    // Get user transaction history
+    getUserTransactionHistory: (params = {}) => {
         const queryParams = new URLSearchParams();
-        if (params.period) queryParams.append('period', params.period);
-        if (params.year) queryParams.append('year', params.year);
-        if (params.month) queryParams.append('month', params.month);
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
         const queryString = queryParams.toString();
-        return apiService.get(`/api/v1/transactions/statistics${queryString ? `?${queryString}` : ''}`);
+
+        console.log('=== GET USER TRANSACTION HISTORY ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/transactions/history${queryString ? `?${queryString}` : ''}`);
     },
 
-    // Export transactions data
+    // Export transactions to Excel (Admin)
     exportTransactions: (params = {}) => {
         const queryParams = new URLSearchParams();
-        if (params.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
-        if (params.paymentMethod) queryParams.append('paymentMethod', params.paymentMethod);
-        if (params.startDate) queryParams.append('startDate', params.startDate);
-        if (params.endDate) queryParams.append('endDate', params.endDate);
-        if (params.format) queryParams.append('format', params.format);
+        if (params.month) queryParams.append('month', params.month);
+        if (params.year) queryParams.append('year', params.year);
         const queryString = queryParams.toString();
-        return apiService.get(`/api/v1/transactions/export${queryString ? `?${queryString}` : ''}`);
+
+        console.log('=== EXPORT TRANSACTIONS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/transactions/admin/export${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Get single transaction by ID
+    getTransactionById: (id) => {
+        console.log('=== GET TRANSACTION BY ID ===');
+        console.log('Transaction ID:', id);
+        return apiService.get(`/api/v1/transactions/${id}`);
+    },
+
+    // Update transaction status
+    updateTransactionStatus: (id, status, notes = null) => {
+        console.log('=== UPDATE TRANSACTION STATUS ===');
+        console.log('Transaction ID:', id);
+        console.log('Status:', status);
+        console.log('Notes:', notes);
+        return apiService.put(`/api/v1/transactions/${id}/status`, { status, notes });
+    },
+
+    // Create manual transaction (admin)
+    createTransaction: (transactionData) => {
+        console.log('=== CREATE TRANSACTION ===');
+        console.log('Transaction data:', transactionData);
+        return apiService.post('/api/v1/transactions', transactionData);
+    },
+
+    // Update transaction details
+    updateTransaction: (id, transactionData) => {
+        console.log('=== UPDATE TRANSACTION ===');
+        console.log('Transaction ID:', id);
+        console.log('Transaction data:', transactionData);
+        return apiService.put(`/api/v1/transactions/${id}`, transactionData);
+    },
+
+    // Delete transaction
+    deleteTransaction: (id) => {
+        console.log('=== DELETE TRANSACTION ===');
+        console.log('Transaction ID:', id);
+        return apiService.delete(`/api/v1/transactions/${id}`);
+    },
+
+    // Get transaction statistics for dashboard
+    getTransactionStats: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.month) queryParams.append('month', params.month);
+        if (params.year) queryParams.append('year', params.year);
+        const queryString = queryParams.toString();
+
+        console.log('=== GET TRANSACTION STATISTICS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/dashboard/statistics/transactions${queryString ? `?${queryString}` : ''}`);
     },
 
     // Send payment reminder
-    sendPaymentReminder: (id) => apiService.post(`/api/v1/transactions/${id}/reminder`),
+    sendPaymentReminder: (id) => {
+        console.log('=== SEND PAYMENT REMINDER ===');
+        console.log('Transaction ID:', id);
+        return apiService.post(`/api/v1/transactions/${id}/reminder`);
+    },
 
     // Process refund
-    processRefund: (id, refundData) => apiService.post(`/api/v1/transactions/${id}/refund`, refundData)
+    processRefund: (id, refundData) => {
+        console.log('=== PROCESS REFUND ===');
+        console.log('Transaction ID:', id);
+        console.log('Refund data:', refundData);
+        return apiService.post(`/api/v1/transactions/${id}/refund`, refundData);
+    }
 };
 
 // Facility API methods
@@ -361,23 +612,182 @@ export const facilityApi = {
         if (params.page) queryParams.append('page', params.page);
         if (params.limit) queryParams.append('limit', params.limit);
         const queryString = queryParams.toString();
+
+        console.log('=== GET FACILITIES ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
         return apiService.get(`/api/v1/facilities${queryString ? `?${queryString}` : ''}`);
     },
 
     // Get single facility by ID
-    getFacilityById: (id) => apiService.get(`/api/v1/facilities/${id}`),
+    getFacilityById: (id) => {
+        console.log('=== GET FACILITY BY ID ===');
+        console.log('Facility ID:', id);
+        return apiService.get(`/api/v1/facilities/${id}`);
+    },
 
-    // Create new facility
-    createFacility: (facilityData) => apiService.post('/api/v1/facilities', facilityData),
+    // Create new facility (requires admin authentication)
+    createFacility: (facilityData) => {
+        console.log('=== CREATE FACILITY ===');
+        console.log('Facility data:', facilityData);
 
-    // Update facility
-    updateFacility: (id, facilityData) => apiService.patch(`/api/v1/facilities/${id}`, facilityData),
+        // Validate required fields
+        if (!facilityData.facilityName || facilityData.facilityName.trim().length < 2) {
+            throw new Error('Nama fasilitas harus diisi minimal 2 karakter');
+        }
 
-    // Delete facility
-    deleteFacility: (id) => apiService.delete(`/api/v1/facilities/${id}`),
+        const payload = {
+            facilityName: facilityData.facilityName.trim(),
+            ...(facilityData.iconUrl && { iconUrl: facilityData.iconUrl.trim() })
+        };
 
-    // Get available icons (if endpoint exists)
-    getAvailableIcons: () => apiService.get('/api/v1/facilities/icons').catch(() => ({ data: [] }))
+        console.log('Payload:', payload);
+        return apiService.post('/api/v1/facilities', payload);
+    },
+
+    // Update facility (requires admin authentication)
+    updateFacility: (id, facilityData) => {
+        console.log('=== UPDATE FACILITY ===');
+        console.log('Facility ID:', id);
+        console.log('Facility data:', facilityData);
+
+        // Validate required fields if provided
+        if (facilityData.facilityName !== undefined && facilityData.facilityName.trim().length < 2) {
+            throw new Error('Nama fasilitas harus diisi minimal 2 karakter');
+        }
+
+        const payload = {};
+        if (facilityData.facilityName !== undefined) {
+            payload.facilityName = facilityData.facilityName.trim();
+        }
+        if (facilityData.iconUrl !== undefined) {
+            payload.iconUrl = facilityData.iconUrl.trim();
+        }
+
+        console.log('Update payload:', payload);
+        return apiService.patch(`/api/v1/facilities/${id}`, payload);
+    },
+
+    // Delete facility (requires admin authentication)
+    deleteFacility: (id) => {
+        console.log('=== DELETE FACILITY ===');
+        console.log('Facility ID:', id);
+        return apiService.delete(`/api/v1/facilities/${id}`);
+    },
+
+    // Get available icons (optional endpoint)
+    getAvailableIcons: () => {
+        console.log('=== GET AVAILABLE ICONS ===');
+        return apiService.get('/api/v1/facilities/icons').catch((error) => {
+            console.log('Icons endpoint not available:', error.message);
+            return { data: [] };
+        });
+    }
+};
+
+// Building Manager API methods
+export const buildingManagerApi = {
+    // Get all building managers with pagination
+    getBuildingManagers: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.buildingId) queryParams.append('buildingId', params.buildingId);
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
+        const queryString = queryParams.toString();
+
+        console.log('=== GET BUILDING MANAGERS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/building-managers${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Get available building managers (not assigned to any building)
+    getAvailableBuildingManagers: () => {
+        console.log('=== GET AVAILABLE BUILDING MANAGERS ===');
+        return apiService.get('/api/v1/building-managers/available');
+    },
+
+    // Create new building manager (requires admin authentication)
+    createBuildingManager: (managerData) => {
+        console.log('=== CREATE BUILDING MANAGER ===');
+        console.log('Manager data:', managerData);
+
+        // Validate required fields
+        if (!managerData.managerName || managerData.managerName.trim().length < 2) {
+            throw new Error('Nama pengelola harus diisi minimal 2 karakter');
+        }
+
+        if (!managerData.phoneNumber || managerData.phoneNumber.trim().length < 10) {
+            throw new Error('Nomor telepon harus diisi minimal 10 karakter');
+        }
+
+        const payload = {
+            managerName: managerData.managerName.trim(),
+            phoneNumber: managerData.phoneNumber.trim(),
+            ...(managerData.buildingId && { buildingId: managerData.buildingId })
+        };
+
+        console.log('Payload:', payload);
+        return apiService.post('/api/v1/building-managers', payload);
+    },
+
+    // Update building manager (requires admin authentication)
+    updateBuildingManager: (id, managerData) => {
+        console.log('=== UPDATE BUILDING MANAGER ===');
+        console.log('Manager ID:', id);
+        console.log('Manager data:', managerData);
+
+        // Validate required fields if provided
+        if (managerData.managerName !== undefined && managerData.managerName.trim().length < 2) {
+            throw new Error('Nama pengelola harus diisi minimal 2 karakter');
+        }
+
+        if (managerData.phoneNumber !== undefined && managerData.phoneNumber.trim().length < 10) {
+            throw new Error('Nomor telepon harus diisi minimal 10 karakter');
+        }
+
+        const payload = {};
+        if (managerData.managerName !== undefined) {
+            payload.managerName = managerData.managerName.trim();
+        }
+        if (managerData.phoneNumber !== undefined) {
+            payload.phoneNumber = managerData.phoneNumber.trim();
+        }
+        if (managerData.buildingId !== undefined) {
+            payload.buildingId = managerData.buildingId;
+        }
+
+        console.log('Update payload:', payload);
+        return apiService.patch(`/api/v1/building-managers/${id}`, payload);
+    },
+
+    // Delete building manager (requires admin authentication)
+    deleteBuildingManager: (id) => {
+        console.log('=== DELETE BUILDING MANAGER ===');
+        console.log('Manager ID:', id);
+        return apiService.delete(`/api/v1/building-managers/${id}`);
+    },
+
+    // Assign building manager to building (requires admin authentication)
+    assignBuildingManager: (assignmentData) => {
+        console.log('=== ASSIGN BUILDING MANAGER ===');
+        console.log('Assignment data:', assignmentData);
+
+        // Validate required fields
+        if (!assignmentData.managerId || !assignmentData.buildingId) {
+            throw new Error('Manager ID dan Building ID harus diisi');
+        }
+
+        const payload = {
+            managerId: assignmentData.managerId,
+            buildingId: assignmentData.buildingId
+        };
+
+        console.log('Assignment payload:', payload);
+        return apiService.post('/api/v1/building-managers/assign', payload);
+    }
 };
 
 // Higher order function for API calls with error handling
@@ -389,7 +799,13 @@ export const withApiErrorHandling = (apiCall) => {
         } catch (error) {
             // Handle specific error types
             if (error.status === 400) {
-                showToast.error(error.data.message || 'Data yang dikirim tidak valid');
+                // Handle validation errors - message can be string or array
+                if (error.data?.message) {
+                    // showToast.error can handle both string and array messages
+                    showToast.error(error.data.message);
+                } else {
+                    showToast.error('Data yang dikirim tidak valid');
+                }
             } else if (error.status === 403) {
                 showToast.error('Anda tidak memiliki akses untuk melakukan tindakan ini');
             } else if (error.status === 404) {
@@ -402,6 +818,53 @@ export const withApiErrorHandling = (apiCall) => {
             throw error;
         }
     };
+};
+
+// Notification API methods
+export const notificationApi = {
+    // Get user notifications
+    getNotifications: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
+        const queryString = queryParams.toString();
+
+        console.log('=== GET NOTIFICATIONS ===');
+        console.log('Params:', params);
+        console.log('Query string:', queryString);
+
+        return apiService.get(`/api/v1/notifications${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Get unread notification count
+    getUnreadCount: () => {
+        console.log('=== GET UNREAD NOTIFICATION COUNT ===');
+        return apiService.get('/api/v1/notifications/unread-count');
+    },
+
+    // Mark a notification as read
+    markAsRead: (notificationId) => {
+        console.log('=== MARK NOTIFICATION AS READ ===');
+        console.log('Notification ID:', notificationId);
+        return apiService.patch(`/api/v1/notifications/${notificationId}/read`);
+    }
+};
+
+// Xendit Callback API methods
+export const callbackApi = {
+    // Xendit payment callback webhook
+    xenditPaymentCallback: (callbackData) => {
+        console.log('=== XENDIT PAYMENT CALLBACK ===');
+        console.log('Callback data:', callbackData);
+        return apiService.post('/api/v1/transactions/callback/xendit', callbackData);
+    },
+
+    // Xendit refund callback webhook
+    xenditRefundCallback: (callbackData) => {
+        console.log('=== XENDIT REFUND CALLBACK ===');
+        console.log('Callback data:', callbackData);
+        return apiService.post('/api/v1/transactions/callback/refund', callbackData);
+    }
 };
 
 export default apiService; 

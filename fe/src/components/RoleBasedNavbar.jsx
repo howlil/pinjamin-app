@@ -19,6 +19,7 @@ import { Bell, Settings, Users, Building, BookOpen, DollarSign, History } from '
 import { useAuthStore } from '../utils/store';
 import { useRole } from '../hooks/useAuth';
 import { AdminOnly, UserOnly, AuthenticatedOnly, GuestOnly, RoleGuard } from './auth/RoleGuard';
+import { NotificationPopup } from './common';
 import logoUnand from '../assets/logo.png';
 
 const RoleBasedNavbar = () => {
@@ -41,29 +42,25 @@ const RoleBasedNavbar = () => {
             ];
         }
 
-        const baseLinks = [
-            { name: 'Dashboard', path: isAdmin() ? '/admin/dashboard' : '/dashboard' }
-        ];
-
         if (isAdmin()) {
             return [
-                ...baseLinks,
+                { name: 'Dashboard', path: '/admin/dashboard' },
                 { name: 'Gedung', path: '/admin/gedung', icon: Building },
                 { name: 'Fasilitas', path: '/admin/fasilitas', icon: Settings },
+                { name: 'Pengelola', path: '/admin/pengelola', icon: Users },
                 { name: 'Peminjaman', path: '/admin/peminjaman', icon: BookOpen },
                 { name: 'Transaksi', path: '/admin/transaksi', icon: DollarSign },
                 { name: 'Riwayat', path: '/admin/riwayat', icon: History },
             ];
         } else if (isUser()) {
             return [
-                ...baseLinks,
                 { name: 'Jadwal', path: '/schedule' },
-                { name: 'Peminjaman', path: '/bookings', icon: BookOpen },
                 { name: 'Riwayat', path: '/history' },
+                { name: 'Transaksi', path: '/transactions' },
             ];
         }
 
-        return baseLinks;
+        return [];
     };
 
     const navLinks = getNavLinks();
@@ -144,10 +141,7 @@ const RoleBasedNavbar = () => {
                                         _hover={{ bg: "rgba(116, 156, 115, 0.2)" }}
                                     />
                                     <MenuList>
-                                        <MenuItem onClick={() => navigate('/admin/settings')}>
-                                            <Settings size={16} style={{ marginRight: '8px' }} />
-                                            System Settings
-                                        </MenuItem>
+
                                         <MenuItem onClick={() => navigate('/admin/users')}>
                                             <Users size={16} style={{ marginRight: '8px' }} />
                                             Manage Users
@@ -157,7 +151,7 @@ const RoleBasedNavbar = () => {
                             </AdminOnly>
 
                             {/* Notifications */}
-                            <Box position="relative">
+                            <NotificationPopup>
                                 <IconButton
                                     bg="rgba(255, 255, 255, 0.3)"
                                     backdropFilter="blur(10px)"
@@ -167,19 +161,7 @@ const RoleBasedNavbar = () => {
                                     size="sm"
                                     _hover={{ bg: "rgba(116, 156, 115, 0.2)" }}
                                 />
-                                <Badge
-                                    position="absolute"
-                                    top="0"
-                                    right="0"
-                                    bg="#749C73"
-                                    color="white"
-                                    borderRadius="full"
-                                    fontSize="xs"
-                                    px={1.5}
-                                >
-                                    {isAdmin() ? '5' : '3'}
-                                </Badge>
-                            </Box>
+                            </NotificationPopup>
 
                             {/* User Menu */}
                             <Menu>
@@ -196,22 +178,16 @@ const RoleBasedNavbar = () => {
                                         <MenuItem onClick={() => navigate('/profile')}>
                                             Profil Saya
                                         </MenuItem>
-                                        <MenuItem onClick={() => navigate('/settings')}>
-                                            Pengaturan
-                                        </MenuItem>
+
                                     </UserOnly>
 
                                     <AdminOnly>
                                         <MenuItem onClick={() => navigate('/admin/profile')}>
                                             Admin Profile
                                         </MenuItem>
-                                        <MenuItem onClick={() => navigate('/admin/settings')}>
-                                            System Settings
-                                        </MenuItem>
+
                                         <MenuDivider />
-                                        <MenuItem onClick={() => navigate('/dashboard')}>
-                                            View as User
-                                        </MenuItem>
+
                                     </AdminOnly>
 
                                     <MenuDivider />

@@ -101,14 +101,37 @@ const FacilityFormModal = ({
 
     // Handle form submission
     const handleSubmit = async () => {
-        if (!formData.facilityName.trim() || !formData.iconUrl) {
-            showToast.error('Nama fasilitas dan ikon harus diisi');
+        // Validate required fields
+        if (!formData.facilityName.trim()) {
+            showToast.error('Nama fasilitas harus diisi');
             return;
         }
 
-        const success = await onSubmit(formData, facility?.id);
-        if (success) {
-            onClose();
+        if (formData.facilityName.trim().length < 2) {
+            showToast.error('Nama fasilitas harus minimal 2 karakter');
+            return;
+        }
+
+        console.log('=== FACILITY FORM SUBMIT ===');
+        console.log('Form data:', formData);
+        console.log('Is editing:', isEditing);
+        console.log('Facility ID:', facility?.id);
+
+        // Prepare submission data
+        const submitData = {
+            facilityName: formData.facilityName.trim(),
+            ...(formData.iconUrl && { iconUrl: formData.iconUrl })
+        };
+
+        console.log('Submit data:', submitData);
+
+        try {
+            const success = await onSubmit(submitData, facility?.id);
+            if (success) {
+                onClose();
+            }
+        } catch (error) {
+            console.error('Form submission error:', error);
         }
     };
 
@@ -145,8 +168,8 @@ const FacilityFormModal = ({
                             />
                         </FormControl>
 
-                        <FormControl isRequired>
-                            <FormLabel color={COLORS.black}>Ikon</FormLabel>
+                        <FormControl>
+                            <FormLabel color={COLORS.black}>Ikon (Opsional)</FormLabel>
                             <Select
                                 placeholder="Pilih ikon fasilitas..."
                                 value={formData.iconUrl}

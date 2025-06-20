@@ -162,7 +162,7 @@ const BookingTable = ({
                             const actions = getAvailableActions(booking);
                             return (
                                 <motion.tr
-                                    key={booking.id}
+                                    key={booking.bookingId}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.1 }}
@@ -178,10 +178,10 @@ const BookingTable = ({
                                             />
                                             <VStack align="start" spacing={0}>
                                                 <Text fontSize="sm" fontWeight="semibold" color={COLORS.black}>
-                                                    {booking.borrowerName}
+                                                    {booking.borrowerName || 'N/A'}
                                                 </Text>
                                                 <Text fontSize="xs" color={COLORS.gray[500]}>
-                                                    {booking.borrowerEmail}
+                                                    ID: {booking.bookingId?.slice(0, 8)}...
                                                 </Text>
                                             </VStack>
                                         </HStack>
@@ -189,20 +189,20 @@ const BookingTable = ({
                                     <Td borderColor={`${COLORS.primary}10`} py={4}>
                                         <VStack align="start" spacing={1}>
                                             <Text fontSize="sm" fontWeight="semibold" color={COLORS.black}>
-                                                {booking.buildingName}
+                                                {booking.buildingName || 'N/A'}
                                             </Text>
                                             <Text fontSize="xs" color={COLORS.gray[500]}>
-                                                {booking.roomName}
+                                                Peminjaman Ruangan
                                             </Text>
                                         </VStack>
                                     </Td>
                                     <Td borderColor={`${COLORS.primary}10`} py={4}>
                                         <VStack align="start" spacing={1}>
                                             <Text fontSize="sm" fontWeight="medium" color={COLORS.black}>
-                                                {booking.activityName}
+                                                {booking.activityName || 'N/A'}
                                             </Text>
                                             <Text fontSize="xs" color={COLORS.gray[500]} noOfLines={2}>
-                                                {booking.activityDescription}
+                                                Kegiatan peminjaman ruangan
                                             </Text>
                                         </VStack>
                                     </Td>
@@ -211,13 +211,16 @@ const BookingTable = ({
                                             <HStack spacing={1}>
                                                 <Calendar size={14} color={COLORS.gray[500]} />
                                                 <Text fontSize="sm" color={COLORS.black}>
-                                                    {formatDate(booking.date)}
+                                                    {booking.startDate || 'N/A'}
+                                                    {booking.endDate && booking.endDate !== booking.startDate &&
+                                                        ` - ${booking.endDate}`
+                                                    }
                                                 </Text>
                                             </HStack>
                                             <HStack spacing={1}>
                                                 <Clock size={14} color={COLORS.gray[500]} />
                                                 <Text fontSize="sm" color={COLORS.gray[600]}>
-                                                    {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                                                    {booking.startTime || 'N/A'} - {booking.endTime || 'N/A'}
                                                 </Text>
                                             </HStack>
                                         </VStack>

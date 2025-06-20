@@ -5,14 +5,15 @@ import { Building, Plus } from 'lucide-react';
 import { PrimaryButton } from '@/components/ui';
 import { useBuildings } from '@/hooks/useBuildings';
 import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
-import { BuildingTable } from '@/components/admin/building';
+import { BuildingTable, BuildingFormModal, BuildingDeleteModal } from '@/components/admin/building';
 
 // Building type options for filter
 const BUILDING_TYPE_OPTIONS = [
-    { value: 'SEMINAR', label: 'Seminar' },
-    { value: 'LABORATORY', label: 'Laboratorium' },
+    { value: 'CLASSROOM', label: 'Ruang Kelas' },
     { value: 'PKM', label: 'PKM' },
-    { value: 'MULTIFUNCTION', label: 'Multifungsi' }
+    { value: 'LABORATORY', label: 'Laboratorium' },
+    { value: 'MULTIFUNCTION', label: 'Multifungsi' },
+    { value: 'SEMINAR', label: 'Seminar' }
 ];
 
 const GedungPage = () => {
@@ -39,9 +40,10 @@ const GedungPage = () => {
     // Local state for UI interactions
     const [selectedBuilding, setSelectedBuilding] = useState(null);
 
-    // Modal states - implement these later with specific modals
+    // Modal states
     const { isOpen: isViewOpen, onOpen: onViewOpen, onClose: onViewClose } = useDisclosure();
     const { isOpen: isFormOpen, onOpen: onFormOpen, onClose: onFormClose } = useDisclosure();
+    const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
 
     // Handle actions
     const handleView = (building) => {
@@ -54,17 +56,32 @@ const GedungPage = () => {
         onFormOpen();
     };
 
-    const handleDelete = async (building) => {
-        // This would open a delete confirmation modal in a real implementation
+    const handleDelete = (building) => {
+        setSelectedBuilding(building);
+        onDeleteOpen();
+    };
+
+    const handleConfirmDelete = async (building) => {
         const success = await deleteBuilding(building.id);
         if (success) {
-            // Could show success feedback
+            onDeleteClose();
         }
     };
 
     const handleAddNew = () => {
         setSelectedBuilding(null);
         onFormOpen();
+    };
+
+    // Handle form submission
+    const handleFormSubmit = async (buildingData) => {
+        if (selectedBuilding) {
+            // Update existing building
+            return await updateBuilding(selectedBuilding.id, buildingData);
+        } else {
+            // Create new building
+            return await createBuilding(buildingData);
+        }
     };
 
     // Prepare filters for search component
@@ -135,18 +152,30 @@ const GedungPage = () => {
                 />
             </DataStateHandler>
 
-            {/* Modals would go here */}
+            {/* Building Form Modal */}
+            <BuildingFormModal
+                isOpen={isFormOpen}
+                onClose={onFormClose}
+                building={selectedBuilding}
+                onSubmit={handleFormSubmit}
+                isLoading={actionLoading}
+            />
+
+            {/* Building Delete Modal */}
+            <BuildingDeleteModal
+                isOpen={isDeleteOpen}
+                onClose={onDeleteClose}
+                building={selectedBuilding}
+                onConfirm={handleConfirmDelete}
+                isLoading={actionLoading}
+            />
+
+            {/* Building Detail Modal - TODO: Implement later */}
             {/* 
             <BuildingDetailModal
                 isOpen={isViewOpen}
                 onClose={onViewClose}
                 building={selectedBuilding}
-            />
-            <BuildingFormModal
-                isOpen={isFormOpen}
-                onClose={onFormClose}
-                building={selectedBuilding}
-                onSubmit={selectedBuilding ? updateBuilding : createBuilding}
             />
             */}
         </PageWrapper>

@@ -58,12 +58,32 @@ export const useFacilities = () => {
     const createFacility = async (facilityData) => {
         try {
             setActionLoading(true);
+            console.log('=== CREATE FACILITY HOOK ===');
+            console.log('Facility data:', facilityData);
+
             await facilityApi.createFacility(facilityData);
             showToast.success('Fasilitas berhasil ditambahkan');
             fetchFacilities(currentPage, searchTerm);
             return true;
         } catch (err) {
-            showToast.error('Gagal menambahkan fasilitas');
+            console.error('=== CREATE FACILITY ERROR ===');
+            console.error('Full error:', err);
+            console.error('Error response:', err.response);
+            console.error('Error response data:', err.response?.data);
+
+            // Handle validation errors - check both err.response.data and err.data
+            const errorData = err.response?.data || err.data;
+
+            if (errorData?.message) {
+                console.log('Using errorData.message:', errorData.message);
+                showToast.error(errorData.message);
+            } else if (errorData?.errors) {
+                console.log('Using errorData.errors:', errorData.errors);
+                showToast.error(errorData.errors);
+            } else {
+                console.log('Using fallback error message');
+                showToast.error('Gagal menambahkan fasilitas');
+            }
             return false;
         } finally {
             setActionLoading(false);
@@ -74,12 +94,33 @@ export const useFacilities = () => {
     const updateFacility = async (id, facilityData) => {
         try {
             setActionLoading(true);
+            console.log('=== UPDATE FACILITY HOOK ===');
+            console.log('Facility ID:', id);
+            console.log('Facility data:', facilityData);
+
             await facilityApi.updateFacility(id, facilityData);
             showToast.success('Fasilitas berhasil diperbarui');
             fetchFacilities(currentPage, searchTerm);
             return true;
         } catch (err) {
-            showToast.error('Gagal memperbarui fasilitas');
+            console.error('=== UPDATE FACILITY ERROR ===');
+            console.error('Full error:', err);
+            console.error('Error response:', err.response);
+            console.error('Error response data:', err.response?.data);
+
+            // Handle validation errors - check both err.response.data and err.data
+            const errorData = err.response?.data || err.data;
+
+            if (errorData?.message) {
+                console.log('Using errorData.message:', errorData.message);
+                showToast.error(errorData.message);
+            } else if (errorData?.errors) {
+                console.log('Using errorData.errors:', errorData.errors);
+                showToast.error(errorData.errors);
+            } else {
+                console.log('Using fallback error message');
+                showToast.error('Gagal memperbarui fasilitas');
+            }
             return false;
         } finally {
             setActionLoading(false);
@@ -90,12 +131,32 @@ export const useFacilities = () => {
     const deleteFacility = async (id) => {
         try {
             setActionLoading(true);
+            console.log('=== DELETE FACILITY HOOK ===');
+            console.log('Facility ID:', id);
+
             await facilityApi.deleteFacility(id);
             showToast.success('Fasilitas berhasil dihapus');
             fetchFacilities(currentPage, searchTerm);
             return true;
         } catch (err) {
-            showToast.error('Gagal menghapus fasilitas');
+            console.error('=== DELETE FACILITY ERROR ===');
+            console.error('Full error:', err);
+            console.error('Error response:', err.response);
+            console.error('Error response data:', err.response?.data);
+
+            // Handle validation errors - check both err.response.data and err.data
+            const errorData = err.response?.data || err.data;
+
+            if (errorData?.message) {
+                console.log('Using errorData.message:', errorData.message);
+                showToast.error(errorData.message);
+            } else if (errorData?.errors) {
+                console.log('Using errorData.errors:', errorData.errors);
+                showToast.error(errorData.errors);
+            } else {
+                console.log('Using fallback error message');
+                showToast.error('Gagal menghapus fasilitas');
+            }
             return false;
         } finally {
             setActionLoading(false);

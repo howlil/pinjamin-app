@@ -27,6 +27,7 @@ import {
     BookOpen,
     DollarSign,
     History,
+    Users,
     LogOut,
     Menu as MenuIcon,
     Bell
@@ -61,6 +62,11 @@ const AdminLayout = () => {
             name: 'Fasilitas',
             path: '/admin/fasilitas',
             icon: Settings
+        },
+        {
+            name: 'Pengelola',
+            path: '/admin/pengelola',
+            icon: Users
         },
         {
             name: 'Peminjaman',

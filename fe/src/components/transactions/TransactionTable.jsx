@@ -1,15 +1,42 @@
 import React from 'react';
-import { Box } from '@chakra-ui/react';
+import { Box, Badge, Button, HStack, Text } from '@chakra-ui/react';
+import { FileText } from 'lucide-react';
+import { AdminPagination } from '@/components/admin/common';
 import { COLORS } from '@/utils/designTokens';
 
 const TransactionTable = ({
     transactions = [],
-    getStatusBadge,
-    getStatusText,
-    getTypeBadge,
-    getTypeText,
-    formatCurrency
+    formatCurrency,
+    currentPage = 1,
+    totalPages = 1,
+    totalItems = 0,
+    onPageChange,
+    onPayNow,
+    onGenerateInvoice,
+    generatingInvoice = false
 }) => {
+    // Helper functions for status and payment method display
+    const getStatusBadge = (status) => {
+        const statusColors = {
+            'PENDING': 'orange',
+            'PAID': 'green',
+            'FAILED': 'red',
+            'CANCELLED': 'gray',
+            'REFUNDED': 'blue'
+        };
+        return statusColors[status] || 'gray';
+    };
+
+    const getStatusText = (status) => {
+        const statusTexts = {
+            'PENDING': 'Menunggu',
+            'PAID': 'Lunas',
+            'FAILED': 'Gagal',
+            'CANCELLED': 'Dibatalkan',
+            'REFUNDED': 'Dikembalikan'
+        };
+        return statusTexts[status] || status;
+    };
     if (!transactions || transactions.length === 0) {
         return (
             <Box
@@ -61,7 +88,7 @@ const TransactionTable = ({
                             color: COLORS.gray[600],
                             borderBottom: '1px solid #E2E8F0'
                         }}>
-                            Tanggal
+                            Tanggal Pembayaran
                         </th>
                         <th style={{
                             padding: '12px',
@@ -71,7 +98,7 @@ const TransactionTable = ({
                             color: COLORS.gray[600],
                             borderBottom: '1px solid #E2E8F0'
                         }}>
-                            Keterangan
+                            Gedung
                         </th>
                         <th style={{
                             padding: '12px',
@@ -81,7 +108,7 @@ const TransactionTable = ({
                             color: COLORS.gray[600],
                             borderBottom: '1px solid #E2E8F0'
                         }}>
-                            Jenis
+                            Metode Pembayaran
                         </th>
                         <th style={{
                             padding: '12px',
@@ -91,7 +118,7 @@ const TransactionTable = ({
                             color: COLORS.gray[600],
                             borderBottom: '1px solid #E2E8F0'
                         }}>
-                            Jumlah
+                            Total
                         </th>
                         <th style={{
                             padding: '12px',
@@ -103,12 +130,22 @@ const TransactionTable = ({
                         }}>
                             Status
                         </th>
+                        <th style={{
+                            padding: '12px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: COLORS.gray[600],
+                            borderBottom: '1px solid #E2E8F0'
+                        }}>
+                            Aksi
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    {transactions.map((item, index) => (
+                    {transactions.map((transaction, index) => (
                         <tr
-                            key={item.id}
+                            key={transaction.transactionId}
                             style={{
                                 borderBottom: index < transactions.length - 1 ? '1px solid #F7FAFC' : 'none'
                             }}
@@ -118,14 +155,14 @@ const TransactionTable = ({
                                 fontSize: '14px',
                                 color: COLORS.black
                             }}>
-                                {index + 1}
+                                {(currentPage - 1) * 10 + index + 1}
                             </td>
                             <td style={{
                                 padding: '16px 12px',
                                 fontSize: '14px',
                                 color: COLORS.black
                             }}>
-                                {item.date || 'N/A'}
+                                {transaction.paymentDate || '-'}
                             </td>
                             <td style={{
                                 padding: '16px 12px',
@@ -133,20 +170,14 @@ const TransactionTable = ({
                                 color: COLORS.black,
                                 maxWidth: '200px'
                             }}>
-                                {item.description || 'No description'}
+                                {transaction.buildingName || 'N/A'}
                             </td>
-                            <td style={{ padding: '16px 12px' }}>
-                                <span style={{
-                                    padding: '4px 12px',
-                                    borderRadius: '20px',
-                                    border: `1px solid ${getTypeBadge(item.type) === 'red' ? '#E53E3E' : '#3182CE'}`,
-                                    color: getTypeBadge(item.type) === 'red' ? '#E53E3E' : '#3182CE',
-                                    fontSize: '12px',
-                                    fontWeight: '500',
-                                    backgroundColor: getTypeBadge(item.type) === 'red' ? '#FED7D7' : '#EBF8FF'
-                                }}>
-                                    {getTypeText(item.type)}
-                                </span>
+                            <td style={{
+                                padding: '16px 12px',
+                                fontSize: '14px',
+                                color: COLORS.black
+                            }}>
+                                {transaction.paymentMethod || '-'}
                             </td>
                             <td style={{
                                 padding: '16px 12px',
@@ -155,24 +186,78 @@ const TransactionTable = ({
                                 fontSize: '14px',
                                 color: COLORS.black
                             }}>
-                                {formatCurrency(item.amount || 0)}
+                                {formatCurrency(transaction.totalAmount || 0)}
                             </td>
                             <td style={{ padding: '16px 12px' }}>
-                                <span style={{
-                                    padding: '4px 12px',
-                                    borderRadius: '20px',
-                                    backgroundColor: getStatusBadge(item.status) === 'green' ? '#48BB78' : getStatusBadge(item.status) === 'orange' ? '#ED8936' : '#ECC94B',
-                                    color: 'white',
-                                    fontSize: '12px',
-                                    fontWeight: '500'
-                                }}>
-                                    {getStatusText(item.status)}
-                                </span>
+                                <Badge
+                                    colorScheme={getStatusBadge(transaction.paymentStatus)}
+                                    borderRadius="full"
+                                    px={2}
+                                    py={1}
+                                    fontSize="xs"
+                                >
+                                    {getStatusText(transaction.paymentStatus)}
+                                </Badge>
+                            </td>
+                            <td style={{ padding: '16px 12px', textAlign: 'center' }}>
+                                <HStack spacing={2} justify="center">
+                                    {/* Tombol Bayar untuk status PENDING */}
+                                    {transaction.paymentStatus === 'PENDING' && onPayNow && (
+                                        <Button
+                                            size="sm"
+                                            colorScheme="green"
+                                            borderRadius="full"
+                                            onClick={() => onPayNow(transaction.transactionId)}
+                                        >
+                                            Bayar
+                                        </Button>
+                                    )}
+
+                                    {/* Tombol Cetak Invoice untuk status PAID */}
+                                    {transaction.paymentStatus === 'PAID' && onGenerateInvoice && (
+                                        <Button
+                                            size="sm"
+                                            colorScheme="blue"
+                                            variant="outline"
+                                            borderRadius="full"
+                                            leftIcon={<FileText size={14} />}
+                                            onClick={() => onGenerateInvoice(
+                                                transaction.bookingId || transaction.transactionId,
+                                                transaction.buildingName
+                                            )}
+                                            isLoading={generatingInvoice}
+                                            loadingText="Membuat..."
+                                        >
+                                            Invoice
+                                        </Button>
+                                    )}
+
+                                    {/* Text untuk status lainnya */}
+                                    {!['PENDING', 'PAID'].includes(transaction.paymentStatus) && (
+                                        <Text fontSize="sm" color="gray.500">
+                                            -
+                                        </Text>
+                                    )}
+                                </HStack>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <Box p={4} borderTop="1px solid #E2E8F0">
+                    <AdminPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={onPageChange}
+                        totalItems={totalItems}
+                        itemsPerPage={10}
+                        itemLabel="transaksi"
+                    />
+                </Box>
+            )}
         </Box>
     );
 };

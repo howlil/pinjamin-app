@@ -7,191 +7,285 @@ import {
     Tr,
     Th,
     Td,
-    Badge,
     Text,
+    Badge,
     VStack,
     HStack,
-    Avatar
+    Spinner,
+    Alert,
+    AlertIcon,
+    Button,
+    IconButton,
+    Tooltip
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { COLORS, GLASS, SHADOWS } from '@/utils/designTokens';
-import { DataStateHandler } from '@/components/admin/common';
+import { Eye, Calendar, Clock, MapPin, User, RefreshCw } from 'lucide-react';
+import { COLORS, SHADOWS } from '@/utils/designTokens';
+import { AdminPagination } from '@/components/admin/common';
 
-const MotionTr = motion(Tr);
-
-const HistoryTable = ({
-    data = [],
-    loading,
-    error,
+const BookingHistoryTable = ({
+    bookings = [],
+    loading = false,
+    error = null,
+    currentPage = 1,
+    totalPages = 1,
+    totalItems = 0,
+    onPageChange,
+    onRefresh,
     getStatusBadge,
-    getStatusText,
-    formatDate,
-    formatCurrency
+    getStatusText
 }) => {
-    if (loading || error || !data || data.length === 0) {
+    // Format date from DD-MM-YYYY to readable format
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        try {
+            const [day, month, year] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (err) {
+            return dateString;
+        }
+    };
+
+    // Format time from HH:MM to readable format
+    const formatTime = (timeString) => {
+        if (!timeString) return '-';
+        return `${timeString} WIB`;
+    };
+
+    // Loading state
+    if (loading) {
         return (
-            <DataStateHandler
-                loading={loading}
-                error={error}
-                isEmpty={!data || data.length === 0}
-                emptyMessage="Belum ada riwayat peminjaman"
-                emptyDescription="Riwayat peminjaman Anda akan muncul di sini"
-            />
+            <Box
+                bg="white"
+                rounded="20px"
+                shadow={SHADOWS.soft}
+                p={8}
+                textAlign="center"
+            >
+                <VStack spacing={4}>
+                    <Spinner size="xl" color={COLORS.primary} />
+                    <Text color={COLORS.black}>Memuat riwayat peminjaman...</Text>
+                </VStack>
+            </Box>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <Box
+                bg="white"
+                rounded="20px"
+                shadow={SHADOWS.soft}
+                p={6}
+            >
+                <Alert status="error" rounded="lg">
+                    <AlertIcon />
+                    <VStack align="start" spacing={2}>
+                        <Text fontWeight="semibold">Gagal memuat data</Text>
+                        <Text fontSize="sm">{error}</Text>
+                        <Button
+                            size="sm"
+                            colorScheme="red"
+                            variant="outline"
+                            leftIcon={<RefreshCw size={16} />}
+                            onClick={onRefresh}
+                        >
+                            Coba Lagi
+                        </Button>
+                    </VStack>
+                </Alert>
+            </Box>
+        );
+    }
+
+    // Empty state
+    if (!bookings || bookings.length === 0) {
+        return (
+            <Box
+                bg="white"
+                rounded="20px"
+                shadow={SHADOWS.soft}
+                p={8}
+                textAlign="center"
+            >
+                <VStack spacing={4}>
+                    <Box
+                        w={16}
+                        h={16}
+                        bg={`${COLORS.primary}20`}
+                        rounded="full"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                    >
+                        <Calendar size={32} color={COLORS.primary} />
+                    </Box>
+                    <VStack spacing={2}>
+                        <Text fontSize="lg" fontWeight="semibold" color={COLORS.black}>
+                            Belum ada riwayat peminjaman
+                        </Text>
+                        <Text color={COLORS.gray[500]} fontSize="sm">
+                            Riwayat peminjaman Anda akan muncul di sini
+                        </Text>
+                    </VStack>
+                </VStack>
+            </Box>
         );
     }
 
     return (
         <Box
-            bg={GLASS.background}
-            backdropFilter={GLASS.backdropFilter}
-            border={GLASS.border}
-            borderRadius="20px"
-            boxShadow={SHADOWS.glass}
+            bg="white"
+            rounded="20px"
+            shadow={SHADOWS.soft}
             overflow="hidden"
         >
+            {/* Header */}
+            <Box p={6} borderBottom="1px" borderColor={`${COLORS.primary}20`}>
+                <HStack justify="space-between" align="center">
+                    <VStack align="start" spacing={1}>
+                        <Text fontSize="lg" fontWeight="bold" color={COLORS.black}>
+                            Riwayat Peminjaman
+                        </Text>
+                        <Text fontSize="sm" color={COLORS.gray[500]}>
+                            Total {totalItems} peminjaman
+                        </Text>
+                    </VStack>
+                    <Tooltip label="Refresh data">
+                        <IconButton
+                            icon={<RefreshCw size={16} />}
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="green"
+                            onClick={onRefresh}
+                        />
+                    </Tooltip>
+                </HStack>
+            </Box>
+
+            {/* Table */}
             <Box overflowX="auto">
                 <Table variant="simple" size="md">
-                    <Thead>
-                        <Tr bg="rgba(255, 255, 255, 0.1)">
-                            <Th
-                                color={COLORS.gray[600]}
-                                fontSize="xs"
-                                fontWeight="semibold"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                borderColor={`${COLORS.primary}20`}
-                            >
+                    <Thead bg={`${COLORS.primary}10`}>
+                        <Tr>
+                            <Th color={COLORS.black} fontWeight="bold" fontSize="xs">
                                 No
                             </Th>
-                            <Th
-                                color={COLORS.gray[600]}
-                                fontSize="xs"
-                                fontWeight="semibold"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                borderColor={`${COLORS.primary}20`}
-                            >
-                                Item
+                            <Th color={COLORS.black} fontWeight="bold" fontSize="xs">
+                                Gedung
                             </Th>
-                            <Th
-                                color={COLORS.gray[600]}
-                                fontSize="xs"
-                                fontWeight="semibold"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                borderColor={`${COLORS.primary}20`}
-                            >
+                            <Th color={COLORS.black} fontWeight="bold" fontSize="xs">
+                                Kegiatan
+                            </Th>
+                            <Th color={COLORS.black} fontWeight="bold" fontSize="xs">
                                 Tanggal
                             </Th>
-                            <Th
-                                color={COLORS.gray[600]}
-                                fontSize="xs"
-                                fontWeight="semibold"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                borderColor={`${COLORS.primary}20`}
-                            >
-                                Durasi
+                            <Th color={COLORS.black} fontWeight="bold" fontSize="xs">
+                                Waktu
                             </Th>
-                            <Th
-                                color={COLORS.gray[600]}
-                                fontSize="xs"
-                                fontWeight="semibold"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                borderColor={`${COLORS.primary}20`}
-                            >
-                                Biaya
-                            </Th>
-                            <Th
-                                color={COLORS.gray[600]}
-                                fontSize="xs"
-                                fontWeight="semibold"
-                                textTransform="uppercase"
-                                letterSpacing="wider"
-                                borderColor={`${COLORS.primary}20`}
-                            >
+                            <Th color={COLORS.black} fontWeight="bold" fontSize="xs">
                                 Status
                             </Th>
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {data.map((item, index) => (
-                            <MotionTr
-                                key={item.id}
+                        {bookings.map((booking, index) => (
+                            <motion.tr
+                                key={booking.bookingId}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                _hover={{ bg: `${COLORS.primary}05` }}
                             >
                                 <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                    <Text fontSize="sm" fontWeight="medium" color={COLORS.black}>
-                                        {index + 1}
+                                    <Text fontSize="sm" color={COLORS.black}>
+                                        {(currentPage - 1) * 10 + index + 1}
                                     </Text>
                                 </Td>
                                 <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                    <HStack spacing={3}>
-                                        <Avatar
-                                            size="sm"
-                                            name={item.itemTitle}
-                                            bg={COLORS.primary}
-                                            color="white"
-                                            fontSize="xs"
-                                        />
-                                        <VStack align="start" spacing={0}>
-                                            <Text fontSize="sm" fontWeight="medium" color={COLORS.black}>
-                                                {item.itemTitle || 'Unknown Item'}
-                                            </Text>
+                                    <VStack align="start" spacing={1}>
+                                        <Text fontSize="sm" fontWeight="semibold" color={COLORS.black}>
+                                            {booking.buildingName || 'N/A'}
+                                        </Text>
+                                        <HStack spacing={1}>
+                                            <MapPin size={12} color={COLORS.gray[400]} />
                                             <Text fontSize="xs" color={COLORS.gray[500]}>
-                                                {item.building || 'Unknown Building'}
+                                                ID: {booking.bookingId?.slice(-8) || 'N/A'}
                                             </Text>
-                                        </VStack>
-                                    </HStack>
+                                        </HStack>
+                                    </VStack>
                                 </Td>
                                 <Td borderColor={`${COLORS.primary}10`} py={4}>
                                     <VStack align="start" spacing={1}>
                                         <Text fontSize="sm" color={COLORS.black}>
-                                            Pinjam: {formatDate(item.borrowDate)}
+                                            {booking.activityName || 'N/A'}
                                         </Text>
-                                        <Text fontSize="xs" color={COLORS.gray[500]}>
-                                            Kembali: {formatDate(item.returnDate)}
-                                        </Text>
-                                        {item.actualReturnDate && (
+                                    </VStack>
+                                </Td>
+                                <Td borderColor={`${COLORS.primary}10`} py={4}>
+                                    <VStack align="start" spacing={1}>
+                                        <HStack spacing={1}>
+                                            <Calendar size={12} color={COLORS.gray[400]} />
                                             <Text fontSize="xs" color={COLORS.gray[500]}>
-                                                Actual: {formatDate(item.actualReturnDate)}
+                                                Mulai: {formatDate(booking.startDate)}
                                             </Text>
+                                        </HStack>
+                                        {booking.endDate && booking.endDate !== booking.startDate && (
+                                            <HStack spacing={1}>
+                                                <Calendar size={12} color={COLORS.gray[400]} />
+                                                <Text fontSize="xs" color={COLORS.gray[500]}>
+                                                    Selesai: {formatDate(booking.endDate)}
+                                                </Text>
+                                            </HStack>
                                         )}
                                     </VStack>
                                 </Td>
                                 <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                    <Text fontSize="sm" fontWeight="medium" color={COLORS.black}>
-                                        {item.duration || 'N/A'}
-                                    </Text>
-                                </Td>
-                                <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                    <Text fontSize="sm" fontWeight="bold" color={COLORS.black}>
-                                        {formatCurrency(item.cost || 0)}
-                                    </Text>
+                                    <VStack align="start" spacing={1}>
+                                        <HStack spacing={1}>
+                                            <Clock size={12} color={COLORS.gray[400]} />
+                                            <Text fontSize="xs" color={COLORS.gray[500]}>
+                                                {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                                            </Text>
+                                        </HStack>
+                                    </VStack>
                                 </Td>
                                 <Td borderColor={`${COLORS.primary}10`} py={4}>
                                     <Badge
-                                        colorScheme={getStatusBadge(item.status)}
+                                        colorScheme={getStatusBadge(booking.status)}
                                         borderRadius="full"
                                         px={3}
                                         py={1}
                                         fontSize="xs"
-                                        fontWeight="medium"
+                                        fontWeight="semibold"
                                     >
-                                        {getStatusText(item.status)}
+                                        {getStatusText(booking.status)}
                                     </Badge>
                                 </Td>
-                            </MotionTr>
+                            </motion.tr>
                         ))}
                     </Tbody>
                 </Table>
             </Box>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <Box p={6} borderTop="1px" borderColor={`${COLORS.primary}20`}>
+                    <AdminPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        onPageChange={onPageChange}
+                    />
+                </Box>
+            )}
         </Box>
     );
 };
 
-export default HistoryTable; 
+export default BookingHistoryTable; 

@@ -34,9 +34,17 @@ export const useBuildings = () => {
             const response = await buildingApi.getBuildings(params);
 
             if (response.status === 'success') {
-                setBuildings(response.data || []);
-                setTotalBuildings(response.pagination?.totalItems || 0);
-                setTotalPages(response.pagination?.totalPages || 1);
+                // Handle response structure - data is directly in response.data array
+                if (Array.isArray(response.data)) {
+                    setBuildings(response.data);
+                    setTotalBuildings(response.pagination?.totalItems || response.data.length);
+                    setTotalPages(response.pagination?.totalPages || 1);
+                } else {
+                    // Fallback for nested structure
+                    setBuildings(response.data?.buildings || []);
+                    setTotalBuildings(response.data?.pagination?.totalItems || 0);
+                    setTotalPages(response.data?.pagination?.totalPages || 1);
+                }
             }
         } catch (err) {
             setError(err.message || 'Failed to fetch buildings');
@@ -73,12 +81,32 @@ export const useBuildings = () => {
     const createBuilding = async (buildingData) => {
         try {
             setActionLoading(true);
+            console.log('=== CREATE BUILDING HOOK ===');
+            console.log('Building data:', buildingData);
+
             await buildingApi.createBuilding(buildingData);
             showToast.success('Gedung berhasil ditambahkan');
             fetchBuildings(currentPage, searchTerm, buildingTypeFilter);
             return true;
         } catch (err) {
-            showToast.error('Gagal menambahkan gedung');
+            console.error('=== CREATE BUILDING ERROR ===');
+            console.error('Full error:', err);
+            console.error('Error response:', err.response);
+            console.error('Error response data:', err.response?.data);
+
+            // Handle validation errors - check both err.response.data and err.data
+            const errorData = err.response?.data || err.data;
+
+            if (errorData?.message) {
+                console.log('Using errorData.message:', errorData.message);
+                showToast.error(errorData.message);
+            } else if (errorData?.errors) {
+                console.log('Using errorData.errors:', errorData.errors);
+                showToast.error(errorData.errors);
+            } else {
+                console.log('Using fallback error message');
+                showToast.error('Gagal menambahkan gedung');
+            }
             return false;
         } finally {
             setActionLoading(false);
@@ -89,12 +117,33 @@ export const useBuildings = () => {
     const updateBuilding = async (id, buildingData) => {
         try {
             setActionLoading(true);
+            console.log('=== UPDATE BUILDING HOOK ===');
+            console.log('Building ID:', id);
+            console.log('Building data:', buildingData);
+
             await buildingApi.updateBuilding(id, buildingData);
             showToast.success('Gedung berhasil diperbarui');
             fetchBuildings(currentPage, searchTerm, buildingTypeFilter);
             return true;
         } catch (err) {
-            showToast.error('Gagal memperbarui gedung');
+            console.error('=== UPDATE BUILDING ERROR ===');
+            console.error('Full error:', err);
+            console.error('Error response:', err.response);
+            console.error('Error response data:', err.response?.data);
+
+            // Handle validation errors - check both err.response.data and err.data
+            const errorData = err.response?.data || err.data;
+
+            if (errorData?.message) {
+                console.log('Using errorData.message:', errorData.message);
+                showToast.error(errorData.message);
+            } else if (errorData?.errors) {
+                console.log('Using errorData.errors:', errorData.errors);
+                showToast.error(errorData.errors);
+            } else {
+                console.log('Using fallback error message');
+                showToast.error('Gagal memperbarui gedung');
+            }
             return false;
         } finally {
             setActionLoading(false);

@@ -12,7 +12,9 @@ import {
     Avatar,
     VStack,
     HStack,
-    Icon
+    Icon,
+    Button,
+    Tooltip
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -22,7 +24,9 @@ import {
     User,
     CheckCircle,
     XCircle,
-    AlertCircle
+    AlertCircle,
+    DollarSign,
+    RefreshCw
 } from 'lucide-react';
 import { COLORS } from '@/utils/designTokens';
 import AdminPagination from '../common/AdminPagination';
@@ -32,7 +36,8 @@ const HistoryTable = ({
     currentPage,
     totalPages,
     totalItems,
-    onPageChange
+    onPageChange,
+    onRefund
 }) => {
     // Format date
     const formatDate = (dateString) => {
@@ -51,8 +56,18 @@ const HistoryTable = ({
     // Get status badge props
     const getStatusProps = (status) => {
         const statusMap = {
-            'COMPLETED': {
+            'PROCESSING': {
+                color: 'orange',
+                icon: RefreshCw,
+                label: 'Diproses'
+            },
+            'APPROVED': {
                 color: 'green',
+                icon: CheckCircle,
+                label: 'Disetujui'
+            },
+            'COMPLETED': {
+                color: 'blue',
                 icon: CheckCircle,
                 label: 'Selesai'
             },
@@ -72,6 +87,11 @@ const HistoryTable = ({
             icon: AlertCircle,
             label: status
         };
+    };
+
+    // Check if booking is eligible for refund
+    const isRefundEligible = (status) => {
+        return status === 'REJECTED' || status === 'CANCELLED';
     };
 
     // Calculate duration
@@ -109,7 +129,10 @@ const HistoryTable = ({
                                 Durasi
                             </Th>
                             <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
-                                Status Akhir
+                                Status
+                            </Th>
+                            <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
+                                Aksi
                             </Th>
                         </Tr>
                     </Thead>
@@ -125,7 +148,7 @@ const HistoryTable = ({
 
                             return (
                                 <motion.tr
-                                    key={item.id}
+                                    key={item.bookingId}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
@@ -141,10 +164,10 @@ const HistoryTable = ({
                                             />
                                             <VStack align="start" spacing={0}>
                                                 <Text fontSize="sm" fontWeight="semibold" color={COLORS.black}>
-                                                    {item.borrowerName}
+                                                    {item.borrowerName || 'N/A'}
                                                 </Text>
                                                 <Text fontSize="xs" color={COLORS.gray[500]}>
-                                                    ID: {item.id.slice(-8)}
+                                                    ID: {item.bookingId?.slice(0, 8)}...
                                                 </Text>
                                             </VStack>
                                         </HStack>
@@ -167,16 +190,16 @@ const HistoryTable = ({
                                             <HStack spacing={1}>
                                                 <Calendar size={14} color={COLORS.gray[500]} />
                                                 <Text fontSize="sm" color={COLORS.black}>
-                                                    {formatDate(item.startDate)}
+                                                    {item.startDate || 'N/A'}
                                                     {item.endDate && item.endDate !== item.startDate &&
-                                                        ` - ${formatDate(item.endDate)}`
+                                                        ` - ${item.endDate}`
                                                     }
                                                 </Text>
                                             </HStack>
                                             <HStack spacing={1}>
                                                 <Clock size={14} color={COLORS.gray[500]} />
                                                 <Text fontSize="xs" color={COLORS.gray[600]}>
-                                                    {formatTime(item.startTime)} - {formatTime(item.endTime)}
+                                                    {item.startTime || 'N/A'} - {item.endTime || 'N/A'}
                                                 </Text>
                                             </HStack>
                                         </VStack>
@@ -193,7 +216,9 @@ const HistoryTable = ({
                                                 size={16}
                                                 color={statusProps.color === 'green' ? 'green.500' :
                                                     statusProps.color === 'red' ? 'red.500' :
-                                                        'gray.500'}
+                                                        statusProps.color === 'blue' ? 'blue.500' :
+                                                            statusProps.color === 'orange' ? 'orange.500' :
+                                                                'gray.500'}
                                             />
                                             <Badge
                                                 colorScheme={statusProps.color}
@@ -206,6 +231,26 @@ const HistoryTable = ({
                                                 {statusProps.label}
                                             </Badge>
                                         </HStack>
+                                    </Td>
+                                    <Td borderColor={`${COLORS.primary}10`} py={4}>
+                                        {isRefundEligible(item.status) && onRefund ? (
+                                            <Tooltip label="Proses refund untuk peminjaman yang ditolak/dibatalkan">
+                                                <Button
+                                                    size="sm"
+                                                    colorScheme="orange"
+                                                    variant="outline"
+                                                    leftIcon={<DollarSign size={14} />}
+                                                    onClick={() => onRefund(item)}
+                                                    borderRadius="full"
+                                                >
+                                                    Refund
+                                                </Button>
+                                            </Tooltip>
+                                        ) : (
+                                            <Text fontSize="sm" color="gray.500">
+                                                -
+                                            </Text>
+                                        )}
                                     </Td>
                                 </motion.tr>
                             );

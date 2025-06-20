@@ -23,6 +23,7 @@ import { Bell, Menu as MenuIcon, X, Settings, Users, Building } from 'lucide-rea
 import { useAuthStore } from '../utils/store';
 import { useRole, useAuth } from '../hooks/useAuth';
 import { AdminOnly, UserOnly, AuthenticatedOnly, GuestOnly, RoleGuard } from './auth/RoleGuard';
+import { NotificationPopup } from './common';
 import logoUnand from '../assets/logo.png';
 
 const Navbar = () => {
@@ -45,12 +46,8 @@ const Navbar = () => {
         { name: 'Jadwal', path: '/schedule', roles: ['ADMIN', 'BORROWER'], showWhen: true },
 
         // User-specific links
-        { name: 'Dashboard', path: '/dashboard', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() },
-        { name: 'Peminjaman', path: '/bookings', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() && canAccess('bookings', 'read') },
         { name: 'Riwayat', path: '/history', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() && canAccess('history', 'read') },
         { name: 'Transaksi', path: '/transactions', roles: ['BORROWER'], showWhen: isAuthenticated && isBorrower() && canAccess('transactions', 'read') },
-
-
     ];
 
     // Filter navigation links based on user role and permissions
@@ -152,15 +149,7 @@ const Navbar = () => {
                                         borderRadius="20px"
                                         boxShadow="0 8px 32px rgba(116, 156, 115, 0.15)"
                                     >
-                                        <MenuItem
-                                            onClick={() => navigate('/admin/settings')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            <Settings size={16} style={{ marginRight: '8px' }} />
-                                            System Settings
-                                        </MenuItem>
+
                                         <MenuItem
                                             onClick={() => navigate('/admin/users')}
                                             bg="transparent"
@@ -175,7 +164,7 @@ const Navbar = () => {
                             </AdminOnly>
 
                             {/* Notification */}
-                            <Box position="relative">
+                            <NotificationPopup>
                                 <IconButton
                                     bg="rgba(255, 255, 255, 0.3)"
                                     backdropFilter="blur(10px)"
@@ -191,19 +180,7 @@ const Navbar = () => {
                                     }}
                                     transition="all 0.3s ease"
                                 />
-                                <Badge
-                                    position="absolute"
-                                    top="0"
-                                    right="0"
-                                    bg="#749C73"
-                                    color="white"
-                                    borderRadius="full"
-                                    fontSize="xs"
-                                    px={1.5}
-                                >
-                                    {isAdmin() ? '8' : '3'}
-                                </Badge>
-                            </Box>
+                            </NotificationPopup>
 
                             {/* User Menu */}
                             <Menu>
@@ -247,14 +224,7 @@ const Navbar = () => {
                                         >
                                             Profil Saya
                                         </MenuItem>
-                                        <MenuItem
-                                            onClick={() => navigate('/settings')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            Pengaturan
-                                        </MenuItem>
+
                                     </UserOnly>
 
                                     {/* Admin-specific menu items */}
@@ -267,23 +237,7 @@ const Navbar = () => {
                                         >
                                             Admin Profile
                                         </MenuItem>
-                                        <MenuItem
-                                            onClick={() => navigate('/admin/settings')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            System Settings
-                                        </MenuItem>
-                                        <MenuDivider borderColor="rgba(116, 156, 115, 0.2)" />
-                                        <MenuItem
-                                            onClick={() => navigate('/dashboard')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            View as User
-                                        </MenuItem>
+
                                     </AdminOnly>
 
                                     <MenuDivider borderColor="rgba(116, 156, 115, 0.2)" />

@@ -8,12 +8,9 @@ import SchedulePage from '../pages/public/SchedulePage';
 import NotFoundPage from '../pages/public/NotFoundPage';
 
 // User pages
-import UserDashboardPage from '../pages/user/DashboardPage';
 import UserProfilePage from '../pages/user/ProfilePage';
-import BookingHistoryPage from '../pages/user/BookingHistoryPage';
 import TransactionsPage from '../pages/user/TransactionsPage';
 import HistoryPage from '../pages/user/HistoryPage';
-import SettingsPage from '../pages/user/SettingsPage';
 
 // Admin pages
 import AdminDashboardPage from '../pages/admin/DashboardPage';
@@ -22,6 +19,8 @@ import AdminPeminjamanPage from '../pages/admin/PeminjamanPage';
 import AdminTransaksiPage from '../pages/admin/TransaksiPage';
 import AdminFasilitasPage from '../pages/admin/FasilitasPage';
 import AdminRiwayatPage from '../pages/admin/RiwayatPage';
+import AdminPengelolaPage from '../pages/admin/PengelolaPage';
+import AdminProfilePage from '../pages/admin/ProfilePage';
 
 // Layouts
 import ProtectedRoute, { AdminProtectedRoute, BorrowerProtectedRoute } from './ProtectedRoute';
@@ -45,10 +44,7 @@ const AppRouter = () => {
 
             {/* Borrower Protected Routes - Only accessible by BORROWER role */}
             <Route path="/" element={<BorrowerProtectedRoute><Layout /></BorrowerProtectedRoute>}>
-                <Route path="dashboard" element={<UserDashboardPage />} />
                 <Route path="profile" element={<UserProfilePage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="bookings" element={<BookingHistoryPage />} />
                 <Route path="transactions" element={<TransactionsPage />} />
                 <Route path="history" element={<HistoryPage />} />
             </Route>
@@ -59,9 +55,11 @@ const AppRouter = () => {
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="gedung" element={<AdminGedungPage />} />
                 <Route path="fasilitas" element={<AdminFasilitasPage />} />
+                <Route path="pengelola" element={<AdminPengelolaPage />} />
                 <Route path="peminjaman" element={<AdminPeminjamanPage />} />
                 <Route path="transaksi" element={<AdminTransaksiPage />} />
                 <Route path="riwayat" element={<AdminRiwayatPage />} />
+                <Route path="profile" element={<AdminProfilePage />} />
             </Route>
 
             {/* 404 */}

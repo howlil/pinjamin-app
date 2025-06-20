@@ -25,7 +25,7 @@ import { PageWrapper } from '@/components/admin/common';
 
 const MotionBox = motion(Box);
 
-const ProfilePage = () => {
+const AdminProfilePage = () => {
     const {
         profile,
         loading,
@@ -84,10 +84,10 @@ const ProfilePage = () => {
                     <HStack justify="space-between" align="center" mb={4}>
                         <VStack align="start" spacing={1}>
                             <Heading size="lg" color="gray.800">
-                                Profil Saya
+                                Profil Admin
                             </Heading>
                             <Text color="gray.600">
-                                Kelola informasi profil dan keamanan akun Anda
+                                Kelola informasi profil dan keamanan akun admin Anda
                             </Text>
                         </VStack>
 
@@ -118,12 +118,12 @@ const ProfilePage = () => {
                         >
                             <HStack spacing={4}>
                                 <Box
-                                    bg="primary.100"
+                                    bg="red.100"
                                     p={3}
                                     borderRadius="full"
-                                    color="primary.600"
+                                    color="red.600"
                                 >
-                                    <User size={24} />
+                                    <Shield size={24} />
                                 </Box>
                                 <VStack align="start" spacing={1}>
                                     <Heading size="md" color="gray.800">
@@ -132,8 +132,8 @@ const ProfilePage = () => {
                                     <Text color="gray.600" fontSize="sm">
                                         {profile.email} • {profile.role}
                                     </Text>
-                                    <Text color="gray.500" fontSize="xs">
-                                        {profile.borrowerType === 'INTERNAL_UNAND' ? 'Internal Unand' : 'External Unand'}
+                                    <Text color="red.500" fontSize="xs" fontWeight="semibold">
+                                        Administrator System
                                     </Text>
                                 </VStack>
                             </HStack>
@@ -249,4 +249,4 @@ const ProfilePage = () => {
     );
 };
 
-export default ProfilePage; 
+export default AdminProfilePage; 

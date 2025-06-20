@@ -12,7 +12,7 @@ export const useTransactions = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalTransactions, setTotalTransactions] = useState(0);
     const [actionLoading, setActionLoading] = useState(false);
-    
+
     // Filter states
     const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
     const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
@@ -24,7 +24,7 @@ export const useTransactions = () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             const params = {
                 page,
                 limit,
@@ -34,7 +34,7 @@ export const useTransactions = () => {
             };
 
             const response = await transactionApi.getTransactions(params);
-            
+
             if (response.status === 'success') {
                 setTransactions(response.data || []);
                 setTotalTransactions(response.pagination?.totalItems || 0);
@@ -62,7 +62,7 @@ export const useTransactions = () => {
             setPaymentMethodFilter(value);
         }
         setCurrentPage(1);
-        fetchTransactions(1, searchTerm, 
+        fetchTransactions(1, searchTerm,
             filterType === 'paymentStatus' ? value : paymentStatusFilter,
             filterType === 'paymentMethod' ? value : paymentMethodFilter
         );
@@ -137,6 +137,44 @@ export const useTransactions = () => {
         }
     };
 
+    // Export transactions to Excel
+    const exportTransactions = async (month, year) => {
+        try {
+            setActionLoading(true);
+
+            console.log('=== EXPORT TRANSACTIONS ===');
+            console.log('Month:', month, 'Year:', year);
+
+            const params = {};
+            if (month) params.month = month;
+            if (year) params.year = year;
+
+            const response = await transactionApi.exportTransactions(params);
+
+            if (response.status === 'success' && response.data?.fileUrl) {
+                // Create download link
+                const downloadUrl = response.data.fileUrl;
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `transactions_${month || 'all'}_${year || new Date().getFullYear()}.xlsx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast.success('Data transaksi berhasil diekspor');
+                return true;
+            } else {
+                throw new Error('File URL tidak ditemukan dalam response');
+            }
+        } catch (err) {
+            console.error('Export error:', err);
+            showToast.error('Gagal mengekspor data transaksi');
+            return false;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     // Refresh data
     const refreshData = () => {
         fetchTransactions(currentPage, searchTerm, paymentStatusFilter, paymentMethodFilter);
@@ -159,7 +197,7 @@ export const useTransactions = () => {
         actionLoading,
         paymentStatusFilter,
         paymentMethodFilter,
-        
+
         // Actions
         setSearchTerm,
         handleSearch,
@@ -169,6 +207,7 @@ export const useTransactions = () => {
         cancelTransaction,
         processRefund,
         sendPaymentReminder,
+        exportTransactions,
         refreshData
     };
 }; 

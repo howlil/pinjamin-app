@@ -843,14 +843,24 @@ paths:
                   type: string
                   format: binary
                   description: Building image file (jpg, jpeg, png, gif)
-                facilities:
-                  type: string
-                  description: JSON string of facilities array
-                  example: '[{"facilityName":"Projector","iconUrl":"https://example.com/icon.png"}]'
-                buildingManagers:
-                  type: string
-                  description: JSON string of building managers array
-                  example: '[{"managerName":"Jane Smith","phoneNumber":"+62812345679"}]'
+                facilityIds:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
+                        format: uuid
+                    - type: string
+                  description: Array of facility IDs or JSON string array of facility IDs to associate with this building. Use GET /facilities to get available facility IDs.
+                  example: '["123e4567-e89b-12d3-a456-426614174000", "456e7890-e89b-12d3-a456-426614174001"]'
+                buildingManagerIds:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
+                        format: uuid
+                    - type: string
+                  description: Array of building manager IDs or JSON string array of building manager IDs to assign to this building. Use GET /building-managers/available to get available manager IDs.
+                  example: '["789e0123-e89b-12d3-a456-426614174002", "012e3456-e89b-12d3-a456-426614174003"]'
       responses:
         '201':
           description: Building created successfully
@@ -935,14 +945,24 @@ paths:
                   type: string
                   format: binary
                   description: Building image file (jpg, jpeg, png, gif)
-                facilities:
-                  type: string
-                  description: JSON string of facilities array
-                  example: '[{"id":"uuid","facilityName":"Projector","iconUrl":"https://example.com/icon.png"}]'
-                buildingManagers:
-                  type: string
-                  description: JSON string of building managers array
-                  example: '[{"id":"uuid","managerName":"Jane Smith","phoneNumber":"+62812345679"}]'
+                facilityIds:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
+                        format: uuid
+                    - type: string
+                  description: Array of facility IDs or JSON string array of facility IDs to associate with this building. Use GET /facilities to get available facility IDs.
+                  example: '["123e4567-e89b-12d3-a456-426614174000", "456e7890-e89b-12d3-a456-426614174001"]'
+                buildingManagerIds:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
+                        format: uuid
+                    - type: string
+                  description: Array of building manager IDs or JSON string array of building manager IDs to assign to this building. Use GET /building-managers/available to get available manager IDs. Use empty array to unassign all.
+                  example: '["789e0123-e89b-12d3-a456-426614174002"]'
       responses:
         '200':
           description: Building updated successfully

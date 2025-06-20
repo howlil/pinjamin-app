@@ -23,6 +23,7 @@ import { Bell, Menu as MenuIcon, X, Settings, Users, Building, BookOpen } from '
 import { useAuthStore } from '../utils/store';
 import { useRole } from '../hooks/useAuth';
 import { AdminOnly, UserOnly, AuthenticatedOnly, GuestOnly, RoleGuard } from './auth/RoleGuard';
+import { NotificationPopup } from './common';
 import logoUnand from '../assets/logo.png';
 
 const NavbarWithRoles = () => {
@@ -187,15 +188,7 @@ const NavbarWithRoles = () => {
                                         borderRadius="20px"
                                         boxShadow="0 8px 32px rgba(116, 156, 115, 0.15)"
                                     >
-                                        <MenuItem
-                                            onClick={() => navigate('/admin/settings')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            <Settings size={16} style={{ marginRight: '8px' }} />
-                                            System Settings
-                                        </MenuItem>
+
                                         <MenuItem
                                             onClick={() => navigate('/admin/users')}
                                             bg="transparent"
@@ -210,7 +203,7 @@ const NavbarWithRoles = () => {
                             </AdminOnly>
 
                             {/* Notification Bell */}
-                            <Box position="relative">
+                            <NotificationPopup>
                                 <IconButton
                                     bg="rgba(255, 255, 255, 0.3)"
                                     backdropFilter="blur(10px)"
@@ -226,21 +219,7 @@ const NavbarWithRoles = () => {
                                     }}
                                     transition="all 0.3s ease"
                                 />
-                                <RoleGuard requiredRoles={['ADMIN', 'USER', 'MEMBER']}>
-                                    <Badge
-                                        position="absolute"
-                                        top="0"
-                                        right="0"
-                                        bg="#749C73"
-                                        color="white"
-                                        borderRadius="full"
-                                        fontSize="xs"
-                                        px={1.5}
-                                    >
-                                        {isAdmin() ? '5' : '3'}
-                                    </Badge>
-                                </RoleGuard>
-                            </Box>
+                            </NotificationPopup>
 
                             {/* User Menu */}
                             <Menu>
@@ -284,14 +263,7 @@ const NavbarWithRoles = () => {
                                         >
                                             Profil Saya
                                         </MenuItem>
-                                        <MenuItem
-                                            onClick={() => navigate('/settings')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            Pengaturan
-                                        </MenuItem>
+
                                     </UserOnly>
 
                                     <AdminOnly>
@@ -303,14 +275,7 @@ const NavbarWithRoles = () => {
                                         >
                                             Admin Profile
                                         </MenuItem>
-                                        <MenuItem
-                                            onClick={() => navigate('/admin/settings')}
-                                            bg="transparent"
-                                            color="#444444"
-                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
-                                        >
-                                            System Settings
-                                        </MenuItem>
+
                                         <MenuDivider borderColor="rgba(116, 156, 115, 0.2)" />
                                         <MenuItem
                                             onClick={() => navigate('/dashboard')}

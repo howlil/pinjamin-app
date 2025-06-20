@@ -31,10 +31,11 @@ import AdminPagination from '../common/AdminPagination';
 
 // Building type constants
 const BUILDING_TYPES = {
-    SEMINAR: 'Seminar',
-    LABORATORY: 'Laboratorium',
+    CLASSROOM: 'Ruang Kelas',
     PKM: 'PKM',
-    MULTIFUNCTION: 'Multifungsi'
+    LABORATORY: 'Laboratorium',
+    MULTIFUNCTION: 'Multifungsi',
+    SEMINAR: 'Seminar'
 };
 
 const BuildingTable = ({
@@ -47,6 +48,9 @@ const BuildingTable = ({
     totalItems,
     onPageChange
 }) => {
+    // Debug logging
+    console.log('BuildingTable - Received buildings:', buildings);
+    console.log('BuildingTable - Buildings length:', buildings.length);
     // Format currency to Indonesian Rupiah
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', {
@@ -59,10 +63,11 @@ const BuildingTable = ({
     // Get building type badge color
     const getBuildingTypeColor = (type) => {
         const colors = {
-            'SEMINAR': 'blue',
-            'LABORATORY': 'purple',
+            'CLASSROOM': 'blue',
             'PKM': 'green',
-            'MULTIFUNCTION': 'orange'
+            'LABORATORY': 'purple',
+            'MULTIFUNCTION': 'orange',
+            'SEMINAR': 'cyan'
         };
         return colors[type] || 'gray';
     };
@@ -100,7 +105,7 @@ const BuildingTable = ({
                             >
                                 <Td borderColor={`${COLORS.primary}10`} py={4}>
                                     <Image
-                                        src={building.buildingPhoto}
+                                        src={building.imageUrl}
                                         alt={building.buildingName}
                                         boxSize="60px"
                                         objectFit="cover"
