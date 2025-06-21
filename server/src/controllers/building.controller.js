@@ -80,21 +80,20 @@ class BuildingController {
         }
     }
 
-    static async getBuildingSchedule(req, res, next) {
+    static async getAllAdmin(req, res, next) {
         try {
-            const { id } = req.params;
-            const { month, year } = req.query;
-            const schedule = await BuildingService.getBuildingSchedule(id, month, year);
-            return Response.success(res, schedule, 'Building schedule retrieved successfully');
+            const result = await BuildingService.getAll(req.query);
+            return Response.success(res, result.data, 'Buildings retrieved successfully', 200, result.pagination);
         } catch (error) {
             next(error);
         }
     }
 
-    static async getAllAdmin(req, res, next) {
+    static async getAllBuildingsSchedule(req, res, next) {
         try {
-            const result = await BuildingService.getAll(req.query);
-            return Response.success(res, result.data, 'Buildings retrieved successfully', 200, result.pagination);
+            const { month, year } = req.query;
+            const result = await BuildingService.getAllBuildingsSchedule(month, year);
+            return Response.success(res, result, 'Buildings schedule retrieved successfully');
         } catch (error) {
             next(error);
         }

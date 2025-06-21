@@ -1,27 +1,24 @@
 const express = require('express');
-const { Response } = require('../utils');
 const authRoutes = require('./auth.route');
 const buildingRoutes = require('./building.route');
 const bookingRoutes = require('./booking.route');
 const dashboardRoutes = require('./dashboard.route');
-const adminBookingRoutes = require('./admin.booking.route');
+const facilityRoutes = require('./facility.route');
+const buildingManagerRoutes = require('./building-manager.route');
+const transactionRoutes = require('./transaction.route');
+const notificationRoutes = require('./notification.route');
 
 const router = express.Router();
 
+
+// Main routes
 router.use('/auth', authRoutes);
 router.use('/buildings', buildingRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/dashboard', dashboardRoutes);
-router.use('/admin/bookings', adminBookingRoutes);
-
-// API Info endpoint
-router.get('/', (req, res) => {
-    return Response.success(res, {
-        name: 'Building Rental API',
-        version: '1.0.0',
-        description: 'RESTful API for Building Rental Management System',
-        timestamp: new Date().toISOString()
-    }, 'API is running successfully');
-});
+router.use('/facilities', facilityRoutes);
+router.use('/building-managers', buildingManagerRoutes);
+router.use('/transactions', transactionRoutes);
+router.use('/notifications', notificationRoutes);
 
 module.exports = router; 

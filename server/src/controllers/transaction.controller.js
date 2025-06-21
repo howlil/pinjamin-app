@@ -48,6 +48,54 @@ const TransactionController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    async getUserTransactionHistory(req, res, next) {
+        try {
+            // Get user ID from authenticated user
+            const userId = req.user.id;
+
+            // Get pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+
+            // Validate pagination parameters
+            if (page < 1) {
+                throw new ErrorHandler(400, 'Page must be greater than 0');
+            }
+            if (limit < 1 || limit > 100) {
+                throw new ErrorHandler(400, 'Limit must be between 1 and 100');
+            }
+
+            // Get user transaction history
+            const result = await TransactionService.getUserTransactionHistory(userId, page, limit);
+
+            return Response.success(res, result.data, 'Transaction history retrieved successfully', 200, result.pagination);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async xenditCallback(req, res, next) {
+        try {
+            // Process Xendit payment callback
+            const result = await TransactionService.processXenditCallback(req.body);
+
+            return Response.success(res, { received: true }, 'Callback processed successfully');
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async refundCallback(req, res, next) {
+        try {
+            // Process Xendit refund callback
+            const result = await TransactionService.processRefundCallback(req.body);
+
+            return Response.success(res, { received: true }, 'Refund callback processed successfully');
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

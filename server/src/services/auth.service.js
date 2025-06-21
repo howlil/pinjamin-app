@@ -1,5 +1,6 @@
 const { prisma } = require('../configs');
-const { BcryptUtil, JWTUtil, ErrorHandler } = require('../utils');
+const { BcryptUtil, JWTUtil, ErrorHandler, Logger } = require('../utils');
+const EmailService = require('./email.service');
 
 class AuthService {
     static async register(userData) {
@@ -141,6 +142,90 @@ class AuthService {
         });
 
         return true;
+    }
+
+    static async changePassword(userId, currentPassword, newPassword) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { password: true }
+        });
+
+        if (!user) {
+            throw ErrorHandler.notFound('User not found');
+        }
+
+        const isValidPassword = await BcryptUtil.compare(currentPassword, user.password);
+        if (!isValidPassword) {
+            throw ErrorHandler.badRequest('Current password is incorrect');
+        }
+
+        const hashedNewPassword = await BcryptUtil.hash(newPassword);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword }
+        });
+
+        return true;
+    }
+
+    static async forgotPassword(email) {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true, fullName: true }
+        });
+
+        if (!user) {
+            throw ErrorHandler.notFound('User not found');
+        }
+
+        // Generate reset token
+        const resetToken = JWTUtil.generateToken(
+            { userId: user.id, email: user.email, type: 'reset' },
+            { expiresIn: '1h' } // Token expires in 1 hour
+        );
+
+        try {
+            // Send email with reset token
+            await EmailService.sendResetPasswordEmail(user.email, user.fullName, resetToken);
+
+            Logger.info('Password reset email sent successfully', {
+                email: user.email,
+                userId: user.id
+            });
+
+            return {
+                success: true,
+                message: 'Password reset instructions have been sent to your email'
+            };
+        } catch (error) {
+            Logger.error('Failed to send password reset email:', error);
+            throw ErrorHandler.internalServerError('Failed to send password reset email. Please try again later.');
+        }
+    }
+
+    static async resetPassword(token, newPassword) {
+        try {
+            const decoded = JWTUtil.verifyToken(token);
+
+            if (decoded.type !== 'reset') {
+                throw ErrorHandler.badRequest('Invalid reset token');
+            }
+
+            const hashedPassword = await BcryptUtil.hash(newPassword);
+
+            await prisma.user.update({
+                where: { id: decoded.userId },
+                data: { password: hashedPassword }
+            });
+
+            return true;
+        } catch (error) {
+            if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+                throw ErrorHandler.badRequest('Invalid or expired reset token');
+            }
+            throw error;
+        }
     }
 }
 

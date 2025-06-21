@@ -70,6 +70,28 @@ const BookingValidation = {
             .messages({
                 'any.required': 'Rejection reason is required when rejecting a booking'
             })
+    }),
+
+    refund: Joi.object({
+        refundReason: Joi.string()
+            .min(3)
+            .max(500)
+            .required()
+            .messages({
+                'string.min': 'Refund reason must be at least 3 characters',
+                'string.max': 'Refund reason must not exceed 500 characters',
+                'any.required': 'Refund reason is required'
+            })
+    }),
+
+    params: Joi.object({
+        id: Joi.string()
+            .uuid()
+            .required()
+            .messages({
+                'string.guid': 'Booking ID must be a valid UUID',
+                'any.required': 'Booking ID is required'
+            })
     })
 };
 

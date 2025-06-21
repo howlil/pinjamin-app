@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { Logger } = require('./logger.util');
+const Logger = require('./logger.util');
 
 class BcryptUtil {
     static #saltRounds = 12;

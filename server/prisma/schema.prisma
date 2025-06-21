@@ -81,13 +81,13 @@ model Building {
 }
 
 model BuildingManager {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   managerName String
   phoneNumber String
-  buildingId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  building    Building @relation(fields: [buildingId], references: [id])
+  buildingId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  building    Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
 }
 
 enum BUILDING_TYPE {

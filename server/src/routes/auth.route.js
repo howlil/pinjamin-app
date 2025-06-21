@@ -46,6 +46,28 @@ class AuthRoute {
             AuthMiddleware.authenticate,
             AuthController.logout
         );
+
+        // Change password endpoint
+        this.#router.post(
+            '/change-password',
+            AuthMiddleware.authenticate,
+            ValidationMiddleware.validate(AuthValidation.changePassword),
+            AuthController.changePassword
+        );
+
+        // Forgot password endpoint
+        this.#router.post(
+            '/forgot-password',
+            ValidationMiddleware.validate(AuthValidation.forgotPassword),
+            AuthController.forgotPassword
+        );
+
+        // Reset password endpoint
+        this.#router.post(
+            '/reset-password',
+            ValidationMiddleware.validate(AuthValidation.resetPassword),
+            AuthController.resetPassword
+        );
     }
 
     getRouter() {

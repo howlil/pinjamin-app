@@ -144,6 +144,64 @@ class AuthValidation {
     }).min(1).messages({
         'object.min': 'At least one field must be provided for update'
     });
+
+    static changePassword = Joi.object({
+        currentPassword: Joi.string()
+            .required()
+            .messages({
+                'string.empty': 'Current password is required'
+            }),
+
+        newPassword: Joi.string()
+            .min(6)
+            .required()
+            .messages({
+                'string.empty': 'New password is required',
+                'string.min': 'New password must be at least 6 characters'
+            }),
+
+        confirmPassword: Joi.string()
+            .valid(Joi.ref('newPassword'))
+            .required()
+            .messages({
+                'string.empty': 'Confirm password is required',
+                'any.only': 'Confirm password must match new password'
+            })
+    });
+
+    static forgotPassword = Joi.object({
+        email: Joi.string()
+            .email()
+            .required()
+            .messages({
+                'string.empty': 'Email is required',
+                'string.email': 'Please provide a valid email address'
+            })
+    });
+
+    static resetPassword = Joi.object({
+        token: Joi.string()
+            .required()
+            .messages({
+                'string.empty': 'Reset token is required'
+            }),
+
+        newPassword: Joi.string()
+            .min(6)
+            .required()
+            .messages({
+                'string.empty': 'New password is required',
+                'string.min': 'New password must be at least 6 characters'
+            }),
+
+        confirmPassword: Joi.string()
+            .valid(Joi.ref('newPassword'))
+            .required()
+            .messages({
+                'string.empty': 'Confirm password is required',
+                'any.only': 'Confirm password must match new password'
+            })
+    });
 }
 
 module.exports = AuthValidation; 

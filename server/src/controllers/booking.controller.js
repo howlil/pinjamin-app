@@ -2,6 +2,17 @@ const { BookingService } = require('../services');
 const { Response, ErrorHandler } = require('../utils');
 
 const BookingController = {
+    async getTodayBookings(req, res, next) {
+        try {
+            // Get today's bookings
+            const result = await BookingService.getTodayBookings();
+
+            return Response.success(res, result, "Today's bookings retrieved successfully");
+        } catch (error) {
+            next(error);
+        }
+    },
+
     async create(req, res, next) {
         try {
             // Check if file is uploaded
@@ -55,6 +66,23 @@ const BookingController = {
             const result = await BookingService.getBookingHistory(userId, page, limit);
 
             return Response.success(res, result.data, 'Booking history retrieved successfully', 200, result.pagination);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async processPayment(req, res, next) {
+        try {
+            // Get booking ID from params
+            const { id } = req.params;
+
+            // Get user ID from authenticated user
+            const userId = req.user.id;
+
+            // Process payment
+            const result = await BookingService.processPayment(id, userId);
+
+            return Response.success(res, result, 'Payment processed successfully');
         } catch (error) {
             next(error);
         }
@@ -116,7 +144,7 @@ const BookingController = {
         }
     },
 
-    async getBookingHistoryWithFilters(req, res, next) {
+    async getAdminBookingHistory(req, res, next) {
         try {
             // Get query parameters
             const { buildingId, startDate, endDate } = req.query;
@@ -170,6 +198,23 @@ const BookingController = {
             const result = await BookingService.processRefund(id, refundReason);
 
             return Response.success(res, result, 'Refund processed successfully');
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async generateInvoice(req, res, next) {
+        try {
+            // Get booking ID from params
+            const { id } = req.params;
+
+            // Get user ID from authenticated user
+            const userId = req.user.id;
+
+            // Generate invoice
+            const result = await BookingService.generateInvoice(id, userId);
+
+            return Response.success(res, result, 'Invoice generated successfully');
         } catch (error) {
             next(error);
         }

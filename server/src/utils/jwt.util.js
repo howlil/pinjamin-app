@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Logger } = require('./logger.util');
+const Logger = require('./logger.util');
 
 class JWTUtil {
     static #jwtSecret = process.env.JWT_SECRET || 'default-secret-key';

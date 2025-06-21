@@ -1,4 +1,4 @@
-const { Logger } = require('./logger.util');
+const Logger = require('./logger.util');
 
 class ErrorHandler {
     static #createErrorResponse(status, message, errors = null) {
@@ -19,19 +19,32 @@ class ErrorHandler {
     }
 
     static #logError(error, req = null) {
-        const logData = {
-            error: error.message,
-            stack: error.stack,
-            ...(req && {
-                method: req.method,
-                url: req.originalUrl,
-                body: req.body,
-                params: req.params,
-                query: req.query,
-                headers: req.headers
-            })
-        };
-        Logger.error('Application Error', logData);
+        try {
+            // Handle cases where error might not be an Error object
+            const errorMessage = error?.message || error?.toString?.() || 'Unknown error';
+            const errorStack = error?.stack || 'No stack trace available';
+
+            const logData = {
+                errorMessage: errorMessage,
+                stack: errorStack,
+                type: typeof error,
+                errorObject: typeof error === 'object' && error !== null ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error),
+                ...(req && {
+                    method: req.method,
+                    url: req.originalUrl,
+                    body: req.body,
+                    params: req.params,
+                    query: req.query,
+                    headers: req.headers
+                })
+            };
+
+            Logger.error('Application Error', logData);
+        } catch (loggerError) {
+            // Fallback jika ada error dalam logging
+            console.error('Error in logging:', loggerError);
+            console.error('Original error:', error);
+        }
     }
 
     static createCustomError(message, statusCode = 500) {
@@ -93,13 +106,18 @@ class ErrorHandler {
     }
 
     static handleValidationError(error, req, res, next) {
+        // Validasi parameter untuk mencegah undefined errors
+        if (!error) {
+            return next(new Error('Validation error occurred'));
+        }
+
         if (error.isJoi) {
-            const errors = error.details.map(detail => ({
-                field: detail.path.join('.'),
-                message: detail.message.replace(/"/g, ''),
+            const errors = error.details?.map(detail => ({
+                field: detail.path?.join('.') || 'unknown',
+                message: detail.message?.replace(/"/g, '') || 'Invalid value',
                 value: detail.context?.value,
                 type: detail.type
-            }));
+            })) || [];
 
             ErrorHandler.#logError(error, req);
 
@@ -119,6 +137,11 @@ class ErrorHandler {
     }
 
     static handleDatabaseError(error, req, res, next) {
+        // Validasi parameter untuk mencegah undefined errors
+        if (!error) {
+            return next(new Error('Database error occurred'));
+        }
+
         if (error.code) {
             let message = 'Database operation failed';
             let statusCode = 500;
@@ -160,20 +183,25 @@ class ErrorHandler {
             ErrorHandler.#logError(error, req);
 
             return res.status(statusCode).json(
-                ErrorHandler.#createErrorResponse(message, message)
+                ErrorHandler.#createErrorResponse(statusCode, message)
             );
         }
         next(error);
     }
 
     static handleGenericError(error, req, res, next) {
+        // Validasi parameter untuk mencegah undefined errors
+        if (!error) {
+            error = new Error('Unknown error occurred');
+        }
+
         ErrorHandler.#logError(error, req);
 
         const statusCode = error.statusCode || error.status || 500;
         const message = error.message || 'Internal server error';
 
         return res.status(statusCode).json(
-            ErrorHandler.#createErrorResponse('Server error', message)
+            ErrorHandler.#createErrorResponse(statusCode, message)
         );
     }
 

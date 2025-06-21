@@ -22,11 +22,11 @@ class BuildingRoute {
             BuildingController.getAll
         );
 
-        // Get building by ID
+        // Get all buildings schedule
         this.#router.get(
-            '/:id',
-            ValidationMiddleware.validateParams(BuildingValidation.params),
-            BuildingController.getById
+            '/schedule',
+            ValidationMiddleware.validateQuery(BuildingValidation.getBuildingSchedule),
+            BuildingController.getAllBuildingsSchedule
         );
 
         // Check availability
@@ -36,12 +36,11 @@ class BuildingRoute {
             BuildingController.checkAvailability
         );
 
-        // Get building schedule
+        // Get building by ID
         this.#router.get(
-            '/:id/schedule',
+            '/:id',
             ValidationMiddleware.validateParams(BuildingValidation.params),
-            ValidationMiddleware.validateQuery(BuildingValidation.getBuildingSchedule),
-            BuildingController.getBuildingSchedule
+            BuildingController.getById
         );
 
         // ===================

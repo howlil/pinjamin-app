@@ -134,7 +134,7 @@ class BuildingService {
             const building = await prisma.building.findUnique({
                 where: { id },
                 include: {
-                    facilityBuildings: {
+                    facilityBuilding: {
                         include: {
                             facility: {
                                 select: {
@@ -145,7 +145,7 @@ class BuildingService {
                             }
                         }
                     },
-                    buildingManagers: {
+                    buildingManager: {
                         select: {
                             id: true,
                             managerName: true,
@@ -188,7 +188,7 @@ class BuildingService {
                 location: building.location,
                 buildingPhoto: building.buildingPhoto,
                 buildingType: building.buildingType,
-                facilities: building.facilityBuildings.map(fb => fb.facility),
+                facilities: building.facilityBuilding.map(fb => fb.facility),
                 buildingManagers: building.buildingManager,
                 bookingSchedule: building.booking.map(booking => ({
                     id: booking.id,
@@ -404,36 +404,47 @@ class BuildingService {
         }
     }
 
-    static async getBuildingSchedule(id, month, year) {
+    static async getAllBuildingsSchedule(month, year) {
         try {
             const currentDate = moment();
             const targetMonth = month || currentDate.month() + 1;
             const targetYear = year || currentDate.year();
 
-            const startDateStr = moment().year(targetYear).month(targetMonth - 1).startOf('month').format('DD-MM-YYYY');
-            const endDateStr = moment().year(targetYear).month(targetMonth - 1).endOf('month').format('DD-MM-YYYY');
-
-            const building = await prisma.building.findUnique({
-                where: { id }
-            });
-
-            if (!building) {
-                throw ErrorHandler.notFound('Building not found');
-            }
-
             const bookings = await prisma.booking.findMany({
                 where: {
-                    buildingId: id,
-                    bookingStatus: { in: ['APPROVED', 'PROCESSING', 'COMPLETED'] }
+                    bookingStatus: { in: ['APPROVED', 'PROCESSING', 'COMPLETED'] },
+                    OR: [
+                        {
+                            startDate: {
+                                gte: moment().year(targetYear).month(targetMonth - 1).startOf('month').format('DD-MM-YYYY'),
+                                lte: moment().year(targetYear).month(targetMonth - 1).endOf('month').format('DD-MM-YYYY')
+                            }
+                        },
+                        {
+                            endDate: {
+                                gte: moment().year(targetYear).month(targetMonth - 1).startOf('month').format('DD-MM-YYYY'),
+                                lte: moment().year(targetYear).month(targetMonth - 1).endOf('month').format('DD-MM-YYYY')
+                            }
+                        }
+                    ]
                 },
                 include: {
                     user: {
                         select: {
                             fullName: true
                         }
+                    },
+                    building: {
+                        select: {
+                            id: true,
+                            buildingName: true,
+                            buildingPhoto: true,
+                            location: true,
+                            buildingType: true
+                        }
                     }
                 },
-                orderBy: { createdAt: 'asc' }
+                orderBy: { startDate: 'asc' }
             });
 
             const schedule = bookings.map(booking => ({
@@ -445,16 +456,26 @@ class BuildingService {
                 endTime: booking.endTime,
                 status: booking.bookingStatus,
                 borrowerDetail: {
-                    borrowerName: booking.user.fullName,
-                    buildingName: building.buildingName,
-                    buildingPhoto: building.buildingPhoto
+                    borrowerName: booking.user.fullName
+                },
+                buildingDetail: {
+                    buildingId: booking.building.id,
+                    buildingName: booking.building.buildingName,
+                    buildingPhoto: booking.building.buildingPhoto,
+                    location: booking.building.location,
+                    buildingType: booking.building.buildingType
                 }
             }));
 
-            return schedule;
+            return {
+                month: targetMonth,
+                year: targetYear,
+                totalBookings: schedule.length,
+                schedule
+            };
         } catch (error) {
-            Logger.error('Failed to get building schedule:', error);
-            throw error.statusCode ? error : ErrorHandler.internalServerError('Failed to retrieve building schedule');
+            Logger.error('Failed to get all buildings schedule:', error);
+            throw ErrorHandler.internalServerError('Failed to retrieve buildings schedule');
         }
     }
 }

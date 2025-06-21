@@ -63,6 +63,37 @@ class AuthController {
             next(error);
         }
     }
+
+    static async changePassword(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const { currentPassword, newPassword } = req.body;
+            await AuthService.changePassword(userId, currentPassword, newPassword);
+            return Response.success(res, null, 'Password changed successfully');
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async forgotPassword(req, res, next) {
+        try {
+            const { email } = req.body;
+            const result = await AuthService.forgotPassword(email);
+            return Response.success(res, result, result.message || 'Password reset instructions sent to your email');
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async resetPassword(req, res, next) {
+        try {
+            const { token, newPassword } = req.body;
+            await AuthService.resetPassword(token, newPassword);
+            return Response.success(res, null, 'Password reset successfully');
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = AuthController; 

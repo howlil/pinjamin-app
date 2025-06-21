@@ -561,6 +561,233 @@ const BookingService = {
             if (error.status) throw error;
             throw new ErrorHandler(500, error.message || 'Failed to process refund');
         }
+    },
+
+    async generateInvoice(bookingId, userId) {
+        try {
+            // Get booking with related data
+            const booking = await prisma.booking.findUnique({
+                where: { id: bookingId },
+                include: {
+                    building: true,
+                    user: true,
+                    payment: true
+                }
+            });
+
+            if (!booking) {
+                throw new ErrorHandler(404, 'Booking not found');
+            }
+
+            // Check if user owns this booking
+            if (booking.userId !== userId) {
+                throw new ErrorHandler(403, 'You can only generate invoice for your own bookings');
+            }
+
+            // Check if booking has payment
+            if (!booking.payment) {
+                throw new ErrorHandler(400, 'No payment found for this booking');
+            }
+
+            // Check if payment is completed
+            if (!['PAID', 'SETTLED'].includes(booking.payment.paymentStatus)) {
+                throw new ErrorHandler(400, 'Invoice can only be generated for paid bookings');
+            }
+
+            // Calculate rental days
+            const startDate = moment(booking.startDate, 'DD-MM-YYYY');
+            const endDate = moment(booking.endDate || booking.startDate, 'DD-MM-YYYY');
+            const rentalDays = endDate.diff(startDate, 'days') + 1;
+
+            // Return invoice data
+            return {
+                invoiceNumber: booking.payment.invoiceNumber,
+                date: booking.payment.paymentDate,
+                paymentMethod: booking.payment.paymentMethod,
+                customer: {
+                    borrowerName: booking.user.fullName,
+                    email: booking.user.email,
+                    phoneNumber: booking.user.phoneNumber
+                },
+                item: {
+                    buildingName: booking.building.buildingName,
+                    startDate: booking.startDate,
+                    endDate: booking.endDate,
+                    startTime: booking.startTime,
+                    endTime: booking.endTime,
+                    rentalDays: rentalDays,
+                    pricePerDay: booking.building.rentalPrice,
+                    subtotal: booking.payment.paymentAmount,
+                    adminFee: booking.payment.totalAmount - booking.payment.paymentAmount,
+                    totalAmount: booking.payment.totalAmount
+                }
+            };
+        } catch (error) {
+            if (error.status) throw error;
+            throw new ErrorHandler(500, error.message || 'Failed to generate invoice');
+        }
+    },
+
+    async getTodayBookings() {
+        try {
+            const today = moment().format('DD-MM-YYYY');
+
+            // Get today's bookings with status APPROVED
+            const bookings = await prisma.booking.findMany({
+                where: {
+                    startDate: today,
+                    bookingStatus: 'APPROVED'
+                },
+                include: {
+                    building: true,
+                    user: {
+                        select: {
+                            fullName: true
+                        }
+                    }
+                },
+                orderBy: {
+                    startTime: 'asc'
+                }
+            });
+
+            // Format bookings data
+            const formattedBookings = bookings.map(booking => ({
+                bookingId: booking.id,
+                buildingName: booking.building.buildingName,
+                activityName: booking.activityName,
+                startTime: booking.startTime,
+                endTime: booking.endTime,
+                borrowerName: booking.user.fullName
+            }));
+
+            return formattedBookings;
+        } catch (error) {
+            if (error.status) throw error;
+            throw new ErrorHandler(500, error.message || 'Failed to get today\'s bookings');
+        }
+    },
+
+    async processPayment(bookingId, userId) {
+        try {
+            // Get booking with payment
+            const booking = await prisma.booking.findUnique({
+                where: { id: bookingId },
+                include: {
+                    payment: true,
+                    building: true,
+                    user: true
+                }
+            });
+
+            if (!booking) {
+                throw new ErrorHandler(404, 'Booking not found');
+            }
+
+            // Check if user owns this booking
+            if (booking.userId !== userId) {
+                throw new ErrorHandler(403, 'You can only process payment for your own bookings');
+            }
+
+            // Check if booking is approved
+            if (booking.bookingStatus !== 'APPROVED') {
+                throw new ErrorHandler(400, 'Booking must be approved before payment can be processed');
+            }
+
+            // Check if payment already exists and is not expired
+            if (booking.payment) {
+                if (['PAID', 'SETTLED'].includes(booking.payment.paymentStatus)) {
+                    throw new ErrorHandler(400, 'Payment has already been completed');
+                }
+
+                // If payment exists but is UNPAID or PENDING, return existing payment URL
+                if (['UNPAID', 'PENDING'].includes(booking.payment.paymentStatus)) {
+                    return {
+                        paymentUrl: booking.payment.paymentUrl
+                    };
+                }
+            }
+
+            // Create new payment if doesn't exist or is expired
+            const rentalDays = moment(booking.endDate || booking.startDate, 'DD-MM-YYYY')
+                .diff(moment(booking.startDate, 'DD-MM-YYYY'), 'days') + 1;
+            const totalAmount = booking.building.rentalPrice * rentalDays;
+
+            // Create Xendit invoice
+            const invoice = await xendit.Invoice.createInvoice({
+                externalId: `booking-${booking.id}`,
+                amount: totalAmount,
+                payerEmail: booking.user.email,
+                description: `Booking for ${booking.building.buildingName} - ${booking.activityName}`,
+                customer: {
+                    given_names: booking.user.fullName,
+                    email: booking.user.email,
+                    mobile_number: booking.user.phoneNumber
+                },
+                customerNotificationPreference: {
+                    invoice_created: ['email'],
+                    invoice_reminder: ['email'],
+                    invoice_paid: ['email']
+                },
+                invoiceDuration: 86400, // 24 hours
+                currency: 'IDR',
+                items: [
+                    {
+                        name: `${booking.building.buildingName} Rental`,
+                        quantity: rentalDays,
+                        price: booking.building.rentalPrice,
+                        category: 'Building Rental'
+                    }
+                ],
+                fees: [
+                    {
+                        type: 'Admin Fee',
+                        value: 5000
+                    }
+                ]
+            });
+
+            // Create or update payment record
+            let payment;
+            if (booking.payment) {
+                payment = await prisma.payment.update({
+                    where: { id: booking.payment.id },
+                    data: {
+                        xenditTransactionId: invoice.id,
+                        invoiceNumber: invoice.invoice_number,
+                        paymentDate: moment().format('DD-MM-YYYY'),
+                        paymentAmount: totalAmount,
+                        totalAmount: totalAmount + 5000, // Include admin fee
+                        paymentMethod: 'PENDING',
+                        paymentUrl: invoice.invoice_url,
+                        snapToken: invoice.id,
+                        paymentStatus: 'UNPAID'
+                    }
+                });
+            } else {
+                payment = await prisma.payment.create({
+                    data: {
+                        xenditTransactionId: invoice.id,
+                        bookingId: booking.id,
+                        invoiceNumber: invoice.invoice_number,
+                        paymentDate: moment().format('DD-MM-YYYY'),
+                        paymentAmount: totalAmount,
+                        totalAmount: totalAmount + 5000, // Include admin fee
+                        paymentMethod: 'PENDING',
+                        paymentUrl: invoice.invoice_url,
+                        snapToken: invoice.id,
+                        paymentStatus: 'UNPAID'
+                    }
+                });
+            }
+
+            return {
+                paymentUrl: payment.paymentUrl
+            };
+        } catch (error) {
+            if (error.status) throw error;
+            throw new ErrorHandler(500, error.message || 'Failed to process payment');
+        }
     }
 };
 
