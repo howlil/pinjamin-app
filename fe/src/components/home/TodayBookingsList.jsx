@@ -5,14 +5,14 @@ import {
     Heading,
     Text,
     HStack,
-    Icon
+    Icon,
+    Badge
 } from '@chakra-ui/react';
-import { Building, Clock, User } from 'lucide-react';
+import { Building, Clock, User, Calendar, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { AnimatedList } from '@/components/magicui/animated-list';
-import { COLORS, GLASS_EFFECT } from '@/utils/designTokens';
-import { useTodayBookings } from '@/hooks/useTodayBookings';
-import { BookingSkeleton, ListSkeleton } from '@/components/ui/SkeletonLoading';
+import { AnimatedList } from '../magicui/animated-list';
+import { useTodayBookings } from '../../hooks/booking';
+import { COLORS, GLASS_EFFECT, RADII } from '../../utils/designTokens';
 
 const MotionBox = motion(Box);
 
@@ -33,7 +33,7 @@ const EmptyStateAnimation = () => {
                 position="absolute"
                 w="120px"
                 h="120px"
-                border="4px solid"
+                border="3px solid"
                 borderColor={`${COLORS.primary}20`}
                 borderRadius="full"
                 animate={{
@@ -50,8 +50,8 @@ const EmptyStateAnimation = () => {
                 position="absolute"
                 w="80px"
                 h="80px"
-                border="4px solid"
-                borderColor={`${COLORS.primary}40`}
+                border="3px solid"
+                borderColor={`${COLORS.primary}30`}
                 borderRadius="full"
                 animate={{
                     rotate: -360,
@@ -76,7 +76,7 @@ const EmptyStateAnimation = () => {
                 }}
             >
                 <Icon
-                    as={Building}
+                    as={Calendar}
                     w={12}
                     h={12}
                     color={COLORS.primary}
@@ -89,82 +89,97 @@ const EmptyStateAnimation = () => {
 const BookingItem = ({ booking, index }) => {
     return (
         <MotionBox
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.5 }}
             bg={GLASS_EFFECT.bg}
             backdropFilter={GLASS_EFFECT.backdropFilter}
             border={GLASS_EFFECT.border}
-            p={4}
             borderRadius={GLASS_EFFECT.borderRadius}
             boxShadow={GLASS_EFFECT.boxShadow}
+            p={5}
             _hover={{
                 transform: "translateY(-2px)",
-                boxShadow: "0 12px 40px rgba(116, 156, 115, 0.25)"
+                boxShadow: "0 12px 40px rgba(116, 156, 115, 0.25)",
+                borderColor: `${COLORS.primary}40`
             }}
             style={{
                 transition: "all 0.3s ease"
             }}
             cursor="pointer"
             w="full"
+            position="relative"
         >
-            <HStack spacing={4}>
+            <HStack spacing={4} align="start">
                 <Box
-                    bg={COLORS.primary}
+                    bg={`${COLORS.primary}20`}
                     p={3}
-                    borderRadius="12px"
-                    color="white"
+                    borderRadius={RADII.default}
+                    color={COLORS.primary}
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                 >
-                    <Icon as={Building} w={5} h={5} />
+                    <Icon as={Building} w={6} h={6} />
                 </Box>
 
-                <VStack align="start" spacing={1} flex={1}>
-                    <HStack justify="space-between" w="full" align="start">
-                        <VStack align="start" spacing={1} flex={1}>
+                <VStack align="start" spacing={3} flex={1}>
+                    <HStack justify="space-between" w="full">
+                        <VStack align="start" spacing={1}>
                             <Text
-                                fontWeight="bold"
+                                fontWeight="semibold"
                                 color={COLORS.black}
-                                fontSize="md"
+                                fontSize="lg"
                                 noOfLines={1}
                             >
                                 {booking.buildingName}
                             </Text>
                             <Text
-                                fontSize="sm"
-                                color={COLORS.black}
-                                opacity={0.8}
+                                fontSize="md"
+                                color={COLORS.gray[600]}
                                 noOfLines={1}
                             >
                                 {booking.activityName}
                             </Text>
                         </VStack>
 
-                        <VStack align="end" spacing={1} minW="120px">
-                            <HStack spacing={1}>
-                                <Icon as={Clock} w={3} h={3} color={COLORS.primary} />
-                                <Text
-                                    fontSize="sm"
-                                    color={COLORS.primary}
-                                    fontWeight="medium"
-                                >
-                                    {booking.startTime} - {booking.endTime}
-                                </Text>
-                            </HStack>
-                            <HStack spacing={1}>
-                                <Icon as={User} w={3} h={3} color={COLORS.gray[500]} />
-                                <Text
-                                    fontSize="xs"
-                                    color={COLORS.gray[600]}
-                                    noOfLines={1}
-                                >
-                                    {booking.borrowerName}
-                                </Text>
-                            </HStack>
-                        </VStack>
+                        <Badge
+                            bg="rgba(255, 165, 0, 0.15)"
+                            color="orange.600"
+                            borderRadius="full"
+                            px={3}
+                            py={1}
+                            fontSize="xs"
+                            fontWeight="medium"
+                            border="1px solid"
+                            borderColor="rgba(255, 165, 0, 0.3)"
+                        >
+                            Sedang Berlangsung
+                        </Badge>
                     </HStack>
+
+                    <VStack align="start" spacing={2} w="full">
+                        <HStack spacing={2} color={COLORS.gray[600]}>
+                            <Icon as={Clock} w={4} h={4} color={COLORS.gray[400]} />
+                            <Text fontSize="sm" fontWeight="medium">
+                                {booking.startTime} - {booking.endTime}
+                            </Text>
+                        </HStack>
+                        <HStack spacing={2} color={COLORS.gray[600]}>
+                            <Icon as={User} w={4} h={4} color={COLORS.gray[400]} />
+                            <Text fontSize="sm" noOfLines={1}>
+                                {booking.borrowerName}
+                            </Text>
+                        </HStack>
+                        {booking.location && (
+                            <HStack spacing={2} color={COLORS.gray[600]}>
+                                <Icon as={MapPin} w={4} h={4} color={COLORS.gray[400]} />
+                                <Text fontSize="sm">
+                                    {booking.location}
+                                </Text>
+                            </HStack>
+                        )}
+                    </VStack>
                 </VStack>
             </HStack>
         </MotionBox>
@@ -177,16 +192,16 @@ const EmptyState = () => (
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         textAlign="center"
-        py={8}
+        py={12}
     >
         <EmptyStateAnimation />
 
-        <VStack spacing={4} mt={4}>
+        <VStack spacing={4} mt={6}>
             <VStack spacing={2}>
-                <Heading size="md" color={COLORS.black} fontWeight="600">
+                <Heading size="md" color={COLORS.black} fontWeight="semibold">
                     Belum Ada Peminjaman Hari Ini
                 </Heading>
-                <Text color={COLORS.black} opacity={0.7} fontSize="sm" maxW="300px">
+                <Text color={COLORS.gray[600]} fontSize="sm" maxW="350px">
                     Tidak ada jadwal peminjaman gedung untuk hari ini.
                     Periksa kembali nanti atau buat peminjaman baru.
                 </Text>
@@ -211,46 +226,92 @@ const TodayBookingsList = () => {
     };
 
     return (
-        <VStack spacing={4} align="stretch">
+        <VStack spacing={6} align="stretch" w="full">
             {/* Header */}
             <VStack spacing={2} align="start">
                 <VStack align="start" spacing={1}>
-                    <Heading size="md" color={COLORS.black} fontWeight="600">
+                    <Heading size="lg" color={COLORS.black} fontWeight="bold">
                         Peminjaman Hari Ini
                     </Heading>
-                    <Text fontSize="xs" color={COLORS.primary} opacity={0.8}>
+                    <Text fontSize="sm" color={COLORS.primary}>
                         {getCurrentDate()}
                     </Text>
                 </VStack>
 
                 {/* Count indicator */}
                 {!isLoading && !isEmpty && (
-                    <Text fontSize="xs" color={COLORS.primary} opacity={0.7}>
-                        {bookings.length} peminjaman aktif
+                    <Text fontSize="md" color={COLORS.gray[600]}>
+                        {bookings.length} peminjaman aktif hari ini
                     </Text>
                 )}
             </VStack>
 
             {/* Content */}
-            <Box w="full" minH="300px">
+            <Box
+                bg={GLASS_EFFECT.bg}
+                backdropFilter={GLASS_EFFECT.backdropFilter}
+                border={GLASS_EFFECT.border}
+                borderRadius={GLASS_EFFECT.borderRadius}
+                boxShadow={GLASS_EFFECT.boxShadow}
+                p={6}
+                w="full"
+                minH="400px"
+                maxH="600px"
+                overflowY="auto"
+                position="relative"
+                css={{
+                    '&::-webkit-scrollbar': {
+                        width: '6px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        background: `${COLORS.primary}40`,
+                        borderRadius: '3px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        background: `${COLORS.primary}60`,
+                    },
+                }}
+            >
                 {isLoading ? (
-                    <ListSkeleton
-                        count={3}
-                        ItemSkeleton={BookingSkeleton}
-                        spacing={3}
-                    />
+                    <VStack spacing={4}>
+                        {[1, 2, 3].map((i) => (
+                            <Box
+                                key={i}
+                                w="full"
+                                h="120px"
+                                bg={GLASS_EFFECT.bg}
+                                borderRadius={GLASS_EFFECT.borderRadius}
+                                border={GLASS_EFFECT.border}
+                                position="relative"
+                                overflow="hidden"
+                            >
+                                <Box
+                                    position="absolute"
+                                    top="0"
+                                    left="-100%"
+                                    w="100%"
+                                    h="100%"
+                                    bg="linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)"
+                                    animation="shimmer 1.5s infinite"
+                                />
+                            </Box>
+                        ))}
+                    </VStack>
                 ) : isEmpty ? (
                     <EmptyState />
                 ) : (
-                    <AnimatedList delay={2000} showItemsCount={3} initialDelay={300}>
+                    <VStack spacing={3} align="stretch">
                         {bookings.map((booking, index) => (
                             <BookingItem
-                                key={booking.bookingId}
+                                key={booking.bookingId || index}
                                 booking={booking}
                                 index={index}
                             />
                         ))}
-                    </AnimatedList>
+                    </VStack>
                 )}
             </Box>
         </VStack>

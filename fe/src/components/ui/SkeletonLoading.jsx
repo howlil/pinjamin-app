@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, HStack, VStack, Skeleton, SkeletonText, SkeletonCircle } from '@chakra-ui/react';
-import { GLASS_EFFECT } from '@/utils/designTokens';
+import { GLASS_EFFECT } from '../../utils/designTokens';
 
 // Skeleton untuk card item
 export const CardSkeleton = ({ showAvatar = true, lines = 2 }) => (

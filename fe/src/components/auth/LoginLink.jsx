@@ -2,7 +2,7 @@ import React from 'react';
 import { Flex, Text, Link } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { COLORS, ANIMATIONS } from '@/utils/designTokens';
+import { COLORS, ANIMATIONS } from '../../utils/designTokens';
 
 const LoginLink = () => {
     return (

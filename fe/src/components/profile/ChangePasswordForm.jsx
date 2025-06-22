@@ -12,13 +12,17 @@ import {
     Text,
     Alert,
     AlertIcon,
-    Card,
-    CardHeader,
-    CardBody,
     Heading,
-    IconButton
+    IconButton,
+    Container,
+    useBreakpointValue
 } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import { COLORS } from '../../utils/designTokens';
+import { AnimatedGridPattern } from '../magicui/animated-grid-pattern';
+
+const MotionBox = motion(Box);
 
 const ChangePasswordForm = ({ onChangePassword, changingPassword }) => {
     const [formData, setFormData] = useState({
@@ -34,6 +38,10 @@ const ChangePasswordForm = ({ onChangePassword, changingPassword }) => {
     });
 
     const [errors, setErrors] = useState({});
+
+    // Responsive values
+    const containerPadding = useBreakpointValue({ base: 4, sm: 5, md: 6 });
+    const headingSize = useBreakpointValue({ base: "md", md: "lg" });
 
     // Handle input change
     const handleChange = (field, value) => {
@@ -119,159 +127,310 @@ const ChangePasswordForm = ({ onChangePassword, changingPassword }) => {
     const hasData = Object.values(formData).some(value => value.trim() !== '');
 
     return (
-        <Card>
-            <CardHeader>
-                <HStack spacing={3}>
-                    <Shield size={24} color="var(--chakra-colors-orange-500)" />
-                    <Heading size="md" color="gray.800">Ubah Password</Heading>
-                </HStack>
-            </CardHeader>
+        <Container maxW="6xl" px={{ base: 3, sm: 4, md: 6 }}>
+            <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                bg="rgba(255, 255, 255, 0.08)"
+                backdropFilter="blur(16px)"
+                border="1px solid rgba(255, 255, 255, 0.12)"
+                borderRadius="20px"
+                boxShadow="0 20px 60px rgba(239, 68, 68, 0.1)"
+                overflow="hidden"
+                position="relative"
+            >
+                {/* Animated Grid Pattern Background */}
+                <AnimatedGridPattern
+                    numSquares={25}
+                    maxOpacity={0.04}
+                    duration={4}
+                    repeatDelay={2}
+                    className="absolute inset-0 h-full w-full fill-[#ef4444]/8 stroke-[#ef4444]/4"
+                />
 
-            <CardBody>
-                <form onSubmit={handleSubmit}>
-                    <VStack spacing={6} align="stretch">
-                        <Alert status="info" borderRadius="lg">
-                            <AlertIcon />
-                            <Box>
-                                <Text fontWeight="semibold">Tips Keamanan Password:</Text>
-                                <Text fontSize="sm" mt={1}>
-                                    • Minimal 8 karakter<br />
-                                    • Kombinasi huruf besar, huruf kecil, angka, dan simbol<br />
-                                    • Jangan gunakan informasi pribadi yang mudah ditebak
-                                </Text>
-                            </Box>
-                        </Alert>
-
-                        <VStack spacing={4} align="stretch">
-                            <FormControl isRequired isInvalid={errors.currentPassword}>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                    <HStack spacing={2}>
-                                        <Lock size={16} />
-                                        <Text>Password Saat Ini</Text>
-                                    </HStack>
-                                </FormLabel>
-                                <InputGroup>
-                                    <Input
-                                        type={showPasswords.current ? 'text' : 'password'}
-                                        value={formData.currentPassword}
-                                        onChange={(e) => handleChange('currentPassword', e.target.value)}
-                                        placeholder="Masukkan password saat ini"
-                                        bg="white"
-                                        borderRadius="full"
-                                        pr="3rem"
-                                    />
-                                    <InputRightElement>
-                                        <IconButton
-                                            variant="ghost"
-                                            size="sm"
-                                            icon={showPasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
-                                            onClick={() => togglePasswordVisibility('current')}
-                                            aria-label={showPasswords.current ? 'Sembunyikan password' : 'Tampilkan password'}
-                                        />
-                                    </InputRightElement>
-                                </InputGroup>
-                                {errors.currentPassword && (
-                                    <Text color="red.500" fontSize="sm" mt={1}>
-                                        {errors.currentPassword}
-                                    </Text>
-                                )}
-                            </FormControl>
-
-                            <FormControl isRequired isInvalid={errors.newPassword}>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                    <HStack spacing={2}>
-                                        <Lock size={16} />
-                                        <Text>Password Baru</Text>
-                                    </HStack>
-                                </FormLabel>
-                                <InputGroup>
-                                    <Input
-                                        type={showPasswords.new ? 'text' : 'password'}
-                                        value={formData.newPassword}
-                                        onChange={(e) => handleChange('newPassword', e.target.value)}
-                                        placeholder="Masukkan password baru"
-                                        bg="white"
-                                        borderRadius="full"
-                                        pr="3rem"
-                                        minLength={8}
-                                    />
-                                    <InputRightElement>
-                                        <IconButton
-                                            variant="ghost"
-                                            size="sm"
-                                            icon={showPasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
-                                            onClick={() => togglePasswordVisibility('new')}
-                                            aria-label={showPasswords.new ? 'Sembunyikan password' : 'Tampilkan password'}
-                                        />
-                                    </InputRightElement>
-                                </InputGroup>
-                                {errors.newPassword && (
-                                    <Text color="red.500" fontSize="sm" mt={1}>
-                                        {errors.newPassword}
-                                    </Text>
-                                )}
-                            </FormControl>
-
-                            <FormControl isRequired isInvalid={errors.confirmPassword}>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                    <HStack spacing={2}>
-                                        <Lock size={16} />
-                                        <Text>Konfirmasi Password Baru</Text>
-                                    </HStack>
-                                </FormLabel>
-                                <InputGroup>
-                                    <Input
-                                        type={showPasswords.confirm ? 'text' : 'password'}
-                                        value={formData.confirmPassword}
-                                        onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                                        placeholder="Ulangi password baru"
-                                        bg="white"
-                                        borderRadius="full"
-                                        pr="3rem"
-                                    />
-                                    <InputRightElement>
-                                        <IconButton
-                                            variant="ghost"
-                                            size="sm"
-                                            icon={showPasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                                            onClick={() => togglePasswordVisibility('confirm')}
-                                            aria-label={showPasswords.confirm ? 'Sembunyikan password' : 'Tampilkan password'}
-                                        />
-                                    </InputRightElement>
-                                </InputGroup>
-                                {errors.confirmPassword && (
-                                    <Text color="red.500" fontSize="sm" mt={1}>
-                                        {errors.confirmPassword}
-                                    </Text>
-                                )}
-                            </FormControl>
-                        </VStack>
-
-                        {/* Action Buttons */}
-                        <HStack spacing={4} justify="flex-end">
-                            <Button
-                                variant="outline"
-                                onClick={handleReset}
-                                isDisabled={!hasData || changingPassword}
-                                borderRadius="full"
-                            >
-                                Reset
-                            </Button>
-                            <Button
-                                type="submit"
-                                colorScheme="orange"
-                                isLoading={changingPassword}
-                                loadingText="Mengubah Password..."
-                                isDisabled={!hasData}
-                                borderRadius="full"
-                            >
+                {/* Header */}
+                <Box
+                    p={containerPadding}
+                    borderBottom="1px solid rgba(255, 255, 255, 0.12)"
+                    position="relative"
+                    zIndex={1}
+                >
+                    <HStack spacing={3}>
+                        <MotionBox
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            w={10}
+                            h={10}
+                            bg="rgba(239, 68, 68, 0.15)"
+                            borderRadius="12px"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            border="1px solid rgba(239, 68, 68, 0.2)"
+                        >
+                            <Shield size={20} color="#ef4444" />
+                        </MotionBox>
+                        <VStack align="start" spacing={0}>
+                            <Heading size={headingSize} color="#444444">
                                 Ubah Password
-                            </Button>
-                        </HStack>
-                    </VStack>
-                </form>
-            </CardBody>
-        </Card>
+                            </Heading>
+                            <Text fontSize={{ base: "xs", sm: "sm" }} color="#666666">
+                                Perbarui password Anda untuk keamanan yang lebih baik
+                            </Text>
+                        </VStack>
+                    </HStack>
+                </Box>
+
+                {/* Form Content */}
+                <Box p={containerPadding} position="relative" zIndex={1}>
+                    <form onSubmit={handleSubmit}>
+                        <VStack spacing={6} align="stretch">
+                            {/* Security Tips Alert */}
+                            <MotionBox
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.5, delay: 0.3 }}
+                                bg="rgba(59, 130, 246, 0.08)"
+                                backdropFilter="blur(8px)"
+                                border="1px solid rgba(59, 130, 246, 0.2)"
+                                borderRadius="12px"
+                                p={4}
+                            >
+                                <HStack spacing={3} align="start">
+                                    <Box
+                                        w={6}
+                                        h={6}
+                                        bg="rgba(59, 130, 246, 0.15)"
+                                        borderRadius="6px"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        flexShrink={0}
+                                        mt={0.5}
+                                    >
+                                        <AlertIcon color="#3b82f6" boxSize={3} />
+                                    </Box>
+                                    <VStack align="start" spacing={2}>
+                                        <Text fontWeight="semibold" color="#1e40af" fontSize="sm">
+                                            Tips Keamanan Password:
+                                        </Text>
+                                        <VStack align="start" spacing={1}>
+                                            <Text fontSize="xs" color="#3730a3">• Minimal 8 karakter</Text>
+                                            <Text fontSize="xs" color="#3730a3">• Kombinasi huruf besar, huruf kecil, angka, dan simbol</Text>
+                                            <Text fontSize="xs" color="#3730a3">• Jangan gunakan informasi pribadi yang mudah ditebak</Text>
+                                        </VStack>
+                                    </VStack>
+                                </HStack>
+                            </MotionBox>
+
+                            {/* Form Fields */}
+                            <VStack spacing={5} align="stretch">
+                                {/* Current Password */}
+                                <MotionBox
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.4 }}
+                                >
+                                    <FormControl isRequired isInvalid={errors.currentPassword}>
+                                        <FormLabel fontSize="sm" color="#444444" fontWeight="semibold">
+                                            <HStack spacing={2}>
+                                                <Lock size={14} color={COLORS.primary} />
+                                                <Text>Password Saat Ini</Text>
+                                            </HStack>
+                                        </FormLabel>
+                                        <InputGroup>
+                                            <Input
+                                                type={showPasswords.current ? 'text' : 'password'}
+                                                value={formData.currentPassword}
+                                                onChange={(e) => handleChange('currentPassword', e.target.value)}
+                                                placeholder="Masukkan password saat ini"
+                                                bg="rgba(255, 255, 255, 0.1)"
+                                                backdropFilter="blur(8px)"
+                                                border="1px solid rgba(255, 255, 255, 0.15)"
+                                                borderRadius="12px"
+                                                pr="3rem"
+                                                color="#444444"
+                                                _placeholder={{ color: "#999999" }}
+                                                _focus={{
+                                                    borderColor: COLORS.primary,
+                                                    boxShadow: `0 0 0 2px rgba(116, 156, 115, 0.2)`
+                                                }}
+                                            />
+                                            <InputRightElement>
+                                                <IconButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon={showPasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    onClick={() => togglePasswordVisibility('current')}
+                                                    aria-label={showPasswords.current ? 'Sembunyikan password' : 'Tampilkan password'}
+                                                    color="#666666"
+                                                    _hover={{ color: COLORS.primary }}
+                                                />
+                                            </InputRightElement>
+                                        </InputGroup>
+                                        {errors.currentPassword && (
+                                            <Text color="#ef4444" fontSize="xs" mt={1}>
+                                                {errors.currentPassword}
+                                            </Text>
+                                        )}
+                                    </FormControl>
+                                </MotionBox>
+
+                                {/* New Password */}
+                                <MotionBox
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.5 }}
+                                >
+                                    <FormControl isRequired isInvalid={errors.newPassword}>
+                                        <FormLabel fontSize="sm" color="#444444" fontWeight="semibold">
+                                            <HStack spacing={2}>
+                                                <Lock size={14} color={COLORS.primary} />
+                                                <Text>Password Baru</Text>
+                                            </HStack>
+                                        </FormLabel>
+                                        <InputGroup>
+                                            <Input
+                                                type={showPasswords.new ? 'text' : 'password'}
+                                                value={formData.newPassword}
+                                                onChange={(e) => handleChange('newPassword', e.target.value)}
+                                                placeholder="Masukkan password baru"
+                                                bg="rgba(255, 255, 255, 0.1)"
+                                                backdropFilter="blur(8px)"
+                                                border="1px solid rgba(255, 255, 255, 0.15)"
+                                                borderRadius="12px"
+                                                pr="3rem"
+                                                color="#444444"
+                                                _placeholder={{ color: "#999999" }}
+                                                _focus={{
+                                                    borderColor: COLORS.primary,
+                                                    boxShadow: `0 0 0 2px rgba(116, 156, 115, 0.2)`
+                                                }}
+                                                minLength={8}
+                                            />
+                                            <InputRightElement>
+                                                <IconButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon={showPasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    onClick={() => togglePasswordVisibility('new')}
+                                                    aria-label={showPasswords.new ? 'Sembunyikan password' : 'Tampilkan password'}
+                                                    color="#666666"
+                                                    _hover={{ color: COLORS.primary }}
+                                                />
+                                            </InputRightElement>
+                                        </InputGroup>
+                                        {errors.newPassword && (
+                                            <Text color="#ef4444" fontSize="xs" mt={1}>
+                                                {errors.newPassword}
+                                            </Text>
+                                        )}
+                                    </FormControl>
+                                </MotionBox>
+
+                                {/* Confirm Password */}
+                                <MotionBox
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.6 }}
+                                >
+                                    <FormControl isRequired isInvalid={errors.confirmPassword}>
+                                        <FormLabel fontSize="sm" color="#444444" fontWeight="semibold">
+                                            <HStack spacing={2}>
+                                                <Lock size={14} color={COLORS.primary} />
+                                                <Text>Konfirmasi Password Baru</Text>
+                                            </HStack>
+                                        </FormLabel>
+                                        <InputGroup>
+                                            <Input
+                                                type={showPasswords.confirm ? 'text' : 'password'}
+                                                value={formData.confirmPassword}
+                                                onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                                                placeholder="Ulangi password baru"
+                                                bg="rgba(255, 255, 255, 0.1)"
+                                                backdropFilter="blur(8px)"
+                                                border="1px solid rgba(255, 255, 255, 0.15)"
+                                                borderRadius="12px"
+                                                pr="3rem"
+                                                color="#444444"
+                                                _placeholder={{ color: "#999999" }}
+                                                _focus={{
+                                                    borderColor: COLORS.primary,
+                                                    boxShadow: `0 0 0 2px rgba(116, 156, 115, 0.2)`
+                                                }}
+                                            />
+                                            <InputRightElement>
+                                                <IconButton
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon={showPasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    onClick={() => togglePasswordVisibility('confirm')}
+                                                    aria-label={showPasswords.confirm ? 'Sembunyikan password' : 'Tampilkan password'}
+                                                    color="#666666"
+                                                    _hover={{ color: COLORS.primary }}
+                                                />
+                                            </InputRightElement>
+                                        </InputGroup>
+                                        {errors.confirmPassword && (
+                                            <Text color="#ef4444" fontSize="xs" mt={1}>
+                                                {errors.confirmPassword}
+                                            </Text>
+                                        )}
+                                    </FormControl>
+                                </MotionBox>
+                            </VStack>
+
+                            {/* Action Buttons */}
+                            <MotionBox
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: 0.7 }}
+                            >
+                                <HStack spacing={3} justify="flex-end" flexWrap="wrap">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleReset}
+                                        isDisabled={!hasData || changingPassword}
+                                        bg="rgba(255, 255, 255, 0.1)"
+                                        backdropFilter="blur(8px)"
+                                        border="1px solid rgba(255, 255, 255, 0.15)"
+                                        borderRadius="10px"
+                                        color="#666666"
+                                        _hover={{
+                                            bg: "rgba(107, 114, 128, 0.15)",
+                                            borderColor: "rgba(107, 114, 128, 0.3)",
+                                            color: "#6b7280"
+                                        }}
+                                        size={{ base: "sm", md: "md" }}
+                                    >
+                                        Reset
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        isLoading={changingPassword}
+                                        loadingText="Mengubah..."
+                                        isDisabled={!hasData}
+                                        bg="rgba(239, 68, 68, 0.15)"
+                                        color="#ef4444"
+                                        border="1px solid rgba(239, 68, 68, 0.3)"
+                                        borderRadius="10px"
+                                        _hover={{
+                                            bg: "rgba(239, 68, 68, 0.2)",
+                                            borderColor: "rgba(239, 68, 68, 0.4)"
+                                        }}
+                                        size={{ base: "sm", md: "md" }}
+                                    >
+                                        Ubah Password
+                                    </Button>
+                                </HStack>
+                            </MotionBox>
+                        </VStack>
+                    </form>
+                </Box>
+            </MotionBox>
+        </Container>
     );
 };
 

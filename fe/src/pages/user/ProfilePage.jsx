@@ -19,9 +19,9 @@ import {
 import { User, Shield, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import { useProfile } from '@/hooks/useProfile';
-import { ProfileForm, ChangePasswordForm } from '@/components/profile';
-import { PageWrapper } from '@/components/admin/common';
+import { useProfile } from '../../hooks/profile';
+import { ProfileForm, ChangePasswordForm } from '../../components/profile';
+import { PageWrapper } from '../../components/admin/common';
 
 const MotionBox = motion(Box);
 
@@ -161,8 +161,8 @@ const ProfilePage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                    <Tabs 
-                        index={activeTab} 
+                    <Tabs
+                        index={activeTab}
                         onChange={setActiveTab}
                         variant="enclosed"
                         colorScheme="primary"

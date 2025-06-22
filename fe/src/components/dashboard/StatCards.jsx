@@ -4,7 +4,8 @@ import {
     Box,
     Text,
     Flex,
-    Icon
+    Icon,
+    useBreakpointValue
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -15,24 +16,57 @@ import {
     TrendingUp,
     Clock
 } from 'lucide-react';
-import { GlassCard } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import { COLORS } from '../../utils/designTokens';
+import { AnimatedGridPattern } from '../magicui/animated-grid-pattern';
+
+const MotionBox = motion(Box);
 
 const StatCard = ({ title, value, icon: IconComponent, subtitle, color = COLORS.primary, delay = 0 }) => {
+    const cardPadding = useBreakpointValue({ base: 3, md: 4 });
+    const iconSize = useBreakpointValue({ base: 10, md: 12 });
+
     return (
-        <Box
-            as={motion.div}
+        <MotionBox
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay, duration: 0.5 }}
+            transition={{ delay, duration: 0.5, ease: "easeOut" }}
+            whileHover={{ 
+                y: -4, 
+                scale: 1.02,
+                transition: { duration: 0.2 }
+            }}
         >
-            <GlassCard p={6} hoverEffect={true}>
-                <Flex align="center" justify="space-between">
+            <Box
+                bg="rgba(255, 255, 255, 0.08)"
+                backdropFilter="blur(16px)"
+                border="1px solid rgba(255, 255, 255, 0.12)"
+                borderRadius="16px"
+                boxShadow="0 8px 32px rgba(116, 156, 115, 0.08)"
+                p={cardPadding}
+                position="relative"
+                overflow="hidden"
+                _hover={{
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                    boxShadow: "0 12px 40px rgba(116, 156, 115, 0.12)"
+                }}
+                style={{ transition: "all 0.3s ease" }}
+                cursor="pointer"
+            >
+                {/* Subtle Background Pattern */}
+                <AnimatedGridPattern
+                    numSquares={8}
+                    maxOpacity={0.03}
+                    duration={3}
+                    repeatDelay={1.5}
+                    className="absolute inset-0 h-full w-full fill-[#749c73]/6 stroke-[#749c73]/3"
+                />
+
+                <Flex align="center" justify="space-between" position="relative" zIndex={1}>
                     <Box flex={1}>
                         <Text
-                            fontSize="sm"
-                            fontWeight="medium"
-                            color={COLORS.gray[600]}
+                            fontSize="xs"
+                            fontWeight="bold"
+                            color="#666666"
                             mb={2}
                             textTransform="uppercase"
                             letterSpacing="wide"
@@ -40,9 +74,9 @@ const StatCard = ({ title, value, icon: IconComponent, subtitle, color = COLORS.
                             {title}
                         </Text>
                         <Text
-                            fontSize="3xl"
+                            fontSize={{ base: "xl", md: "2xl" }}
                             fontWeight="bold"
-                            color={COLORS.black}
+                            color="#444444"
                             lineHeight="1"
                             mb={1}
                         >
@@ -51,7 +85,7 @@ const StatCard = ({ title, value, icon: IconComponent, subtitle, color = COLORS.
                         {subtitle && (
                             <Text
                                 fontSize="xs"
-                                color={COLORS.gray[500]}
+                                color="#777777"
                                 fontWeight="medium"
                             >
                                 {subtitle}
@@ -60,25 +94,50 @@ const StatCard = ({ title, value, icon: IconComponent, subtitle, color = COLORS.
                     </Box>
 
                     <Box
-                        w="60px"
-                        h="60px"
-                        borderRadius="full"
+                        w={iconSize}
+                        h={iconSize}
+                        borderRadius="12px"
                         bg={`${color}15`}
-                        border={`2px solid ${color}30`}
+                        border={`1px solid ${color}30`}
                         display="flex"
                         align="center"
                         justify="center"
                         flexShrink={0}
+                        position="relative"
+                        _before={{
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            bg: `linear-gradient(135deg, ${color}20, ${color}05)`,
+                            borderRadius: '12px'
+                        }}
                     >
-                        <Icon as={IconComponent} boxSize={6} color={color} />
+                        <Icon 
+                            as={IconComponent} 
+                            boxSize={{ base: 4, md: 5 }} 
+                            color={color}
+                            position="relative"
+                            zIndex={1}
+                        />
                     </Box>
                 </Flex>
-            </GlassCard>
-        </Box>
+            </Box>
+        </MotionBox>
     );
 };
 
 const StatCards = ({ stats = {} }) => {
+    const gridColumns = useBreakpointValue({ 
+        base: 1, 
+        sm: 2, 
+        md: 3, 
+        lg: 6,
+        xl: 6 
+    });
+
     const {
         totalUsers = 0,
         totalBuildings = 0,
@@ -144,8 +203,8 @@ const StatCards = ({ stats = {} }) => {
 
     return (
         <SimpleGrid
-            columns={{ base: 1, sm: 2, lg: 3, xl: 6 }}
-            spacing={4}
+            columns={gridColumns}
+            spacing={{ base: 3, md: 4 }}
             w="full"
         >
             {cardData.map((card, index) => (
@@ -156,7 +215,7 @@ const StatCards = ({ stats = {} }) => {
                     icon={card.icon}
                     color={card.color}
                     subtitle={card.subtitle}
-                    delay={index * 0.1}
+                    delay={index * 0.05}
                 />
             ))}
         </SimpleGrid>

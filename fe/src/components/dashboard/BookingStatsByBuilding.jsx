@@ -1,11 +1,15 @@
 import React from 'react';
-import { Box, Text, VStack, HStack, Progress, Badge, Icon, Flex } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack, Progress, Badge, Icon, Flex, useBreakpointValue } from '@chakra-ui/react';
 import { Building, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { GlassCard } from '@/components/ui';
-import { COLORS, SHADOWS, RADII } from '@/utils/designTokens';
+import { COLORS } from '../../utils/designTokens';
+import { AnimatedGridPattern } from '../magicui/animated-grid-pattern';
+
+const MotionBox = motion(Box);
 
 const BookingStatsByBuilding = ({ bookingStatistics = [] }) => {
+    const cardPadding = useBreakpointValue({ base: 4, md: 5 });
+
     // Calculate total bookings
     const totalBookings = bookingStatistics.reduce((sum, item) => sum + item.totalBookings, 0);
 
@@ -13,142 +17,183 @@ const BookingStatsByBuilding = ({ bookingStatistics = [] }) => {
     const sortedStats = [...bookingStatistics].sort((a, b) => b.totalBookings - a.totalBookings);
 
     return (
-        <GlassCard p={6}>
-            <Flex justify="space-between" align="center" mb={6}>
-                <Text
-                    fontSize="lg"
-                    fontWeight="semibold"
-                    color={COLORS.black}
-                >
-                    Statistik Peminjaman
-                </Text>
-                <Badge
-                    bg={`${COLORS.primary}15`}
-                    color={COLORS.primary}
-                    px={3}
-                    py={1}
-                    borderRadius="full"
-                    fontSize="xs"
-                    fontWeight="semibold"
-                    border={`1px solid ${COLORS.primary}30`}
-                >
-                    <HStack spacing={1}>
-                        <TrendingUp size={12} />
-                        <Text>Total: {totalBookings}</Text>
-                    </HStack>
-                </Badge>
-            </Flex>
+        <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            bg="rgba(255, 255, 255, 0.08)"
+            backdropFilter="blur(16px)"
+            border="1px solid rgba(255, 255, 255, 0.12)"
+            borderRadius="20px"
+            boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+            p={cardPadding}
+            position="relative"
+            overflow="hidden"
+            _hover={{
+                transform: "translateY(-2px)",
+                boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+            }}
+            transition="all 0.3s ease"
+        >
+            {/* Background Pattern */}
+            <AnimatedGridPattern
+                numSquares={18}
+                maxOpacity={0.04}
+                duration={5}
+                repeatDelay={2.5}
+                className="absolute inset-0 h-full w-full fill-[#749c73]/8 stroke-[#749c73]/4"
+            />
 
-            <VStack spacing={4} align="stretch">
-                {sortedStats.length === 0 ? (
-                    <Flex
-                        direction="column"
-                        align="center"
-                        justify="center"
-                        py={12}
-                        gap={3}
+            <Box position="relative" zIndex={1}>
+                <Flex justify="space-between" align="center" mb={5}>
+                    <Text
+                        fontSize={{ base: "md", md: "lg" }}
+                        fontWeight="bold"
+                        color="#444444"
                     >
-                        <Box
-                            w="50px"
-                            h="50px"
-                            borderRadius="full"
-                            bg={`${COLORS.primary}10`}
-                            display="flex"
+                        Statistik Peminjaman
+                    </Text>
+                    <Badge
+                        bg="rgba(116, 156, 115, 0.15)"
+                        color={COLORS.primary}
+                        border="1px solid rgba(116, 156, 115, 0.2)"
+                        px={3}
+                        py={1}
+                        borderRadius="8px"
+                        fontSize="xs"
+                        fontWeight="semibold"
+                    >
+                        <HStack spacing={1}>
+                            <TrendingUp size={12} />
+                            <Text>Total: {totalBookings}</Text>
+                        </HStack>
+                    </Badge>
+                </Flex>
+
+                <VStack spacing={3} align="stretch">
+                    {sortedStats.length === 0 ? (
+                        <Flex
+                            direction="column"
                             align="center"
                             justify="center"
+                            py={10}
+                            gap={3}
                         >
-                            <Building size={20} color={COLORS.primary} />
-                        </Box>
-                        <Text
-                            color={COLORS.gray[500]}
-                            textAlign="center"
-                            fontSize="sm"
-                        >
-                            Belum ada data peminjaman gedung
-                        </Text>
-                    </Flex>
-                ) : (
-                    sortedStats.map((building, index) => {
-                        const percentage = totalBookings > 0
-                            ? (building.totalBookings / totalBookings) * 100
-                            : 0;
-
-                        return (
-                            <motion.div
-                                key={`${building.buildingName}-${index}`}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
+                            <MotionBox
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.5, delay: 0.3 }}
+                                w={12}
+                                h={12}
+                                borderRadius="12px"
+                                bg="rgba(116, 156, 115, 0.15)"
+                                border="1px solid rgba(116, 156, 115, 0.2)"
+                                display="flex"
+                                align="center"
+                                justify="center"
                             >
-                                <Box
-                                    p={4}
-                                    borderRadius="lg"
-                                    bg={`${COLORS.primary}05`}
-                                    border={`1px solid ${COLORS.primary}15`}
-                                    _hover={{
-                                        bg: `${COLORS.primary}10`,
-                                        borderColor: `${COLORS.primary}25`,
-                                        transform: 'translateY(-1px)',
-                                        boxShadow: SHADOWS.sm
-                                    }}
-                                    transition="all 0.2s"
-                                    cursor="pointer"
+                                <Building size={20} color={COLORS.primary} />
+                            </MotionBox>
+                            <Text
+                                color="#666666"
+                                textAlign="center"
+                                fontSize="sm"
+                                fontWeight="medium"
+                            >
+                                Belum ada data peminjaman gedung
+                            </Text>
+                        </Flex>
+                    ) : (
+                        sortedStats.map((building, index) => {
+                            const percentage = totalBookings > 0
+                                ? (building.totalBookings / totalBookings) * 100
+                                : 0;
+
+                            return (
+                                <MotionBox
+                                    key={`${building.buildingName}-${index}`}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.05, duration: 0.4 }}
+                                    whileHover={{ scale: 1.02, y: -1 }}
                                 >
-                                    <HStack justify="space-between" mb={3}>
-                                        <HStack spacing={3}>
-                                            <Box
-                                                p={2}
-                                                borderRadius="md"
-                                                bg={`${COLORS.primary}15`}
-                                            >
-                                                <Icon
-                                                    as={Building}
-                                                    boxSize={4}
-                                                    color={COLORS.primary}
-                                                />
-                                            </Box>
-                                            <Text
-                                                fontWeight="semibold"
-                                                color={COLORS.black}
-                                                fontSize="sm"
-                                            >
-                                                {building.buildingName}
-                                            </Text>
-                                        </HStack>
-                                        <VStack spacing={0} align="end">
-                                            <Text
-                                                fontWeight="bold"
-                                                color={COLORS.black}
-                                                fontSize="sm"
-                                            >
-                                                {building.totalBookings}
-                                            </Text>
-                                            <Text
-                                                color={COLORS.gray[600]}
-                                                fontSize="xs"
-                                            >
-                                                {percentage.toFixed(1)}%
-                                            </Text>
-                                        </VStack>
-                                    </HStack>
-                                    <Progress
-                                        value={percentage}
-                                        bg="gray.100"
-                                        sx={{
-                                            '& > div': {
-                                                bg: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.primaryLight})`
-                                            }
+                                    <Box
+                                        p={4}
+                                        borderRadius="12px"
+                                        bg="rgba(255, 255, 255, 0.1)"
+                                        backdropFilter="blur(8px)"
+                                        border="1px solid rgba(255, 255, 255, 0.15)"
+                                        _hover={{
+                                            bg: "rgba(116, 156, 115, 0.1)",
+                                            borderColor: "rgba(116, 156, 115, 0.25)",
+                                            boxShadow: "0 4px 20px rgba(116, 156, 115, 0.1)"
                                         }}
-                                        size="sm"
-                                        borderRadius="full"
-                                    />
-                                </Box>
-                            </motion.div>
-                        );
-                    })
-                )}
-            </VStack>
-        </GlassCard>
+                                        transition="all 0.2s ease"
+                                        cursor="pointer"
+                                    >
+                                        <HStack justify="space-between" mb={3}>
+                                            <HStack spacing={3}>
+                                                <Box
+                                                    w={8}
+                                                    h={8}
+                                                    borderRadius="8px"
+                                                    bg="rgba(116, 156, 115, 0.15)"
+                                                    border="1px solid rgba(116, 156, 115, 0.2)"
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    justifyContent="center"
+                                                >
+                                                    <Icon
+                                                        as={Building}
+                                                        boxSize={4}
+                                                        color={COLORS.primary}
+                                                    />
+                                                </Box>
+                                                <Text
+                                                    fontWeight="semibold"
+                                                    color="#444444"
+                                                    fontSize="sm"
+                                                >
+                                                    {building.buildingName}
+                                                </Text>
+                                            </HStack>
+                                            <VStack spacing={0} align="end">
+                                                <Text
+                                                    fontWeight="bold"
+                                                    color="#444444"
+                                                    fontSize="sm"
+                                                >
+                                                    {building.totalBookings}
+                                                </Text>
+                                                <Text
+                                                    color="#666666"
+                                                    fontSize="xs"
+                                                    fontWeight="medium"
+                                                >
+                                                    {percentage.toFixed(1)}%
+                                                </Text>
+                                            </VStack>
+                                        </HStack>
+                                        <Progress
+                                            value={percentage}
+                                            bg="rgba(255, 255, 255, 0.2)"
+                                            borderRadius="full"
+                                            size="sm"
+                                            sx={{
+                                                '& > div': {
+                                                    bg: `linear-gradient(90deg, ${COLORS.primary}, rgba(116, 156, 115, 0.7))`,
+                                                    borderRadius: "full"
+                                                }
+                                            }}
+                                        />
+                                    </Box>
+                                </MotionBox>
+                            );
+                        })
+                    )}
+                </VStack>
+            </Box>
+        </MotionBox>
     );
 };
 

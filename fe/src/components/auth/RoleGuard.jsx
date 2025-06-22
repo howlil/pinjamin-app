@@ -1,4 +1,4 @@
-import { useRole, useAuth } from '../../hooks/useAuth';
+import { useRole, useAuth } from '../../hooks/auth';
 import { useAuthStore } from '../../utils/store';
 
 // Component to conditionally render content based on user roles

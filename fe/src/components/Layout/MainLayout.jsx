@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Container, VStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { COLORS, ANIMATIONS } from '../../utils/designTokens';
-import Navbar from '../Navbar';
+import { Navbar } from '../navigation';
 
 
 const MainLayout = ({

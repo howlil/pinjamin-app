@@ -33,9 +33,10 @@ import {
     Spinner,
 } from '@chakra-ui/react';
 import { Building, Upload, X, Plus, User, Phone } from 'lucide-react';
-import { PrimaryButton } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
-import { facilityApi, buildingManagerApi } from '@/services/apiService';
+import { PrimaryButton } from '../../ui';
+import { COLORS } from '../../../utils/designTokens';
+import { facilityApi } from '../../../services/facility/facilityService';
+import { buildingManagerApi } from '../../../services/buildingManager/buildingManagerService';
 
 const BUILDING_TYPES = [
     { value: 'CLASSROOM', label: 'Ruang Kelas' },

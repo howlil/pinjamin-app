@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Heading, Text } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { COLORS, ANIMATIONS } from '@/utils/designTokens';
+import { COLORS, ANIMATIONS } from '../../utils/designTokens';
 
 const AuthHeader = ({ title, subtitle }) => {
     return (

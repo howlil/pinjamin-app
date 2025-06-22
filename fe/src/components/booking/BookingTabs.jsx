@@ -8,7 +8,7 @@ import {
     VStack,
     Text
 } from '@chakra-ui/react';
-import { COLORS } from '@/utils/designTokens';
+import { COLORS } from '../../utils/designTokens';
 import BookingCard from './BookingCard';
 
 const BookingTabs = ({ bookings }) => {

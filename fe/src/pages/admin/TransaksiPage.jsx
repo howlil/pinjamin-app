@@ -19,10 +19,10 @@ import {
 } from '@chakra-ui/react';
 import { DollarSign, Download } from 'lucide-react';
 
-import { PrimaryButton } from '@/components/ui';
-import { useTransactions } from '@/hooks/useTransactions';
-import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
-import { TransactionTable } from '@/components/admin/transaction';
+import { PrimaryButton } from '../../components/ui';
+import { useTransactions } from '../../hooks/transaction';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '../../components/admin/common';
+import { TransactionTable } from '../../components/admin/transaction';
 
 // Payment status options for filter
 const PAYMENT_STATUS_OPTIONS = [

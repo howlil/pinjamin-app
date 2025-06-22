@@ -15,8 +15,8 @@ import {
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
-import { PrimaryButton } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import { PrimaryButton } from '../ui';
+import { COLORS } from '../../utils/designTokens';
 
 const RegisterForm = ({
     formData,
@@ -53,65 +53,8 @@ const RegisterForm = ({
                             borderColor: 'gray.300',
                         }}
                     />
-                </FormControl>
-
-                <FormControl isRequired>
-                    <FormLabel fontSize="sm" fontWeight="medium">
-                        Tipe Peminjam<Text as="span" color={COLORS.primary}>*</Text>
-                    </FormLabel>
-                    <Select
-                        name="borrowerType"
-                        value={formData.borrowerType}
-                        onChange={handleInputChange}
-                        placeholder="Pilih tipe peminjam"
-                        bg="white"
-                        border="1px"
-                        borderColor="gray.200"
-                        borderRadius="full"
-                        fontSize="sm"
-                        h="50px"
-                        _focus={{
-                            borderColor: COLORS.primary,
-                            boxShadow: `0 0 0 1px ${COLORS.primary}`
-                        }}
-                        _hover={{
-                            borderColor: 'gray.300',
-                        }}
-                    >
-                        <option value="INTERNAL_UNAND">Civitas Akademika Unand</option>
-                        <option value="EXTERNAL_UNAND">Eksternal Unand</option>
-                        <option value="GOVERNMENT">Pemerintah</option>
-                        <option value="PRIVATE">Swasta</option>
-                        <option value="INDIVIDUAL">Perorangan</option>
-                    </Select>
-                </FormControl>
-
-                <FormControl isRequired>
-                    <FormLabel fontSize="sm" fontWeight="medium">
-                        Nomor Telepon<Text as="span" color={COLORS.primary}>*</Text>
-                    </FormLabel>
-                    <Input
-                        name="phoneNumber"
-                        type="tel"
-                        value={formData.phoneNumber}
-                        onChange={handleInputChange}
-                        placeholder="+62812345678"
-                        bg="white"
-                        border="1px"
-                        borderColor="gray.200"
-                        borderRadius="full"
-                        fontSize="sm"
-                        py={6}
-                        _focus={{
-                            borderColor: COLORS.primary,
-                            boxShadow: `0 0 0 1px ${COLORS.primary}`
-                        }}
-                        _hover={{
-                            borderColor: 'gray.300',
-                        }}
-                    />
                     <FormHelperText fontSize="xs" color="gray.500">
-                        Format: +62812345678 atau 0812345678
+                        Nama lengkap 3-100 karakter
                     </FormHelperText>
                 </FormControl>
 
@@ -151,7 +94,7 @@ const RegisterForm = ({
                             type={showPassword ? 'text' : 'password'}
                             value={formData.password}
                             onChange={handleInputChange}
-                            placeholder="Min. 6 characters"
+                            placeholder="Min. 8 karakter"
                             bg="white"
                             border="1px"
                             borderColor="gray.200"
@@ -179,7 +122,67 @@ const RegisterForm = ({
                         </InputRightElement>
                     </InputGroup>
                     <FormHelperText fontSize="xs" color="gray.500">
-                        Password minimal 6 karakter
+                        Password minimal 8 karakter
+                    </FormHelperText>
+                </FormControl>
+
+                <FormControl isRequired>
+                    <FormLabel fontSize="sm" fontWeight="medium">
+                        Tipe Peminjam<Text as="span" color={COLORS.primary}>*</Text>
+                    </FormLabel>
+                    <Select
+                        name="borrowerType"
+                        value={formData.borrowerType}
+                        onChange={handleInputChange}
+                        placeholder="Pilih tipe peminjam"
+                        bg="white"
+                        border="1px"
+                        borderColor="gray.200"
+                        borderRadius="full"
+                        fontSize="sm"
+                        h="50px"
+                        _focus={{
+                            borderColor: COLORS.primary,
+                            boxShadow: `0 0 0 1px ${COLORS.primary}`
+                        }}
+                        _hover={{
+                            borderColor: 'gray.300',
+                        }}
+                    >
+                        <option value="INTERNAL_UNAND">Civitas Akademika Unand</option>
+                        <option value="EXTERNAL_UNAND">Eksternal Unand</option>
+                    </Select>
+                    <FormHelperText fontSize="xs" color="gray.500">
+                        Pilih apakah Anda bagian dari civitas akademika Unand atau pihak eksternal
+                    </FormHelperText>
+                </FormControl>
+
+                <FormControl isRequired>
+                    <FormLabel fontSize="sm" fontWeight="medium">
+                        Nomor Telepon<Text as="span" color={COLORS.primary}>*</Text>
+                    </FormLabel>
+                    <Input
+                        name="phoneNumber"
+                        type="tel"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        placeholder="+62812345678"
+                        bg="white"
+                        border="1px"
+                        borderColor="gray.200"
+                        borderRadius="full"
+                        fontSize="sm"
+                        py={6}
+                        _focus={{
+                            borderColor: COLORS.primary,
+                            boxShadow: `0 0 0 1px ${COLORS.primary}`
+                        }}
+                        _hover={{
+                            borderColor: 'gray.300',
+                        }}
+                    />
+                    <FormHelperText fontSize="xs" color="gray.500">
+                        Format: +62812345678 atau 0812345678
                     </FormHelperText>
                 </FormControl>
 
@@ -246,7 +249,7 @@ const RegisterForm = ({
                         }}
                     />
                     <FormHelperText fontSize="xs" color="gray.500">
-                        Masukkan nomor rekening (6-20 digit)
+                        Masukkan nomor rekening (angka 8-20 digit)
                     </FormHelperText>
                 </FormControl>
 
@@ -254,7 +257,7 @@ const RegisterForm = ({
                     type="submit"
                     w="full"
                     isLoading={isLoading}
-                    loadingText="Daftar..."
+                    loadingText="Mendaftar..."
                     size="lg"
                     mt={2}
                 >

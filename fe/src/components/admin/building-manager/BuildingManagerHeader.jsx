@@ -1,32 +1,122 @@
 import React from 'react';
-import { HStack, Text, Icon } from '@chakra-ui/react';
-import { Users, Plus } from 'lucide-react';
-import { PrimaryButton } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import {
+    Box,
+    Heading,
+    Text,
+    Button,
+    HStack,
+    Flex,
+    useBreakpointValue
+} from '@chakra-ui/react';
+import { motion } from 'framer-motion';
+import { Plus, Users } from 'lucide-react';
+import { COLORS } from '../../../utils/designTokens';
+
+const MotionBox = motion(Box);
 
 const BuildingManagerHeader = ({ onAddNew }) => {
-    return (
-        <HStack justify="space-between" align="center" mb={6}>
-            <HStack spacing={3} align="center">
-                <Icon as={Users} boxSize={8} color={COLORS.primary} />
-                <div>
-                    <Text fontSize="2xl" fontWeight="bold" color={COLORS.black}>
-                        Kelola Pengelola Gedung
-                    </Text>
-                    <Text fontSize="md" color={COLORS.gray[600]}>
-                        Manajemen pengelola dan penugasan gedung
-                    </Text>
-                </div>
-            </HStack>
+    const padding = useBreakpointValue({ base: 4, md: 6 });
 
-            <PrimaryButton
-                leftIcon={<Plus size={18} />}
-                onClick={onAddNew}
-                size="lg"
+    return (
+        <MotionBox
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            mb={6}
+        >
+            <Box
+                bg="rgba(255, 255, 255, 0.08)"
+                backdropFilter="blur(16px)"
+                border="1px solid rgba(255, 255, 255, 0.12)"
+                borderRadius="20px"
+                boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+                p={padding}
+                _hover={{
+                    borderColor: "rgba(255, 255, 255, 0.15)",
+                    boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+                }}
+                transition="all 0.3s ease"
             >
-                Tambah Pengelola
-            </PrimaryButton>
-        </HStack>
+                <Flex
+                    justify="space-between"
+                    align={{ base: 'start', md: 'center' }}
+                    direction={{ base: 'column', md: 'row' }}
+                    gap={4}
+                >
+                    <HStack spacing={4}>
+                        <Box
+                            w={14}
+                            h={14}
+                            borderRadius="16px"
+                            bg="rgba(116, 156, 115, 0.15)"
+                            border="1px solid rgba(116, 156, 115, 0.2)"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            position="relative"
+                            _before={{
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                bg: 'linear-gradient(135deg, rgba(116, 156, 115, 0.2), rgba(116, 156, 115, 0.05))',
+                                borderRadius: '16px'
+                            }}
+                        >
+                            <Users
+                                size={24}
+                                color={COLORS.primary}
+                                style={{ position: 'relative', zIndex: 1 }}
+                            />
+                        </Box>
+                        <Box>
+                            <Heading
+                                size={{ base: "md", md: "lg" }}
+                                color="#444444"
+                                fontWeight="bold"
+                                mb={1}
+                            >
+                                Kelola Pengelola Gedung
+                            </Heading>
+                            <Text
+                                color="#666666"
+                                fontSize="sm"
+                                fontWeight="medium"
+                                lineHeight="1.5"
+                            >
+                                Manajemen pengelola dan penugasan gedung
+                            </Text>
+                        </Box>
+                    </HStack>
+
+                    <Button
+                        leftIcon={<Plus size={16} />}
+                        bg={COLORS.primary}
+                        color="white"
+                        size="md"
+                        borderRadius="12px"
+                        px={6}
+                        py={3}
+                        fontSize="sm"
+                        fontWeight="bold"
+                        _hover={{
+                            bg: COLORS.primary,
+                            transform: 'translateY(-2px)',
+                            boxShadow: "0 8px 25px rgba(116, 156, 115, 0.3)"
+                        }}
+                        _active={{
+                            transform: 'translateY(0)'
+                        }}
+                        transition="all 0.2s ease"
+                        onClick={onAddNew}
+                    >
+                        Tambah Pengelola
+                    </Button>
+                </Flex>
+            </Box>
+        </MotionBox>
     );
 };
 

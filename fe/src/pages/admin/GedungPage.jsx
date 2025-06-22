@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Box, useDisclosure, Flex } from '@chakra-ui/react';
 import { Building, Plus } from 'lucide-react';
 
-import { PrimaryButton } from '@/components/ui';
-import { useBuildings } from '@/hooks/useBuildings';
-import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
-import { BuildingTable, BuildingFormModal, BuildingDeleteModal } from '@/components/admin/building';
+import { PrimaryButton } from '../../components/ui';
+import { useBuildings } from '../../hooks/building';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '../../components/admin/common';
+import { BuildingTable, BuildingFormModal, BuildingDeleteModal } from '../../components/admin/building';
 
 // Building type options for filter
 const BUILDING_TYPE_OPTIONS = [

@@ -24,10 +24,10 @@ import {
 } from '@chakra-ui/react';
 import { History, Download, RefreshCw, Calendar, DollarSign } from 'lucide-react';
 
-import { PrimaryButton } from '@/components/ui';
-import { useAdminBookingHistory } from '@/hooks/useAdminBookingHistory';
-import { DataStateHandler, PageHeader, PageWrapper } from '@/components/admin/common';
-import { HistoryTable } from '@/components/admin/history';
+import { PrimaryButton } from '../../components/ui';
+import { useAdminBookingHistory } from '../../hooks/booking';
+import { DataStateHandler, PageHeader, PageWrapper } from '../../components/admin/common';
+import { HistoryTable } from '../../components/admin/history';
 
 const RiwayatPage = () => {
     // Modal controls

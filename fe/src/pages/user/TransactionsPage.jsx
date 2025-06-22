@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Container, VStack, Spinner, Text, Alert, AlertIcon } from '@chakra-ui/react';
-import { TransactionHeader, TransactionTable } from '@/components/transactions';
-import { useUserTransactions } from '@/hooks/useUserTransactions';
+import { TransactionHeader, TransactionTable } from '../../components/transactions';
+import { useUserTransactions } from '../../hooks/transaction';
 
 const TransactionsPage = () => {
   const {

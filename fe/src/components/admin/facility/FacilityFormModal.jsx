@@ -30,8 +30,8 @@ import {
     School2,
     Settings
 } from 'lucide-react';
-import { COLORS, SHADOWS } from '@/utils/designTokens';
-import { showToast } from '@/utils/helpers';
+import { COLORS, SHADOWS } from '../../../utils/designTokens';
+import { showToast } from '../../../utils/helpers';
 
 // Available icons for selection
 const AVAILABLE_ICONS = [

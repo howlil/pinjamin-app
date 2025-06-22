@@ -7,12 +7,16 @@
     "theme": "dark-modern",
     "colors": {
       "primary": {
-        "50": "#f0f4ff",
-        "100": "#e0e9ff",
-        "500": "#6366f1",
-        "600": "#5b21b6",
-        "700": "#4c1d95",
-        "900": "#312e81"
+        "50": "#e9f1e8",
+        "100": "#d3e3d1",
+        "200": "#bdd4ba",
+        "300": "#a7c6a3",
+        "400": "#91b88c",
+        "500": "#749c73",
+        "600": "#5f7e5e",
+        "700": "#4c6a4b",
+        "800": "#395238",
+        "900": "#263a25"
       },
       "secondary": {
         "50": "#fafafa",
@@ -20,12 +24,7 @@
         "500": "#71717a",
         "900": "#18181b"
       },
-      "accent": {
-        "cyan": "#06b6d4",
-        "purple": "#8b5cf6",
-        "pink": "#ec4899",
-        "emerald": "#10b981"
-      },
+
       "background": {
         "primary": "#0a0a0a",
         "secondary": "#111111",
@@ -45,10 +44,16 @@
         "glass": "rgba(255, 255, 255, 0.2)"
       },
       "gradient": {
-        "primary": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        "secondary": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-        "ai": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        "glass": "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)"
+        "primary": "linear-gradient(135deg, #749c73 0%, #4c6a4b 100%)",
+        "secondary": "linear-gradient(135deg, #91b88c 0%, #5f7e5e 100%)",
+        "accent": "linear-gradient(135deg, #a7c6a3 0%, #749c73 100%)",
+        "nature": "linear-gradient(135deg, #bdd4ba 0%, #91b88c 100%)",
+        "forest": "linear-gradient(135deg, #395238 0%, #263a25 100%)",
+        "emerald": "linear-gradient(135deg, #749c73 0%, #22c55e 100%)",
+        "mint": "linear-gradient(135deg, #d3e3d1 0%, #a7c6a3 100%)",
+        "ai": "linear-gradient(135deg, #749c73 0%, #4ade80 100%)",
+        "glass": "linear-gradient(135deg, rgba(116,156,115,0.1) 0%, rgba(116,156,115,0.05) 100%)",
+        "glassLight": "linear-gradient(135deg, rgba(167,198,163,0.15) 0%, rgba(116,156,115,0.08) 100%)"
       }
     },
     "typography": {
@@ -165,55 +170,6 @@
         "animations": {}
       },
       "components": {
-        "common": {
-          "Button": {
-            "file": "Button.js",
-            "variants": ["primary", "secondary", "ghost", "gradient"],
-            "animation": {
-              "initial": { "scale": 1 },
-              "whileHover": { "scale": 1.02, "transition": { "duration": 0.2 } },
-              "whileTap": { "scale": 0.98 }
-            }
-          },
-          "Input": {
-            "file": "Input.js",
-            "variants": ["default", "glass", "floating"],
-            "animation": {
-              "initial": { "borderColor": "rgba(255, 255, 255, 0.1)" },
-              "focus": { "borderColor": "#6366f1", "boxShadow": "0 0 0 2px rgba(99, 102, 241, 0.2)" }
-            }
-          },
-          "Card": {
-            "file": "Card.js",
-            "variants": ["default", "glass", "elevated", "interactive"],
-            "animation": {
-              "initial": { "y": 20, "opacity": 0 },
-              "animate": { "y": 0, "opacity": 1, "transition": { "duration": 0.4 } },
-              "whileHover": { "y": -4, "transition": { "duration": 0.2 } }
-            }
-          },
-          "Modal": {
-            "file": "Modal.js",
-            "animation": {
-              "initial": { "opacity": 0, "scale": 0.95 },
-              "animate": { "opacity": 1, "scale": 1 },
-              "exit": { "opacity": 0, "scale": 0.95 }
-            }
-          },
-          "Toast": {
-            "file": "Toast.js",
-            "variants": ["success", "error", "warning", "info"],
-            "animation": {
-              "initial": { "opacity": 0, "x": 300 },
-              "animate": { "opacity": 1, "x": 0 },
-              "exit": { "opacity": 0, "x": 300 }
-            }
-          },
-          "Loading": {
-            "file": "Loading.js",
-            "variants": ["spinner", "dots", "pulse", "skeleton"]
-          }
-        },
         "navigation": {
           "Header": {
             "file": "Header.js",
@@ -241,23 +197,6 @@
           "TabNavigation": {
             "file": "TabNavigation.js",
             "features": ["glass-indicator", "smooth-slide"]
-          }
-        },
-        "ai": {
-          "ChatInterface": {
-            "file": "ChatInterface.js",
-            "features": ["typing-indicator", "message-streaming", "glass-bubbles"],
-            "animation": {
-              "messageEnter": { "initial": { "opacity": 0, "y": 20 }, "animate": { "opacity": 1, "y": 0 } }
-            }
-          },
-          "AIAssistant": {
-            "file": "AIAssistant.js",
-            "features": ["voice-recognition", "suggestion-chips", "context-aware"]
-          },
-          "DataVisualization": {
-            "file": "DataVisualization.js",
-            "features": ["interactive-charts", "real-time-updates", "glass-panels"]
           }
         },
         "dashboard": {
@@ -292,41 +231,6 @@
           "Section": {
             "file": "Section.js",
             "variants": ["hero", "feature", "pricing", "testimonial"]
-          }
-        },
-        "feedback": {
-          "ProgressBar": {
-            "file": "ProgressBar.js",
-            "variants": ["linear", "circular", "glass-fill"]
-          },
-          "StatusIndicator": {
-            "file": "StatusIndicator.js",
-            "variants": ["dot", "badge", "pulse"]
-          },
-          "EmptyState": {
-            "file": "EmptyState.js",
-            "features": ["illustration", "call-to-action"]
-          }
-        },
-        "pages": {
-          "Dashboard": {
-            "file": "Dashboard.js",
-            "features": ["real-time-data", "customizable-layout", "glass-panels"],
-            "animation": "staggered-cards"
-          },
-          "Authentication": {
-            "file": "Authentication.js",
-            "variants": ["login", "register", "reset-password"],
-            "features": ["glass-form", "social-auth", "magic-link"]
-          },
-          "Landing": {
-            "file": "Landing.js",
-            "sections": ["hero", "features", "pricing", "testimonials", "cta"],
-            "features": ["parallax", "reveal-animations", "glass-sections"]
-          },
-          "Settings": {
-            "file": "Settings.js",
-            "features": ["tabbed-sections", "real-time-preview", "glass-panels"]
           }
         }
       },

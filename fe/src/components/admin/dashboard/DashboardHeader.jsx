@@ -6,7 +6,7 @@ import {
     Flex
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { COLORS } from '@/utils/designTokens';
+import { COLORS } from '../../../utils/designTokens';
 
 const DashboardHeader = ({
     title = "Dashboard",

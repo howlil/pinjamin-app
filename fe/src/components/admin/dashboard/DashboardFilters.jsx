@@ -4,8 +4,8 @@ import {
     HStack
 } from '@chakra-ui/react';
 import { Calendar } from 'lucide-react';
-import { GlassCard } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import { GlassCard } from '../../ui';
+import { COLORS } from '../../../utils/designTokens';
 
 const DashboardFilters = ({
     selectedMonth,

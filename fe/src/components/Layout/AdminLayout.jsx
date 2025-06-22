@@ -17,7 +17,8 @@ import {
     DrawerOverlay,
     DrawerContent,
     DrawerCloseButton,
-    Tooltip
+    Tooltip,
+    useBreakpointValue
 } from '@chakra-ui/react';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -32,15 +33,25 @@ import {
     Menu as MenuIcon,
     Bell
 } from 'lucide-react';
-import { useAuthStore } from '@/utils/store';
+import { useAuthStore } from '../../utils/store';
 import { motion } from 'framer-motion';
-import logoUnand from '@/assets/logo.png';
+import { COLORS } from '../../utils/designTokens';
+import { AnimatedGridPattern } from '../magicui/animated-grid-pattern';
+import logoUnand from '../../assets/logo.png';
+
+const MotionBox = motion(Box);
+const MotionButton = motion(Button);
 
 const AdminLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
     const { isOpen, onOpen, onClose } = useDisclosure();
+
+    // Responsive values
+    const sidebarWidth = useBreakpointValue({ base: "280px", xl: "300px" });
+    const contentPadding = useBreakpointValue({ base: 2, sm: 3, md: 4 });
+    const headerPadding = useBreakpointValue({ base: 4, md: 6 });
 
     const handleLogout = () => {
         logout();
@@ -90,233 +101,315 @@ const AdminLayout = () => {
     };
 
     const SidebarContent = () => (
-        <VStack spacing={0} align="stretch" h="100%">
+        <VStack spacing={0} align="stretch" h="100%" position="relative" zIndex={1}>
             {/* Logo Section */}
-            <Box p={6}>
+            <MotionBox
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                p={5}
+            >
                 <HStack spacing={3}>
-                    <img src={logoUnand} alt="Logo" width={40} height={40} />
+                    <MotionBox
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        w={10}
+                        h={10}
+                        bg="rgba(116, 156, 115, 0.15)"
+                        borderRadius="12px"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        border="1px solid rgba(116, 156, 115, 0.2)"
+                        overflow="hidden"
+                    >
+                        <img src={logoUnand} alt="Logo" width={24} height={24} />
+                    </MotionBox>
                     <VStack align="start" spacing={0}>
-                        <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                        <Text fontSize="md" fontWeight="bold" color="#444444">
                             Admin Panel
                         </Text>
-                        <Text fontSize="sm" color="gray.500">
+                        <Text fontSize="xs" color="#666666">
                             Building Rental System
                         </Text>
                     </VStack>
                 </HStack>
-            </Box>
-
-            <Divider />
+            </MotionBox>
 
             {/* Navigation */}
-            <VStack spacing={2} p={4} flex={1} align="stretch">
+            <VStack spacing={1} px={4} flex={1} align="stretch">
                 {adminNavItems.map((item, index) => {
                     const isActive = isActiveLink(item.path);
                     return (
-                        <Button
+                        <MotionButton
                             key={item.name}
                             as={RouterLink}
                             to={item.path}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.05 }}
+                            whileHover={{ scale: 1.02, y: -1 }}
+                            whileTap={{ scale: 0.98 }}
                             variant="ghost"
                             justifyContent="flex-start"
-                            leftIcon={<Icon as={item.icon} />}
-                            bg={isActive ? '#749C73' : 'transparent'}
-                            color={isActive ? 'white' : 'gray.700'}
+                            leftIcon={<Icon as={item.icon} size={16} />}
+                            bg={isActive ? 'rgba(116, 156, 115, 0.15)' : 'transparent'}
+                            color={isActive ? COLORS.primary : '#666666'}
                             _hover={{
-                                bg: isActive ? '#5a7c59' : 'gray.100',
-                                color: isActive ? 'white' : 'gray.800',
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 4px 12px rgba(116, 156, 115, 0.3)'
+                                bg: isActive ? 'rgba(116, 156, 115, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                                color: isActive ? COLORS.primary : '#444444',
+                                backdropFilter: "blur(8px)",
+                                boxShadow: `0 4px 12px ${isActive ? 'rgba(116, 156, 115, 0.2)' : 'rgba(0, 0, 0, 0.1)'}`
                             }}
-                            borderRadius="full"
-                            h={12}
+                            borderRadius="10px"
+                            h={10}
                             fontSize="sm"
-                            fontWeight="medium"
+                            fontWeight={isActive ? "semibold" : "medium"}
                             onClick={onClose}
-                            transition="all 0.3s ease"
-                            boxShadow={isActive ? '0 4px 12px rgba(116, 156, 115, 0.4)' : 'none'}
+                            transition="all 0.2s ease"
+                            boxShadow={isActive ? '0 2px 8px rgba(116, 156, 115, 0.2)' : 'none'}
+                            border={isActive ? `1px solid rgba(116, 156, 115, 0.3)` : 'none'}
                             w="100%"
                         >
                             {item.name}
-                        </Button>
+                        </MotionButton>
                     );
                 })}
             </VStack>
 
             {/* Logout */}
-            <Box p={4}>
-                <Divider mb={4} />
-                <Button
+            <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                p={4}
+            >
+                <MotionButton
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
                     variant="ghost"
                     justifyContent="flex-start"
-                    leftIcon={<Icon as={LogOut} />}
-                    color="red.500"
+                    leftIcon={<Icon as={LogOut} size={16} />}
+                    color="#ef4444"
                     _hover={{
-                        bg: 'red.50',
-                        color: 'red.600',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                        bg: 'rgba(239, 68, 68, 0.1)',
+                        color: '#dc2626',
+                        backdropFilter: "blur(8px)",
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
                     }}
-                    borderRadius="full"
-                    h={12}
+                    borderRadius="10px"
+                    h={10}
                     fontSize="sm"
                     fontWeight="medium"
                     onClick={handleLogout}
                     w="100%"
-                    transition="all 0.3s ease"
+                    transition="all 0.2s ease"
                 >
                     Keluar
-                </Button>
-            </Box>
+                </MotionButton>
+            </MotionBox>
         </VStack>
     );
 
     return (
-        <Flex h="100vh" bg="gray.50">
-            {/* Desktop Sidebar */}
-            <Box
-                w="280px"
-                h="calc(100vh - 32px)"
-                bg="rgba(255, 255, 255, 0.95)"
-                backdropFilter="blur(20px)"
-                borderRight="1px"
-                borderColor="gray.200"
-                boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
-                position="relative"
-                borderRadius="20px"
-                m={2}
-                display={{ base: 'none', lg: 'block' }}
-            >
-                <SidebarContent />
-            </Box>
+        <Box
+            minH="100vh"
+            bg="linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)"
+            position="relative"
+            overflow="hidden"
+        >
+            {/* Global Background Pattern */}
+     
 
-            {/* Mobile Drawer */}
-            <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
-                <DrawerOverlay />
-                <DrawerContent
-                    bg="rgba(255, 255, 255, 0.95)"
-                    backdropFilter="blur(20px)"
-                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
-                    borderRadius="0 20px 20px 0"
-                    ml={2}
-                    mt={2}
-                    mb={2}
-                    h="calc(100vh - 16px)"
+            <Flex h="100vh" position="relative" zIndex={1} p={contentPadding}>
+                {/* Desktop Sidebar */}
+                <MotionBox
+                    initial={{ x: -280, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    w={sidebarWidth}
+                    h="100%"
+                    bg="rgba(255, 255, 255, 0.08)"
+                    backdropFilter="blur(16px)"
+                    border="1px solid rgba(255, 255, 255, 0.12)"
+                    boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+                    position="relative"
+                    borderRadius="20px"
+                    mr={4}
+                    display={{ base: 'none', lg: 'block' }}
+                    overflow="hidden"
                 >
-                    <DrawerCloseButton
-                        borderRadius="full"
-                        _hover={{
-                            transform: 'scale(1.1)',
-                            bg: 'gray.100'
-                        }}
-                        transition="all 0.3s ease"
-                    />
+                 
                     <SidebarContent />
-                </DrawerContent>
-            </Drawer>
+                </MotionBox>
 
-            {/* Main Content */}
-            <Flex
-                direction="column"
-                flex={1}
-                overflow="hidden"
-                mr={2}
-            >
-                {/* Header */}
-                <motion.div
-                    initial={{ y: -60, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <Box
-                        bg="rgba(255, 255, 255, 0.95)"
-                        backdropFilter="blur(20px)"
-                        borderBottom="1px"
-                        borderColor="gray.200"
-                        px={6}
-                        py={4}
-                        boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+                {/* Mobile Drawer */}
+                <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+                    <DrawerOverlay backdropFilter="blur(4px)" bg="rgba(0, 0, 0, 0.3)" />
+                    <DrawerContent
+                        bg="rgba(255, 255, 255, 0.08)"
+                        backdropFilter="blur(16px)"
+                        border="1px solid rgba(255, 255, 255, 0.12)"
+                        boxShadow="0 20px 60px rgba(116, 156, 115, 0.15)"
+                        borderRadius="0 20px 20px 0"
+                        ml={contentPadding}
+                        mt={contentPadding}
+                        mb={contentPadding}
+                        h={`calc(100vh - ${contentPadding * 2 * 4}px)`}
+                        overflow="hidden"
                         position="relative"
-                        zIndex={5}
-                        borderRadius="20px"
-                        mx={4}
-                        mt={2}
-                        mb={2}
                     >
-                        <Flex justify="space-between" align="center">
-                            {/* Mobile Menu Button & Title */}
+                        <AnimatedGridPattern
+                            numSquares={20}
+                            maxOpacity={0.04}
+                            duration={5}
+                            repeatDelay={2.5}
+                            className="absolute inset-0 h-full w-full fill-[#749c73]/8 stroke-[#749c73]/4"
+                        />
+                        <DrawerCloseButton
+                            borderRadius="8px"
+                            bg="rgba(255, 255, 255, 0.1)"
+                            backdropFilter="blur(8px)"
+                            border="1px solid rgba(255, 255, 255, 0.15)"
+                            color="#666666"
+                            _hover={{
+                                bg: 'rgba(239, 68, 68, 0.1)',
+                                color: '#ef4444',
+                                transform: 'scale(1.05)'
+                            }}
+                            transition="all 0.2s ease"
+                            zIndex={2}
+                        />
+                        <SidebarContent />
+                    </DrawerContent>
+                </Drawer>
+
+                {/* Main Content */}
+                <Flex
+                    direction="column"
+                    flex={1}
+                    overflow="hidden"
+                >
+                    {/* Header */}
+                    <MotionBox
+                        initial={{ y: -60, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        bg="rgba(255, 255, 255, 0.08)"
+                        backdropFilter="blur(16px)"
+                        border="1px solid rgba(255, 255, 255, 0.12)"
+                        borderRadius="20px"
+                        boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+                        px={headerPadding}
+                        py={4}
+                        mb={4}
+                        position="relative"
+                        overflow="hidden"
+                    >
+                     
+
+                        <Flex justify="space-between" align="center" position="relative" zIndex={1}>
+                            {/* Mobile Menu Button */}
                             <HStack spacing={4}>
                                 <IconButton
                                     display={{ base: 'flex', lg: 'none' }}
                                     onClick={onOpen}
                                     variant="ghost"
-                                    icon={<MenuIcon size={20} />}
+                                    icon={<MenuIcon size={18} />}
                                     aria-label="Open menu"
-                                    borderRadius="full"
+                                    bg="rgba(255, 255, 255, 0.1)"
+                                    backdropFilter="blur(8px)"
+                                    border="1px solid rgba(255, 255, 255, 0.15)"
+                                    borderRadius="10px"
+                                    color="#666666"
                                     _hover={{
-                                        bg: 'gray.100',
+                                        bg: "rgba(116, 156, 115, 0.15)",
+                                        borderColor: "rgba(116, 156, 115, 0.3)",
+                                        color: COLORS.primary,
                                         transform: 'scale(1.05)'
                                     }}
-                                    transition="all 0.3s ease"
+                                    transition="all 0.2s ease"
                                 />
-
                             </HStack>
 
                             {/* Header Right */}
-                            <HStack spacing={4}>
+                            <HStack spacing={3}>
                                 {/* Notifications */}
-                                <IconButton
-                                    variant="ghost"
-                                    icon={<Bell size={20} />}
-                                    aria-label="Notifications"
-                                    position="relative"
-                                    borderRadius="full"
-                                    _hover={{
-                                        bg: 'gray.100',
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                    transition="all 0.3s ease"
-                                />
+                                <Tooltip label="Notifikasi" placement="bottom">
+                                    <IconButton
+                                        variant="ghost"
+                                        icon={<Bell size={18} />}
+                                        aria-label="Notifications"
+                                        position="relative"
+                                        bg="rgba(255, 255, 255, 0.1)"
+                                        backdropFilter="blur(8px)"
+                                        border="1px solid rgba(255, 255, 255, 0.15)"
+                                        borderRadius="10px"
+                                        color="#666666"
+                                        _hover={{
+                                            bg: "rgba(59, 130, 246, 0.15)",
+                                            borderColor: "rgba(59, 130, 246, 0.3)",
+                                            color: "#3b82f6",
+                                            transform: 'translateY(-1px)',
+                                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+                                        }}
+                                        transition="all 0.2s ease"
+                                    />
+                                </Tooltip>
 
                                 {/* User Info */}
                                 <HStack spacing={3}>
                                     <VStack align="end" spacing={0} display={{ base: 'none', md: 'flex' }}>
-                                        <Text fontSize="sm" fontWeight="medium" color="gray.800">
+                                        <Text fontSize="sm" fontWeight="semibold" color="#444444">
                                             {user?.name || user?.fullName || 'Admin'}
                                         </Text>
-                                        <Text fontSize="xs" color="gray.500">
+                                        <Text fontSize="xs" color="#666666">
                                             Administrator
                                         </Text>
                                     </VStack>
                                     <Avatar
                                         size="sm"
                                         name={user?.name || user?.fullName || 'Admin'}
-                                        bg="#749C73"
-                                        color="white"
+                                        bg="rgba(116, 156, 115, 0.15)"
+                                        color={COLORS.primary}
+                                        border="2px solid rgba(116, 156, 115, 0.2)"
                                         cursor="pointer"
                                         _hover={{
                                             transform: 'scale(1.05)',
-                                            boxShadow: '0 4px 12px rgba(116, 156, 115, 0.3)'
+                                            boxShadow: '0 4px 12px rgba(116, 156, 115, 0.3)',
+                                            borderColor: "rgba(116, 156, 115, 0.4)"
                                         }}
-                                        transition="all 0.3s ease"
+                                        transition="all 0.2s ease"
                                     />
                                 </HStack>
                             </HStack>
                         </Flex>
-                    </Box>
-                </motion.div>
+                    </MotionBox>
 
-                {/* Page Content */}
-                <Box
-                    flex={1}
-                    overflow="auto"
-                    p={4}
-                >
-                    <Outlet />
-                </Box>
+                    {/* Page Content */}
+                    <MotionBox
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                        flex={1}
+                        overflow="auto"
+                        bg="rgba(255, 255, 255, 0.05)"
+                        backdropFilter="blur(8px)"
+                        border="1px solid rgba(255, 255, 255, 0.08)"
+                        borderRadius="20px"
+                        boxShadow="0 20px 60px rgba(116, 156, 115, 0.05)"
+                        position="relative"
+                    >
+                        {/* Content Background Pattern */}
+                    
+                        <Box position="relative" zIndex={1} p={4}>
+                            <Outlet />
+                        </Box>
+                    </MotionBox>
+                </Flex>
             </Flex>
-        </Flex>
+        </Box>
     );
 };
 

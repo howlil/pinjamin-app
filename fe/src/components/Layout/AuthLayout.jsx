@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, Container, VStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { COLORS, ANIMATIONS, GLASS } from '@/utils/designTokens';
-import { AnimatedGridPattern } from '@/components/magicui/animated-grid-pattern';
-import AuthHeader from '@/components/auth/AuthHeader';
-import { GlassCard } from '@/components/ui';
+import { COLORS, ANIMATIONS, GLASS } from '../../utils/designTokens';
+import { AnimatedGridPattern } from '../magicui/animated-grid-pattern';
+import AuthHeader from '../auth/AuthHeader';
+import { GlassCard } from '../ui';
 
 const AuthLayout = ({
     children,

@@ -5,66 +5,122 @@ import {
     Text,
     Button,
     HStack,
-    Flex
+    Flex,
+    useBreakpointValue
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
-import { COLORS, SHADOWS } from '@/utils/designTokens';
+import { Plus, Building } from 'lucide-react';
+import { COLORS } from '../../../utils/designTokens';
+
+const MotionBox = motion(Box);
 
 const BuildingHeader = ({
     title = "Manajemen Gedung",
     description = "Kelola data gedung dan ruangan untuk peminjaman",
     onAddNew
 }) => {
+    const padding = useBreakpointValue({ base: 4, md: 6 });
+
     return (
-        <Box
-            as={motion.div}
+        <MotionBox
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            mb={8}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            mb={6}
         >
-            <Flex
-                justify="space-between"
-                align={{ base: 'start', md: 'center' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={4}
-                mb={6}
+            <Box
+                bg="rgba(255, 255, 255, 0.08)"
+                backdropFilter="blur(16px)"
+                border="1px solid rgba(255, 255, 255, 0.12)"
+                borderRadius="20px"
+                boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+                p={padding}
+                _hover={{
+                    borderColor: "rgba(255, 255, 255, 0.15)",
+                    boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+                }}
+                transition="all 0.3s ease"
             >
-                <Box>
-                    <Heading
-                        size="xl"
-                        color={COLORS.black}
-                        fontWeight="bold"
-                        mb={2}
-                    >
-                        {title}
-                    </Heading>
-                    <Text color={COLORS.gray[600]} fontSize="md">
-                        {description}
-                    </Text>
-                </Box>
+                <Flex
+                    justify="space-between"
+                    align={{ base: 'start', md: 'center' }}
+                    direction={{ base: 'column', md: 'row' }}
+                    gap={4}
+                >
+                    <HStack spacing={4}>
+                        <Box
+                            w={14}
+                            h={14}
+                            borderRadius="16px"
+                            bg="rgba(116, 156, 115, 0.15)"
+                            border="1px solid rgba(116, 156, 115, 0.2)"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            position="relative"
+                            _before={{
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                bg: 'linear-gradient(135deg, rgba(116, 156, 115, 0.2), rgba(116, 156, 115, 0.05))',
+                                borderRadius: '16px'
+                            }}
+                        >
+                            <Building
+                                size={24}
+                                color={COLORS.primary}
+                                style={{ position: 'relative', zIndex: 1 }}
+                            />
+                        </Box>
+                        <Box>
+                            <Heading
+                                size={{ base: "md", md: "lg" }}
+                                color="#444444"
+                                fontWeight="bold"
+                                mb={1}
+                            >
+                                {title}
+                            </Heading>
+                            <Text
+                                color="#666666"
+                                fontSize="sm"
+                                fontWeight="medium"
+                                lineHeight="1.5"
+                            >
+                                {description}
+                            </Text>
+                        </Box>
+                    </HStack>
 
-                <HStack spacing={3}>
                     <Button
-                        leftIcon={<Plus size={18} />}
+                        leftIcon={<Plus size={16} />}
                         bg={COLORS.primary}
                         color="white"
-                        size="lg"
-                        borderRadius="xl"
+                        size="md"
+                        borderRadius="12px"
+                        px={6}
+                        py={3}
+                        fontSize="sm"
+                        fontWeight="bold"
                         _hover={{
-                            bg: COLORS.primaryDark,
+                            bg: COLORS.primary,
                             transform: 'translateY(-2px)',
-                            boxShadow: SHADOWS.lg
+                            boxShadow: "0 8px 25px rgba(116, 156, 115, 0.3)"
                         }}
-                        transition="all 0.3s"
+                        _active={{
+                            transform: 'translateY(0)'
+                        }}
+                        transition="all 0.2s ease"
                         onClick={onAddNew}
                     >
                         Tambah Gedung
                     </Button>
-                </HStack>
-            </Flex>
-        </Box>
+                </Flex>
+            </Box>
+        </MotionBox>
     );
 };
 

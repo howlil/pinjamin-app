@@ -6,11 +6,14 @@ import {
     Select,
     IconButton,
     Flex,
-    Box
+    Box,
+    useBreakpointValue
 } from '@chakra-ui/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { GlassCard } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { COLORS } from '../../../utils/designTokens';
+
+const MotionBox = motion(Box);
 
 const AdminPagination = ({
     currentPage = 1,
@@ -22,17 +25,19 @@ const AdminPagination = ({
     showSizeChanger = true,
     pageSizeOptions = [10, 25, 50, 100]
 }) => {
+    const padding = useBreakpointValue({ base: 3, md: 4 });
+    const buttonSize = useBreakpointValue({ base: "32px", md: "36px" });
+
     const startItem = (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
     const generatePageNumbers = () => {
         const pages = [];
-        const showPages = 5; // Show 5 page numbers at most
+        const showPages = 5;
 
         let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
         let endPage = Math.min(totalPages, startPage + showPages - 1);
 
-        // Adjust if we're near the end
         if (endPage - startPage < showPages - 1) {
             startPage = Math.max(1, endPage - showPages + 1);
         }
@@ -49,27 +54,29 @@ const AdminPagination = ({
     const PaginationButton = ({ children, isActive = false, onClick, ...props }) => (
         <Button
             size="sm"
-            h="36px"
-            minW="36px"
-            borderRadius="full"
-            fontWeight="semibold"
+            h={buttonSize}
+            minW={buttonSize}
+            borderRadius="10px"
+            fontWeight="bold"
+            fontSize="sm"
             onClick={onClick}
             bg={isActive
                 ? COLORS.primary
-                : "rgba(255, 255, 255, 0.3)"
+                : "rgba(255, 255, 255, 0.1)"
             }
-            color={isActive ? "white" : COLORS.gray[600]}
+            color={isActive ? "white" : "#444444"}
             border={isActive
-                ? "none"
-                : `1px solid rgba(255, 255, 255, 0.4)`
+                ? `1px solid ${COLORS.primary}`
+                : "1px solid rgba(255, 255, 255, 0.15)"
             }
-            backdropFilter="blur(10px)"
+            backdropFilter="blur(8px)"
             _hover={{
                 bg: isActive
-                    ? COLORS.primaryDark
-                    : "rgba(255, 255, 255, 0.5)",
+                    ? COLORS.primary
+                    : "rgba(255, 255, 255, 0.15)",
                 transform: "translateY(-1px)",
-                color: isActive ? "white" : COLORS.primary
+                color: isActive ? "white" : COLORS.primary,
+                borderColor: isActive ? COLORS.primary : "rgba(116, 156, 115, 0.3)"
             }}
             _active={{
                 transform: "translateY(0)"
@@ -82,127 +89,163 @@ const AdminPagination = ({
     );
 
     return (
-        <GlassCard p={4}>
-            <Flex
-                direction={{ base: 'column', md: 'row' }}
-                justify="space-between"
-                align="center"
-                gap={4}
+        <MotionBox
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+            <Box
+                bg="rgba(255, 255, 255, 0.08)"
+                backdropFilter="blur(16px)"
+                border="1px solid rgba(255, 255, 255, 0.12)"
+                borderRadius="16px"
+                boxShadow="0 8px 32px rgba(116, 156, 115, 0.08)"
+                p={padding}
             >
-                {/* Items Info */}
-                <Text color={COLORS.gray[600]} fontSize="sm" fontWeight="medium">
-                    Menampilkan {startItem}-{endItem} dari {totalItems} item
-                </Text>
-
-                {/* Pagination Controls */}
-                <HStack spacing={2}>
-                    {/* Previous Button */}
-                    <IconButton
-                        icon={<ChevronLeft size={16} />}
-                        size="sm"
-                        h="36px"
-                        w="36px"
-                        borderRadius="full"
-                        bg="rgba(255, 255, 255, 0.3)"
-                        color={COLORS.gray[600]}
-                        border="1px solid rgba(255, 255, 255, 0.4)"
-                        backdropFilter="blur(10px)"
-                        onClick={() => onPageChange(currentPage - 1)}
-                        isDisabled={currentPage === 1}
-                        _hover={{
-                            bg: "rgba(255, 255, 255, 0.5)",
-                            color: COLORS.primary,
-                            transform: "translateY(-1px)"
-                        }}
-                        _disabled={{
-                            opacity: 0.4,
-                            cursor: "not-allowed",
-                            _hover: {
-                                bg: "rgba(255, 255, 255, 0.3)",
-                                transform: "none"
-                            }
-                        }}
-                        transition="all 0.2s ease"
-                    />
-
-                    {/* Page Numbers */}
-                    {pageNumbers.map((pageNum) => (
-                        <PaginationButton
-                            key={pageNum}
-                            isActive={pageNum === currentPage}
-                            onClick={() => onPageChange(pageNum)}
+                <Flex
+                    direction={{ base: 'column', md: 'row' }}
+                    justify="space-between"
+                    align="center"
+                    gap={4}
+                >
+                    {/* Info Section */}
+                    <HStack spacing={3} color="#666666" fontSize="sm">
+                        <Box
+                            w={8}
+                            h={8}
+                            borderRadius="8px"
+                            bg="rgba(116, 156, 115, 0.15)"
+                            border="1px solid rgba(116, 156, 115, 0.2)"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
                         >
-                            {pageNum}
-                        </PaginationButton>
-                    ))}
-
-                    {/* Next Button */}
-                    <IconButton
-                        icon={<ChevronRight size={16} />}
-                        size="sm"
-                        h="36px"
-                        w="36px"
-                        borderRadius="full"
-                        bg="rgba(255, 255, 255, 0.3)"
-                        color={COLORS.gray[600]}
-                        border="1px solid rgba(255, 255, 255, 0.4)"
-                        backdropFilter="blur(10px)"
-                        onClick={() => onPageChange(currentPage + 1)}
-                        isDisabled={currentPage >= totalPages}
-                        _hover={{
-                            bg: "rgba(255, 255, 255, 0.5)",
-                            color: COLORS.primary,
-                            transform: "translateY(-1px)"
-                        }}
-                        _disabled={{
-                            opacity: 0.4,
-                            cursor: "not-allowed",
-                            _hover: {
-                                bg: "rgba(255, 255, 255, 0.3)",
-                                transform: "none"
-                            }
-                        }}
-                        transition="all 0.2s ease"
-                    />
-                </HStack>
-
-                {/* Items Per Page Selector */}
-                {showSizeChanger && (
-                    <HStack spacing={2}>
-                        <Text color={COLORS.gray[600]} fontSize="sm" whiteSpace="nowrap">
-                            Items per page:
+                            <Info size={14} color={COLORS.primary} />
+                        </Box>
+                        <Text fontWeight="medium">
+                            {totalItems > 0 ? `${startItem}-${endItem}` : '0'} dari {totalItems} item
                         </Text>
-                        <Select
-                            value={itemsPerPage}
-                            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-                            size="sm"
-                            w="80px"
-                            h="36px"
-                            borderRadius="full"
-                            bg="rgba(255, 255, 255, 0.4)"
-                            backdropFilter="blur(10px)"
-                            border="1px solid rgba(255, 255, 255, 0.3)"
-                            color={COLORS.gray[600]}
-                            fontSize="sm"
-                            _focus={{
-                                borderColor: COLORS.primary,
-                                boxShadow: `0 0 0 3px rgba(116, 156, 115, 0.1)`,
-                                bg: "rgba(255, 255, 255, 0.6)"
-                            }}
-                            _hover={{
-                                bg: "rgba(255, 255, 255, 0.5)"
-                            }}
-                        >
-                            {pageSizeOptions.map((size) => (
-                                <option key={size} value={size}>
-                                    {size}
-                                </option>
-                            ))}
-                        </Select>
                     </HStack>
-                )}
-            </Flex>
-        </GlassCard>
+
+                    {/* Pagination Controls */}
+                    <HStack spacing={2}>
+                        {/* Previous Button */}
+                        <IconButton
+                            icon={<ChevronLeft size={16} />}
+                            size="sm"
+                            h={buttonSize}
+                            w={buttonSize}
+                            borderRadius="10px"
+                            bg="rgba(255, 255, 255, 0.1)"
+                            color="#444444"
+                            border="1px solid rgba(255, 255, 255, 0.15)"
+                            backdropFilter="blur(8px)"
+                            onClick={() => onPageChange(currentPage - 1)}
+                            isDisabled={currentPage === 1}
+                            _hover={{
+                                bg: "rgba(255, 255, 255, 0.15)",
+                                color: COLORS.primary,
+                                transform: "translateY(-1px)",
+                                borderColor: "rgba(116, 156, 115, 0.3)"
+                            }}
+                            _disabled={{
+                                opacity: 0.3,
+                                cursor: "not-allowed",
+                                _hover: {
+                                    bg: "rgba(255, 255, 255, 0.1)",
+                                    transform: "none",
+                                    color: "#444444",
+                                    borderColor: "rgba(255, 255, 255, 0.15)"
+                                }
+                            }}
+                            transition="all 0.2s ease"
+                        />
+
+                        {/* Page Numbers */}
+                        {pageNumbers.map((pageNum) => (
+                            <PaginationButton
+                                key={pageNum}
+                                isActive={pageNum === currentPage}
+                                onClick={() => onPageChange(pageNum)}
+                            >
+                                {pageNum}
+                            </PaginationButton>
+                        ))}
+
+                        {/* Next Button */}
+                        <IconButton
+                            icon={<ChevronRight size={16} />}
+                            size="sm"
+                            h={buttonSize}
+                            w={buttonSize}
+                            borderRadius="10px"
+                            bg="rgba(255, 255, 255, 0.1)"
+                            color="#444444"
+                            border="1px solid rgba(255, 255, 255, 0.15)"
+                            backdropFilter="blur(8px)"
+                            onClick={() => onPageChange(currentPage + 1)}
+                            isDisabled={currentPage >= totalPages}
+                            _hover={{
+                                bg: "rgba(255, 255, 255, 0.15)",
+                                color: COLORS.primary,
+                                transform: "translateY(-1px)",
+                                borderColor: "rgba(116, 156, 115, 0.3)"
+                            }}
+                            _disabled={{
+                                opacity: 0.3,
+                                cursor: "not-allowed",
+                                _hover: {
+                                    bg: "rgba(255, 255, 255, 0.1)",
+                                    transform: "none",
+                                    color: "#444444",
+                                    borderColor: "rgba(255, 255, 255, 0.15)"
+                                }
+                            }}
+                            transition="all 0.2s ease"
+                        />
+                    </HStack>
+
+                    {/* Items Per Page Selector */}
+                    {showSizeChanger && (
+                        <HStack spacing={3}>
+                            <Text color="#666666" fontSize="sm" fontWeight="medium" whiteSpace="nowrap">
+                                Per halaman:
+                            </Text>
+                            <Select
+                                value={itemsPerPage}
+                                onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+                                size="sm"
+                                w="80px"
+                                h={buttonSize}
+                                borderRadius="10px"
+                                bg="rgba(255, 255, 255, 0.1)"
+                                backdropFilter="blur(8px)"
+                                border="1px solid rgba(255, 255, 255, 0.15)"
+                                color="#444444"
+                                fontSize="sm"
+                                fontWeight="medium"
+                                _focus={{
+                                    borderColor: COLORS.primary,
+                                    boxShadow: `0 0 0 3px rgba(116, 156, 115, 0.1)`,
+                                    bg: "rgba(255, 255, 255, 0.15)"
+                                }}
+                                _hover={{
+                                    bg: "rgba(255, 255, 255, 0.15)",
+                                    borderColor: "rgba(116, 156, 115, 0.3)"
+                                }}
+                                transition="all 0.2s ease"
+                            >
+                                {pageSizeOptions.map((size) => (
+                                    <option key={size} value={size} style={{ background: '#ffffff', color: '#444444' }}>
+                                        {size}
+                                    </option>
+                                ))}
+                            </Select>
+                        </HStack>
+                    )}
+                </Flex>
+            </Box>
+        </MotionBox>
     );
 };
 

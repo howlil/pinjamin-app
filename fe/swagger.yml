@@ -405,7 +405,7 @@ paths:
               $ref: '#/components/schemas/ForgotPasswordRequest'
       responses:
         '200':
-          description: Password reset token generated successfully
+          description: Password reset instructions sent to email successfully
           content:
             application/json:
               schema:
@@ -416,10 +416,14 @@ paths:
                       data:
                         type: object
                         properties:
-                          resetToken:
+                          success:
+                            type: boolean
+                            description: Whether the email was sent successfully
+                            example: true
+                          message:
                             type: string
-                            description: Password reset token (for testing purposes)
-                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                            description: Confirmation message
+                            example: "Password reset instructions have been sent to your email"
         '400':
           description: Validation error
           content:
@@ -428,6 +432,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Email service error
           content:
             application/json:
               schema:

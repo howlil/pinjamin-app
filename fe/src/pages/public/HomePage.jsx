@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box } from '@chakra-ui/react';
+import React, { useEffect } from 'react';
+import { Box, VStack } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 
 // Import modular components
@@ -8,14 +8,16 @@ import {
     HeroContent,
     SearchForm,
     TodayBookingsList,
+    AvailableRoomsList,
     BuildingCardGrid,
     BuildingPagination,
     AvailabilityModal,
-} from '@/components/home';
+} from '../../components/home';
 
 // Import hooks for buildings data and availability check
-import { usePublicBuildings } from '@/hooks/usePublicBuildings';
-import { useAvailabilityCheck } from '@/hooks/useAvailabilityCheck';
+import { usePublicBuildings } from '../../hooks/building';
+import { useAvailabilityCheck } from '../../hooks/building';
+import { useTodayBookings } from '../../hooks/booking';
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -49,6 +51,17 @@ const HomePage = () => {
         clearResults
     } = useAvailabilityCheck();
 
+    // Use today bookings hook
+    const { bookings: todayBookings, isLoading: todayLoading } = useTodayBookings();
+
+    // Debug logging
+    useEffect(() => {
+        console.log('HomePage - availableBuildings:', availableBuildings);
+        console.log('HomePage - searchCriteria:', searchCriteria);
+        console.log('HomePage - availabilityLoading:', availabilityLoading);
+        console.log('HomePage - isAvailabilityModalOpen:', isAvailabilityModalOpen);
+    }, [availableBuildings, searchCriteria, availabilityLoading, isAvailabilityModalOpen]);
+
     const handleRoomClick = (buildingId) => {
         navigate(`/room/${buildingId}`);
     };
@@ -63,30 +76,56 @@ const HomePage = () => {
         navigate(`/room/${building.id}`);
     };
 
+    // Transform today bookings for AvailableRoomsList - always show today's bookings
+    const transformedTodayRooms = todayBookings.map(booking => ({
+        id: booking.bookingId,
+        name: booking.buildingName,
+        location: booking.activityName,
+        time: `${booking.startTime} - ${booking.endTime}`
+    }));
+
+    console.log('HomePage - transformedTodayRooms:', transformedTodayRooms);
+
+    // Left content for hero section
+    const leftContent = (
+        <VStack spacing={8} align="stretch">
+            <HeroContent />
+            <SearchForm
+                onCheckAvailability={checkAvailability}
+                loading={availabilityLoading}
+            />
+        </VStack>
+    );
+
+    // Right content for hero section - always show today's bookings
+    const rightContent = (
+        <AvailableRoomsList
+            rooms={transformedTodayRooms}
+            loading={todayLoading}
+            searchCriteria={null} // Always null since search results go to modal
+        />
+    );
+
     return (
         <Box position="relative" minH="100vh">
-            <HeroSection>
-                <Box>
-                    <HeroContent />
-                    <SearchForm
-                        onSearch={handleSearch}
-                        onCheckAvailability={checkAvailability}
-                        buildingTypes={getBuildingTypes()}
-                        loading={loading || availabilityLoading}
-                    />
-                </Box>
-                <TodayBookingsList />
-            </HeroSection>
+            {/* Hero Section with 2 grid layout */}
+            <HeroSection
+                leftContent={leftContent}
+                rightContent={rightContent}
+            />
 
+            {/* Building Cards Grid */}
             <BuildingCardGrid
                 buildings={buildings}
                 loading={loading}
                 error={error}
                 onCardClick={handleRoomClick}
                 onDetailsClick={handleRoomClick}
+                onSearch={handleSearch}
                 formatCurrency={formatCurrency}
                 getBuildingTypeColor={getBuildingTypeColor}
                 getBuildingTypeText={getBuildingTypeText}
+                getBuildingTypes={getBuildingTypes}
             />
 
             {/* Add pagination if there are buildings */}
@@ -103,8 +142,7 @@ const HomePage = () => {
                 </Box>
             )}
 
-
-            {/* Availability Check Modal */}
+            {/* Availability Check Modal - shows search results */}
             <AvailabilityModal
                 isOpen={isAvailabilityModalOpen}
                 onClose={onAvailabilityModalClose}

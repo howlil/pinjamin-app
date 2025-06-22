@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { Box, useDisclosure, Flex } from '@chakra-ui/react';
 import { Settings, Plus } from 'lucide-react';
 
-import { PrimaryButton } from '@/components/ui';
-import { useFacilities } from '@/hooks/useFacilities';
-import { DataStateHandler, PageHeader, PageWrapper } from '@/components/admin/common';
+import { PrimaryButton } from '../../components/ui';
+import { useFacilities } from '../../hooks/facility';
+import { DataStateHandler, PageHeader, PageWrapper } from '../../components/admin/common';
 import {
     FacilitySearchBar,
     FacilityTable,
     FacilityFormModal,
     FacilityDeleteModal,
     FacilityDetailModal
-} from '@/components/admin/facility';
+} from '../../components/admin/facility';
 
 const FasilitasPage = () => {
     // Custom hook for all business logic

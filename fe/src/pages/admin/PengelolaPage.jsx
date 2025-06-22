@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { Box, useDisclosure } from '@chakra-ui/react';
 import { Users, Plus } from 'lucide-react';
 
-import { PrimaryButton } from '@/components/ui';
-import { useBuildingManagers } from '@/hooks/useBuildingManagers';
-import { DataStateHandler, PageHeader, PageWrapper } from '@/components/admin/common';
+import { PrimaryButton } from '../../components/ui';
+import { useBuildingManagers } from '../../hooks/building';
+import { DataStateHandler, PageHeader, PageWrapper } from '../../components/admin/common';
 import {
     BuildingManagerHeader,
     BuildingManagerTable,
     BuildingManagerFormModal,
     BuildingManagerDeleteModal,
     BuildingManagerDetailModal
-} from '@/components/admin/building-manager';
+} from '../../components/admin/building-manager';
 
 const PengelolaPage = () => {
     // Custom hook for all business logic

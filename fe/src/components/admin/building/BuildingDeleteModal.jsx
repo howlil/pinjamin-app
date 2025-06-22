@@ -18,8 +18,8 @@ import {
     AlertDescription,
 } from '@chakra-ui/react';
 import { Trash2, AlertTriangle } from 'lucide-react';
-import { PrimaryButton } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import { PrimaryButton } from '../../ui';
+import { COLORS } from '../../../utils/designTokens';
 
 const BuildingDeleteModal = ({
     isOpen,

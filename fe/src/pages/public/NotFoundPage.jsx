@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Container, VStack, Heading, Text, Button } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
-import { COLORS } from '@/utils/designTokens';
+import { COLORS } from '../../utils/designTokens';
 
 // NotFoundContent component (inline since it's simple)
 const NotFoundContent = () => {

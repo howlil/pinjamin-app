@@ -1,19 +1,25 @@
-import { Box, Container, VStack } from '@chakra-ui/react';
+import { Box, VStack } from '@chakra-ui/react';
 import { useToast } from '@chakra-ui/react';
-import { HistoryHeader, HistoryTable } from '@/components/user/history';
-import { useUserHistory } from '@/hooks/useUserHistory';
+import { HistoryHeader, HistoryTable } from '../../components/user/history';
+import { useUserHistory } from '../../hooks/booking';
 
 const HistoryPage = () => {
     const {
-        borrowHistory,
+        bookings,
         loading,
         error,
+        currentPage,
+        totalPages,
+        totalItems,
+        statusFilter,
+        handlePageChange,
+        handleStatusFilter,
+        refreshData,
         getStatusBadge,
         getStatusText,
         formatCurrency,
         formatDate,
-        getStats,
-        refetch
+        getStats
     } = useUserHistory();
 
     const toast = useToast();
@@ -21,7 +27,7 @@ const HistoryPage = () => {
 
     // Handle refresh
     const handleRefresh = () => {
-        refetch();
+        refreshData();
         toast({
             title: 'Data diperbarui',
             description: 'Riwayat peminjaman telah diperbarui',
@@ -31,53 +37,29 @@ const HistoryPage = () => {
         });
     };
 
-    // Handle export
-    const handleExport = () => {
-        // Simulate export functionality
-        toast({
-            title: 'Export berhasil',
-            description: 'Data riwayat telah diekspor ke CSV',
-            status: 'success',
-            duration: 3000,
-            isClosable: true
-        });
-    };
-
-    // Handle generate report
-    const handleGenerateReport = () => {
-        // Simulate report generation
-        toast({
-            title: 'Laporan dihasilkan',
-            description: 'Laporan riwayat peminjaman telah dibuat',
-            status: 'success',
-            duration: 3000,
-            isClosable: true
-        });
-    };
-
     return (
         <Box py={8}>
-            <Container maxW="7xl">
-                <VStack spacing={6} align="stretch">
-                    <HistoryHeader
-                        stats={stats}
-                        formatCurrency={formatCurrency}
-                        onRefresh={handleRefresh}
-                        onExport={handleExport}
-                        onGenerateReport={handleGenerateReport}
-                    />
+            <VStack spacing={6} align="stretch">
+                <HistoryHeader
+                    totalItems={totalItems}
+                    statusFilter={statusFilter}
+                    onStatusFilter={handleStatusFilter}
+                    onRefresh={handleRefresh}
+                />
 
-                    <HistoryTable
-                        data={borrowHistory}
-                        loading={loading}
-                        error={error}
-                        getStatusBadge={getStatusBadge}
-                        getStatusText={getStatusText}
-                        formatDate={formatDate}
-                        formatCurrency={formatCurrency}
-                    />
-                </VStack>
-            </Container>
+                <HistoryTable
+                    bookings={bookings}
+                    loading={loading}
+                    error={error}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    onPageChange={handlePageChange}
+                    onRefresh={handleRefresh}
+                    getStatusBadge={getStatusBadge}
+                    getStatusText={getStatusText}
+                />
+            </VStack>
         </Box>
     );
 };

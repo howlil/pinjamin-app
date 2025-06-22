@@ -1,124 +1,168 @@
 import React from 'react';
-import { Box, Text, Tabs, TabList, TabPanels, Tab, TabPanel, HStack, Icon } from '@chakra-ui/react';
+import { Box, Text, Tabs, TabList, TabPanels, Tab, TabPanel, HStack, Icon, useBreakpointValue } from '@chakra-ui/react';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SimpleBarChart from './SimpleBarChart';
-import { GlassCard } from '@/components/ui';
-import { COLORS, SHADOWS, RADII } from '@/utils/designTokens';
+import { COLORS } from '../../utils/designTokens';
 
-// Default chart data - would typically come from props or a data hook
-const defaultBookingsData = [
-    { month: 'Jan', value: 65 },
-    { month: 'Feb', value: 59 },
-    { month: 'Mar', value: 80 },
-    { month: 'Apr', value: 81 },
-    { month: 'Mei', value: 56 },
-    { month: 'Jun', value: 55 }
-];
-
-const defaultTransactionsData = [
-    { month: 'Jan', value: 45 },
-    { month: 'Feb', value: 63 },
-    { month: 'Mar', value: 58 },
-    { month: 'Apr', value: 70 },
-    { month: 'Mei', value: 75 },
-    { month: 'Jun', value: 82 }
-];
+const MotionBox = motion(Box);
 
 const AnalyticsCard = ({
-    bookingsData = defaultBookingsData,
-    transactionsData = defaultTransactionsData
+    bookingsData = [],
+    transactionsData = []
 }) => {
+    const cardPadding = useBreakpointValue({ base: 4, md: 5 });
+
     return (
-        <GlassCard p={6}>
-            <Text
-                fontSize="lg"
-                fontWeight="semibold"
-                color={COLORS.black}
-                mb={6}
-            >
-                Statistik Peminjaman
-            </Text>
+        <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            bg="rgba(255, 255, 255, 0.08)"
+            backdropFilter="blur(16px)"
+            border="1px solid rgba(255, 255, 255, 0.12)"
+            borderRadius="20px"
+            boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+            p={cardPadding}
+            position="relative"
+            overflow="hidden"
+            _hover={{
+                transform: "translateY(-2px)",
+                boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+            }}
+        >
 
-            <Tabs variant="soft-rounded" colorScheme="green" isLazy>
-                <TabList
-                    bg={`${COLORS.primary}08`}
-                    borderRadius="xl"
-                    p={1}
-                    mb={6}
+
+            <Box position="relative" zIndex={1}>
+                <Text
+                    fontSize={{ base: "md", md: "lg" }}
+                    fontWeight="bold"
+                    color="#444444"
+                    mb={5}
                 >
-                    <Tab
-                        fontSize="sm"
-                        fontWeight="medium"
-                        borderRadius="lg"
-                        _selected={{
-                            bg: COLORS.primary,
-                            color: 'white',
-                            boxShadow: SHADOWS.sm
-                        }}
-                        transition="all 0.2s"
-                        flex={1}
-                    >
-                        <HStack spacing={2}>
-                            <Icon as={BarChart3} boxSize={4} />
-                            <Text>Peminjaman</Text>
-                        </HStack>
-                    </Tab>
-                    <Tab
-                        fontSize="sm"
-                        fontWeight="medium"
-                        borderRadius="lg"
-                        _selected={{
-                            bg: COLORS.primary,
-                            color: 'white',
-                            boxShadow: SHADOWS.sm
-                        }}
-                        transition="all 0.2s"
-                        flex={1}
-                    >
-                        <HStack spacing={2}>
-                            <Icon as={TrendingUp} boxSize={4} />
-                            <Text>Transaksi</Text>
-                        </HStack>
-                    </Tab>
-                </TabList>
+                    Statistik Peminjaman
+                </Text>
 
-                <TabPanels>
-                    <TabPanel p={0}>
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
+                <Tabs variant="unstyled" isLazy>
+                    <TabList
+                        bg="rgba(255, 255, 255, 0.1)"
+                        backdropFilter="blur(8px)"
+                        border="1px solid rgba(255, 255, 255, 0.15)"
+                        borderRadius="12px"
+                        p={1}
+                        mb={5}
+                    >
+                        <Tab
+                            fontSize="sm"
+                            fontWeight="medium"
+                            borderRadius="8px"
+                            color="#666666"
+                            _selected={{
+                                bg: "rgba(116, 156, 115, 0.15)",
+                                color: COLORS.primary,
+                                border: "1px solid rgba(116, 156, 115, 0.2)",
+                                boxShadow: "0 2px 8px rgba(116, 156, 115, 0.1)"
+                            }}
+                            _hover={{
+                                bg: "rgba(255, 255, 255, 0.1)",
+                                color: "#444444"
+                            }}
+                            transition="all 0.2s ease"
+                            flex={1}
                         >
-                            <Text
-                                color={COLORS.gray[600]}
-                                fontSize="sm"
-                                mb={4}
-                            >
-                                Jumlah peminjaman per bulan
-                            </Text>
-                            <SimpleBarChart data={bookingsData} />
-                        </motion.div>
-                    </TabPanel>
-                    <TabPanel p={0}>
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
+                            <HStack spacing={2}>
+                                <Icon as={BarChart3} boxSize={4} />
+                                <Text>Peminjaman</Text>
+                            </HStack>
+                        </Tab>
+                        <Tab
+                            fontSize="sm"
+                            fontWeight="medium"
+                            borderRadius="8px"
+                            color="#666666"
+                            _selected={{
+                                bg: "rgba(116, 156, 115, 0.15)",
+                                color: COLORS.primary,
+                                border: "1px solid rgba(116, 156, 115, 0.2)",
+                                boxShadow: "0 2px 8px rgba(116, 156, 115, 0.1)"
+                            }}
+                            _hover={{
+                                bg: "rgba(255, 255, 255, 0.1)",
+                                color: "#444444"
+                            }}
+                            transition="all 0.2s ease"
+                            flex={1}
                         >
-                            <Text
-                                color={COLORS.gray[600]}
-                                fontSize="sm"
-                                mb={4}
+                            <HStack spacing={2}>
+                                <Icon as={TrendingUp} boxSize={4} />
+                                <Text>Transaksi</Text>
+                            </HStack>
+                        </Tab>
+                    </TabList>
+
+                    <TabPanels>
+                        <TabPanel p={0}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
                             >
-                                Jumlah transaksi per bulan
-                            </Text>
-                            <SimpleBarChart data={transactionsData} />
-                        </motion.div>
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
-        </GlassCard>
+                                <Text
+                                    color="#666666"
+                                    fontSize="sm"
+                                    mb={4}
+                                    fontWeight="medium"
+                                >
+                                    Jumlah peminjaman per bulan
+                                </Text>
+                                {bookingsData.length > 0 ? (
+                                    <SimpleBarChart data={bookingsData} />
+                                ) : (
+                                    <Box
+                                        h="200px"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        color="#666666"
+                                    >
+                                        <Text fontSize="sm">Tidak ada data peminjaman</Text>
+                                    </Box>
+                                )}
+                            </motion.div>
+                        </TabPanel>
+                        <TabPanel p={0}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <Text
+                                    color="#666666"
+                                    fontSize="sm"
+                                    mb={4}
+                                    fontWeight="medium"
+                                >
+                                    Jumlah transaksi per bulan
+                                </Text>
+                                {transactionsData.length > 0 ? (
+                                    <SimpleBarChart data={transactionsData} />
+                                ) : (
+                                    <Box
+                                        h="200px"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        color="#666666"
+                                    >
+                                        <Text fontSize="sm">Tidak ada data transaksi</Text>
+                                    </Box>
+                                )}
+                            </motion.div>
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            </Box>
+        </MotionBox>
     );
 };
 

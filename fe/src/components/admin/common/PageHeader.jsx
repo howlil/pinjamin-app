@@ -1,61 +1,110 @@
 import React from 'react';
-import { Box, Flex, Heading, Text } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, useBreakpointValue } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
-const PageHeader = ({ 
-    title, 
-    subtitle, 
+const MotionBox = motion(Box);
+
+const PageHeader = ({
+    title,
+    subtitle,
     icon: Icon,
     action,
-    children 
+    children
 }) => {
+    const padding = useBreakpointValue({ base: 4, md: 6 });
+    const iconSize = useBreakpointValue({ base: 12, md: 14 });
+
     return (
-        <Box mb={4}>
-            <Flex 
-                justify="space-between" 
-                align={{ base: 'start', md: 'center' }}
-                direction={{ base: 'column', md: 'row' }}
-                gap={3}
+        <MotionBox
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            mb={6}
+        >
+            <Box
+                bg="rgba(255, 255, 255, 0.08)"
+                backdropFilter="blur(16px)"
+                border="2px solid rgba(255, 255, 255, 0.12)"
+                borderRadius="20px"
+                p={padding}
+                _hover={{
+                    borderColor: "rgba(255, 255, 255, 0.15)",
+                    boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+                }}
+                transition="all 0.3s ease"
             >
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
+                <Flex
+                    justify="space-between"
+                    align={{ base: 'start', md: 'center' }}
+                    direction={{ base: 'column', md: 'row' }}
+                    gap={4}
                 >
-                    <Flex align="center" gap={3}>
+                    <Flex align="center" gap={4}>
                         {Icon && (
                             <Box
-                                p={2}
-                                bg="rgba(116, 156, 115, 0.1)"
-                                borderRadius="lg"
-                                color="#749C73"
+                                w={iconSize}
+                                h={iconSize}
+                                borderRadius="16px"
+                                bg="rgba(116, 156, 115, 0.15)"
+                                border="1px solid rgba(116, 156, 115, 0.2)"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                position="relative"
+                                _before={{
+                                    content: '""',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    bg: 'linear-gradient(135deg, rgba(116, 156, 115, 0.2), rgba(116, 156, 115, 0.05))',
+                                    borderRadius: '16px'
+                                }}
                             >
-                                <Icon size={24} />
+                                <Icon
+                                    size={24}
+                                    color="#749C73"
+                                    style={{ position: 'relative', zIndex: 1 }}
+                                />
                             </Box>
                         )}
                         <Box>
-                            <Heading size="lg" color="gray.800">
+                            <Heading
+                                size={{ base: "md", md: "lg" }}
+                                color="#444444"
+                                fontWeight="bold"
+                                mb={1}
+                            >
                                 {title}
                             </Heading>
                             {subtitle && (
-                                <Text color="gray.500" fontSize="sm" mt={1}>
+                                <Text
+                                    color="#666666"
+                                    fontSize="sm"
+                                    fontWeight="medium"
+                                    lineHeight="1.5"
+                                >
                                     {subtitle}
                                 </Text>
                             )}
                         </Box>
                     </Flex>
-                </motion.div>
 
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                >
-                    {action}
-                </motion.div>
-            </Flex>
-            {children}
-        </Box>
+                    {action && (
+                        <Box>
+                            {action}
+                        </Box>
+                    )}
+                </Flex>
+
+                {children && (
+                    <Box mt={4}>
+                        {children}
+                    </Box>
+                )}
+            </Box>
+        </MotionBox>
     );
 };
 

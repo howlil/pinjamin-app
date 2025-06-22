@@ -1,23 +1,32 @@
 import React from 'react';
-import { Box } from '@chakra-ui/react';
+import { Box, useBreakpointValue } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
+const MotionBox = motion(Box);
+
 const PageWrapper = ({ children }) => {
+    const padding = useBreakpointValue({ base: 4, md: 6 });
+    const borderRadius = useBreakpointValue({ base: "16px", md: "24px" });
+
     return (
-        <Box
-            as={motion.div}
+        <MotionBox
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            bg="white"
-            borderRadius="2xl"
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            bg="rgba(255, 255, 255, 0.08)"
+            backdropFilter="blur(16px)"
+            border="1px solid rgba(255, 255, 255, 0.12)"
+            borderRadius={borderRadius}
             overflow="hidden"
-            boxShadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-            border="1px solid rgba(0, 0, 0, 0.05)"
-            p={6}
+            p={padding}
+            _hover={{
+                borderColor: "rgba(255, 255, 255, 0.15)",
+                boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+            }}
+            transition="all 0.3s ease"
         >
             {children}
-        </Box>
+        </MotionBox>
     );
 };
 

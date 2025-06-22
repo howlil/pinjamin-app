@@ -6,8 +6,8 @@ import {
     IconButton
 } from '@chakra-ui/react';
 import { Eye, EyeOff } from 'lucide-react';
-import { GlassInput, PrimaryButton } from '@/components/ui';
-import { COLORS } from '@/utils/designTokens';
+import { GlassInput, PrimaryButton } from '../ui';
+import { COLORS } from '../../utils/designTokens';
 
 const LoginForm = ({
     formData,

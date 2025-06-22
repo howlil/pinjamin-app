@@ -19,9 +19,9 @@ import {
     Spinner
 } from '@chakra-ui/react';
 import { Users, Phone, Building } from 'lucide-react';
-import { COLORS, SHADOWS } from '@/utils/designTokens';
-import { showToast } from '@/utils/helpers';
-import { buildingApi } from '@/services/apiService';
+import { COLORS, SHADOWS } from '../../../utils/designTokens';
+import { showToast } from '../../../utils/helpers';
+import { buildingApi } from '../../../services/building/buildingService';
 
 const BuildingManagerFormModal = ({
     isOpen,

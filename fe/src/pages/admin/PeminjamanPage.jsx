@@ -23,10 +23,10 @@ import {
 } from '@chakra-ui/react';
 import { Calendar, Download, Check, X, AlertTriangle } from 'lucide-react';
 
-import { PrimaryButton } from '@/components/ui';
-import { useBookings } from '@/hooks/useBookings';
-import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '@/components/admin/common';
-import { BookingTable } from '@/components/admin/booking';
+import { PrimaryButton } from '../../components/ui';
+import { useBookings } from '../../hooks/booking';
+import { DataStateHandler, AdminSearchFilter, PageHeader, PageWrapper } from '../../components/admin/common';
+import { BookingTable } from '../../components/admin/booking';
 
 // Booking status options for filter
 const BOOKING_STATUS_OPTIONS = [

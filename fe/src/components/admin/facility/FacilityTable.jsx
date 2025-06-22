@@ -8,7 +8,6 @@ import {
     Th,
     Td,
     Text,
-    Flex,
     Icon,
     IconButton,
     Menu,
@@ -16,7 +15,8 @@ import {
     MenuList,
     MenuItem,
     HStack,
-    Button
+    VStack,
+    useBreakpointValue
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -34,9 +34,16 @@ import {
     Bath,
     Armchair,
     School2,
-    Settings
+    Settings,
+    Grid3X3,
+    Calendar,
+    Clock
 } from 'lucide-react';
-import { COLORS, SHADOWS } from '@/utils/designTokens';
+import { COLORS } from '../../../utils/designTokens';
+import AdminPagination from '../common/AdminPagination';
+
+const MotionBox = motion(Box);
+const MotionTr = motion(Tr);
 
 // Icon mapping for facilities
 const FACILITY_ICONS = {
@@ -60,8 +67,11 @@ const FacilityTable = ({
     onDelete,
     currentPage,
     totalPages,
+    totalItems,
     onPageChange
 }) => {
+    const padding = useBreakpointValue({ base: 4, md: 6 });
+
     // Get icon component
     const getIconComponent = (iconName) => {
         const IconComponent = FACILITY_ICONS[iconName] || Settings;
@@ -73,188 +83,290 @@ const FacilityTable = ({
         return new Date(dateString).toLocaleDateString('id-ID', {
             day: '2-digit',
             month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric'
         });
     };
 
     return (
-        <Box>
-            <Box overflowX="auto">
-                <Table variant="simple" size="md">
-                    <Thead>
-                        <Tr>
-                            <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
-                                Ikon
-                            </Th>
-                            <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
-                                Nama Fasilitas
-                            </Th>
-                            <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
-                                Dibuat
-                            </Th>
-                            <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
-                                Diperbarui
-                            </Th>
-                            <Th color={COLORS.gray[600]} fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" borderColor={`${COLORS.primary}20`}>
-                                Aksi
-                            </Th>
-                        </Tr>
-                    </Thead>
-                    <Tbody>
-                        {facilities.map((facility, index) => {
-                            const IconComponent = getIconComponent(facility.iconUrl);
-                            return (
-                                <motion.tr
-                                    key={facility.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                >
-                                    <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                        <Flex align="center" justify="center">
-                                            <Box
-                                                p={3}
-                                                borderRadius="xl"
-                                                bg={`${COLORS.primary}15`}
-                                                border={`1px solid ${COLORS.primary}30`}
-                                                display="flex"
-                                                align="center"
-                                                justify="center"
-                                            >
-                                                <Icon
-                                                    as={IconComponent}
-                                                    boxSize={6}
-                                                    color={COLORS.primary}
-                                                />
-                                            </Box>
-                                        </Flex>
-                                    </Td>
-                                    <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                        <Text
-                                            fontSize="sm"
-                                            fontWeight="semibold"
-                                            color={COLORS.black}
+        <VStack spacing={6} align="stretch">
+            <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+                <Box
+                    bg="rgba(255, 255, 255, 0.08)"
+                    backdropFilter="blur(16px)"
+                    border="1px solid rgba(255, 255, 255, 0.12)"
+                    borderRadius="20px"
+                    boxShadow="0 20px 60px rgba(116, 156, 115, 0.1)"
+                    p={padding}
+                    _hover={{
+                        borderColor: "rgba(255, 255, 255, 0.15)",
+                        boxShadow: "0 25px 80px rgba(116, 156, 115, 0.15)"
+                    }}
+                    transition="all 0.3s ease"
+                >
+                    <Box
+                        overflowX="auto"
+                        css={{
+                            '&::-webkit-scrollbar': {
+                                height: '6px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                borderRadius: '3px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: 'rgba(116, 156, 115, 0.3)',
+                                borderRadius: '3px',
+                            },
+                            '&::-webkit-scrollbar-thumb:hover': {
+                                background: 'rgba(116, 156, 115, 0.5)',
+                            },
+                        }}
+                    >
+                        <Table variant="unstyled" size="md">
+                            <Thead>
+                                <Tr>
+                                    <Th
+                                        color="#666666"
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        textTransform="uppercase"
+                                        letterSpacing="wider"
+                                        borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+                                        pb={4}
+                                    >
+                                        <HStack spacing={2}>
+                                            <Grid3X3 size={12} />
+                                            <Text>Ikon</Text>
+                                        </HStack>
+                                    </Th>
+                                    <Th
+                                        color="#666666"
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        textTransform="uppercase"
+                                        letterSpacing="wider"
+                                        borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+                                        pb={4}
+                                    >
+                                        <HStack spacing={2}>
+                                            <Settings size={12} />
+                                            <Text>Fasilitas</Text>
+                                        </HStack>
+                                    </Th>
+                                    <Th
+                                        color="#666666"
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        textTransform="uppercase"
+                                        letterSpacing="wider"
+                                        borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+                                        pb={4}
+                                    >
+                                        <HStack spacing={2}>
+                                            <Calendar size={12} />
+                                            <Text>Dibuat</Text>
+                                        </HStack>
+                                    </Th>
+                                    <Th
+                                        color="#666666"
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        textTransform="uppercase"
+                                        letterSpacing="wider"
+                                        borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+                                        pb={4}
+                                    >
+                                        <HStack spacing={2}>
+                                            <Clock size={12} />
+                                            <Text>Update</Text>
+                                        </HStack>
+                                    </Th>
+                                    <Th
+                                        color="#666666"
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        textTransform="uppercase"
+                                        letterSpacing="wider"
+                                        borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+                                        pb={4}
+                                    >
+                                        Aksi
+                                    </Th>
+                                </Tr>
+                            </Thead>
+                            <Tbody>
+                                {facilities.map((facility, index) => {
+                                    const IconComponent = getIconComponent(facility.iconUrl);
+                                    return (
+                                        <MotionTr
+                                            key={facility.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.05, duration: 0.4 }}
+                                            whileHover={{
+                                                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                                                scale: 1.005
+                                            }}
+                                            borderRadius="12px"
                                         >
-                                            {facility.facilityName}
-                                        </Text>
-                                    </Td>
-                                    <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                        <Text fontSize="sm" color={COLORS.gray[600]}>
-                                            {formatDate(facility.createdAt)}
-                                        </Text>
-                                    </Td>
-                                    <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                        <Text fontSize="sm" color={COLORS.gray[600]}>
-                                            {formatDate(facility.updatedAt)}
-                                        </Text>
-                                    </Td>
-                                    <Td borderColor={`${COLORS.primary}10`} py={4}>
-                                        <Menu>
-                                            <MenuButton
-                                                as={IconButton}
-                                                icon={<MoreVertical size={16} />}
-                                                variant="ghost"
-                                                size="sm"
-                                                borderRadius="full"
-                                                _hover={{ bg: `${COLORS.primary}10` }}
-                                            />
-                                            <MenuList
-                                                bg="white"
-                                                borderColor={`${COLORS.primary}20`}
-                                                boxShadow={SHADOWS.lg}
-                                                borderRadius="xl"
-                                                overflow="hidden"
-                                            >
-                                                <MenuItem
-                                                    icon={<Eye size={16} />}
-                                                    onClick={() => onView(facility)}
-                                                    _hover={{ bg: `${COLORS.primary}10` }}
+                                            <Td borderBottom="1px solid rgba(255, 255, 255, 0.05)" py={4}>
+                                                <Box display="flex" justifyContent="center">
+                                                    <Box
+                                                        w={12}
+                                                        h={12}
+                                                        borderRadius="12px"
+                                                        bg="rgba(116, 156, 115, 0.15)"
+                                                        border="1px solid rgba(116, 156, 115, 0.2)"
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        justifyContent="center"
+                                                        position="relative"
+                                                        _before={{
+                                                            content: '""',
+                                                            position: 'absolute',
+                                                            top: 0,
+                                                            left: 0,
+                                                            right: 0,
+                                                            bottom: 0,
+                                                            bg: 'linear-gradient(135deg, rgba(116, 156, 115, 0.2), rgba(116, 156, 115, 0.05))',
+                                                            borderRadius: '12px'
+                                                        }}
+                                                        _hover={{
+                                                            transform: "scale(1.1)",
+                                                            borderColor: "rgba(116, 156, 115, 0.4)"
+                                                        }}
+                                                        transition="all 0.2s ease"
+                                                    >
+                                                        <Icon
+                                                            as={IconComponent}
+                                                            boxSize={6}
+                                                            color={COLORS.primary}
+                                                            style={{ position: 'relative', zIndex: 1 }}
+                                                        />
+                                                    </Box>
+                                                </Box>
+                                            </Td>
+                                            <Td borderBottom="1px solid rgba(255, 255, 255, 0.05)" py={4}>
+                                                <Text
+                                                    fontSize="sm"
+                                                    fontWeight="bold"
+                                                    color="#444444"
                                                 >
-                                                    Lihat Detail
-                                                </MenuItem>
-                                                <MenuItem
-                                                    icon={<Edit3 size={16} />}
-                                                    onClick={() => onEdit(facility)}
-                                                    _hover={{ bg: `${COLORS.primary}10` }}
+                                                    {facility.facilityName}
+                                                </Text>
+                                            </Td>
+                                            <Td borderBottom="1px solid rgba(255, 255, 255, 0.05)" py={4}>
+                                                <Text
+                                                    fontSize="sm"
+                                                    color="#666666"
+                                                    fontWeight="medium"
                                                 >
-                                                    Edit
-                                                </MenuItem>
-                                                <MenuItem
-                                                    icon={<Trash2 size={16} />}
-                                                    onClick={() => onDelete(facility)}
-                                                    _hover={{ bg: 'red.50' }}
-                                                    color="red.500"
+                                                    {formatDate(facility.createdAt)}
+                                                </Text>
+                                            </Td>
+                                            <Td borderBottom="1px solid rgba(255, 255, 255, 0.05)" py={4}>
+                                                <Text
+                                                    fontSize="sm"
+                                                    color="#666666"
+                                                    fontWeight="medium"
                                                 >
-                                                    Hapus
-                                                </MenuItem>
-                                            </MenuList>
-                                        </Menu>
-                                    </Td>
-                                </motion.tr>
-                            );
-                        })}
-                    </Tbody>
-                </Table>
-            </Box>
+                                                    {formatDate(facility.updatedAt)}
+                                                </Text>
+                                            </Td>
+                                            <Td borderBottom="1px solid rgba(255, 255, 255, 0.05)" py={4}>
+                                                <Menu>
+                                                    <MenuButton
+                                                        as={IconButton}
+                                                        icon={<MoreVertical size={16} />}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        borderRadius="10px"
+                                                        bg="rgba(255, 255, 255, 0.1)"
+                                                        color="#444444"
+                                                        border="1px solid rgba(255, 255, 255, 0.15)"
+                                                        _hover={{
+                                                            bg: "rgba(116, 156, 115, 0.1)",
+                                                            borderColor: "rgba(116, 156, 115, 0.3)",
+                                                            transform: "translateY(-1px)"
+                                                        }}
+                                                        transition="all 0.2s ease"
+                                                    />
+                                                    <MenuList
+                                                        bg="rgba(255, 255, 255, 0.95)"
+                                                        backdropFilter="blur(16px)"
+                                                        border="1px solid rgba(255, 255, 255, 0.2)"
+                                                        boxShadow="0 12px 40px rgba(116, 156, 115, 0.15)"
+                                                        borderRadius="12px"
+                                                        overflow="hidden"
+                                                        p={2}
+                                                    >
+                                                        <MenuItem
+                                                            icon={<Eye size={16} />}
+                                                            onClick={() => onView(facility)}
+                                                            borderRadius="8px"
+                                                            fontWeight="medium"
+                                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
+                                                            transition="all 0.2s ease"
+                                                        >
+                                                            Lihat Detail
+                                                        </MenuItem>
+                                                        <MenuItem
+                                                            icon={<Edit3 size={16} />}
+                                                            onClick={() => onEdit(facility)}
+                                                            borderRadius="8px"
+                                                            fontWeight="medium"
+                                                            _hover={{ bg: "rgba(116, 156, 115, 0.1)" }}
+                                                            transition="all 0.2s ease"
+                                                        >
+                                                            Edit
+                                                        </MenuItem>
+                                                        <MenuItem
+                                                            icon={<Trash2 size={16} />}
+                                                            onClick={() => onDelete(facility)}
+                                                            borderRadius="8px"
+                                                            fontWeight="medium"
+                                                            _hover={{ bg: 'rgba(239, 68, 68, 0.1)' }}
+                                                            color="red.500"
+                                                            transition="all 0.2s ease"
+                                                        >
+                                                            Hapus
+                                                        </MenuItem>
+                                                    </MenuList>
+                                                </Menu>
+                                            </Td>
+                                        </MotionTr>
+                                    );
+                                })}
+                            </Tbody>
+                        </Table>
+                    </Box>
+
+                    {facilities.length === 0 && (
+                        <Box
+                            textAlign="center"
+                            py={12}
+                            color="#666666"
+                        >
+                            <Text fontSize="sm" fontWeight="medium">
+                                Belum ada data fasilitas
+                            </Text>
+                        </Box>
+                    )}
+                </Box>
+            </MotionBox>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-                <Flex justify="center" mt={6}>
-                    <HStack spacing={2}>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onPageChange(currentPage - 1)}
-                            isDisabled={currentPage === 1}
-                            borderRadius="full"
-                            borderColor={`${COLORS.primary}30`}
-                            _hover={{
-                                bg: `${COLORS.primary}10`,
-                                borderColor: COLORS.primary
-                            }}
-                        >
-                            Sebelumnya
-                        </Button>
-
-                        {[...Array(totalPages)].map((_, i) => (
-                            <Button
-                                key={i + 1}
-                                size="sm"
-                                variant={currentPage === i + 1 ? "solid" : "outline"}
-                                bg={currentPage === i + 1 ? COLORS.primary : "transparent"}
-                                color={currentPage === i + 1 ? "white" : COLORS.primary}
-                                borderColor={`${COLORS.primary}30`}
-                                onClick={() => onPageChange(i + 1)}
-                                borderRadius="full"
-                                _hover={{
-                                    bg: currentPage === i + 1 ? COLORS.primaryDark : `${COLORS.primary}10`,
-                                    borderColor: COLORS.primary
-                                }}
-                            >
-                                {i + 1}
-                            </Button>
-                        ))}
-
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onPageChange(currentPage + 1)}
-                            isDisabled={currentPage === totalPages}
-                            borderRadius="full"
-                            borderColor={`${COLORS.primary}30`}
-                            _hover={{
-                                bg: `${COLORS.primary}10`,
-                                borderColor: COLORS.primary
-                            }}
-                        >
-                            Selanjutnya
-                        </Button>
-                    </HStack>
-                </Flex>
-            )}
-        </Box>
+            <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={onPageChange}
+            />
+        </VStack>
     );
 };
 
