@@ -59,6 +59,15 @@ const startServer = async () => {
     }
 };
 
+// Increase max listeners to prevent warnings during development
+process.setMaxListeners(20);
+
+// Remove existing listeners to prevent duplicates during hot reload
+process.removeAllListeners('unhandledRejection');
+process.removeAllListeners('uncaughtException');
+process.removeAllListeners('SIGTERM');
+process.removeAllListeners('SIGINT');
+
 startServer();
 
 process.on('unhandledRejection', (reason, promise) => {

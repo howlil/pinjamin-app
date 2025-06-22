@@ -84,9 +84,9 @@ class BuildingService {
 
             if (search) {
                 where.OR = [
-                    { buildingName: { contains: search, mode: 'insensitive' } },
-                    { description: { contains: search, mode: 'insensitive' } },
-                    { location: { contains: search, mode: 'insensitive' } }
+                    { buildingName: { contains: search } },
+                    { description: { contains: search } },
+                    { location: { contains: search } }
                 ];
             }
 

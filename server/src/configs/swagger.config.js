@@ -19,7 +19,7 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     specs.servers = [
         {
-            url: process.env.BASE_URL || 'http://localhost:8080',
+            url: process.env.BASE_URL || 'http://localhost:3000',
             description: 'Development server'
         }
     ];

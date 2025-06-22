@@ -21,7 +21,7 @@ class BookingRoute {
         this.#router.post(
             '/',
             AuthMiddleware.authenticate,
-            UploadMiddleware.handleProposalUpload,
+            UploadMiddleware.optionalProposalUpload,
             ValidationMiddleware.validate(BookingValidation.create),
             BookingController.create
         );

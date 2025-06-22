@@ -36,13 +36,6 @@ class BuildingRoute {
             BuildingController.checkAvailability
         );
 
-        // Get building by ID
-        this.#router.get(
-            '/:id',
-            ValidationMiddleware.validateParams(BuildingValidation.params),
-            BuildingController.getById
-        );
-
         // ===================
         // ADMIN ENDPOINTS
         // ===================
@@ -84,6 +77,13 @@ class BuildingRoute {
             AuthMiddleware.authorize('ADMIN'),
             ValidationMiddleware.validateParams(BuildingValidation.params),
             BuildingController.delete
+        );
+
+        // Get building by ID (moved to end after admin routes)
+        this.#router.get(
+            '/:id',
+            ValidationMiddleware.validateParams(BuildingValidation.params),
+            BuildingController.getById
         );
     }
 

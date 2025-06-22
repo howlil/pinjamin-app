@@ -124,6 +124,29 @@ class UploadMiddleware {
             next();
         });
     };
+
+    static optionalProposalUpload = (req, res, next) => {
+        multerConfig.proposalUpload(req, res, (error) => {
+            if (error) {
+                if (error instanceof multer.MulterError) {
+                    switch (error.code) {
+                        case 'LIMIT_FILE_SIZE':
+                            return next(ErrorHandler.badRequest('File size too large. Maximum 10MB allowed'));
+                        case 'LIMIT_FILE_COUNT':
+                            return next(ErrorHandler.badRequest('Too many files. Only 1 file allowed'));
+                        case 'LIMIT_UNEXPECTED_FILE':
+                            return next(ErrorHandler.badRequest('Unexpected field name. Use "proposalLetter" field'));
+                        default:
+                            return next(ErrorHandler.badRequest('File upload error'));
+                    }
+                }
+                return next(ErrorHandler.badRequest(error.message));
+            }
+
+            // Don't require file to be present - controller will handle the check
+            next();
+        });
+    };
 }
 
 module.exports = UploadMiddleware; 
