@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { HStack, Icon, useToast, useDisclosure } from '@chakra-ui/react';
+import { HStack, Icon, useDisclosure } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { Search } from 'lucide-react';
 import Card from '@shared/components/Card';
 import { DateField, TimeField } from '@shared/components/FormField';
@@ -30,7 +31,7 @@ const AvailabilityChecker = ({
     const [resultData, setResultData] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const toast = useToast();
+
 
     useEffect(() => {
         if (isSearching && !loading && availableBuildings.length >= 0) {
@@ -51,13 +52,11 @@ const AvailabilityChecker = ({
             setResultData(resultData);
             onOpen();
 
-            toast({
-                title: availableBuildings.length > 0 ? 'Pencarian Berhasil' : 'Pencarian Selesai',
-                description: `Ditemukan ${availableBuildings.length} gedung yang tersedia`,
-                status: availableBuildings.length > 0 ? 'success' : 'info',
-                duration: 3000,
-                isClosable: true,
-            });
+            if (availableBuildings.length > 0) {
+                toast.success(`Ditemukan ${availableBuildings.length} gedung yang tersedia`);
+            } else {
+                toast(`Ditemukan ${availableBuildings.length} gedung yang tersedia`);
+            }
 
             setIsSearching(false);
         }
@@ -65,24 +64,12 @@ const AvailabilityChecker = ({
 
     const handleCheck = async () => {
         if (!date || !time) {
-            toast({
-                title: 'Field Tidak Lengkap',
-                description: 'Silakan pilih tanggal dan waktu terlebih dahulu',
-                status: 'warning',
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error('Silakan pilih tanggal dan waktu terlebih dahulu');
             return;
         }
 
         if (!onCheckAvailability) {
-            toast({
-                title: 'Error',
-                description: 'Fungsi check availability tidak tersedia',
-                status: 'error',
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error('Fungsi check availability tidak tersedia');
             return;
         }
 
@@ -101,13 +88,7 @@ const AvailabilityChecker = ({
         } catch (error) {
             console.error('Error checking availability:', error);
             setIsSearching(false);
-            toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan saat mengecek ketersediaan',
-                status: 'error',
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error('Terjadi kesalahan saat mengecek ketersediaan');
         }
     };
 

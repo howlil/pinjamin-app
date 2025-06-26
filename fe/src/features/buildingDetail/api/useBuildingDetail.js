@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
-import { buildingsAPI } from '@features/home/api/buildingsAPI';
+import toast from 'react-hot-toast';
+import { buildingsAPI } from '../../home/api/buildingsAPI';
 
 export const useBuildingDetail = (buildingId) => {
     const [building, setBuilding] = useState(null);
+    const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const toast = useToast();
 
     const fetchBuildingDetail = async () => {
         if (!buildingId) return;
@@ -16,20 +15,15 @@ export const useBuildingDetail = (buildingId) => {
         setError(null);
 
         try {
-            const response = await buildingsAPI.getBuildingDetail(buildingId);
+            const response = await buildingsAPI.getBuildingById(buildingId);
 
             if (response.status === 'success') {
                 setBuilding(response.data);
+                setFacilities(response.data?.facilities || []);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat detail gedung');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat detail gedung',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -43,6 +37,7 @@ export const useBuildingDetail = (buildingId) => {
 
     return {
         building,
+        facilities,
         loading,
         error,
         refetch
@@ -53,8 +48,6 @@ export const useAvailabilityCheck = () => {
     const [availableBuildings, setAvailableBuildings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const toast = useToast();
 
     const checkAvailability = async (date, time) => {
         setLoading(true);
@@ -69,13 +62,7 @@ export const useAvailabilityCheck = () => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal mengecek ketersediaan');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal mengecek ketersediaan',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -95,8 +82,6 @@ export const useBuildingSchedule = (buildingId, month, year) => {
     const [error, setError] = useState(null);
     const [totalBookings, setTotalBookings] = useState(0);
 
-    const toast = useToast();
-
     const fetchBuildingSchedule = async () => {
         if (!buildingId) return;
 
@@ -111,13 +96,7 @@ export const useBuildingSchedule = (buildingId, month, year) => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat jadwal gedung');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat jadwal gedung',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }

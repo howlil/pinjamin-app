@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
 import { dashboardAPI } from './dashboardAPI';
 
 export const useDashboardStatistics = (month = null, year = null) => {
@@ -7,8 +6,6 @@ export const useDashboardStatistics = (month = null, year = null) => {
     const [transactionStats, setTransactionStats] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const toast = useToast();
 
     const fetchStatistics = async () => {
         setLoading(true);
@@ -33,13 +30,7 @@ export const useDashboardStatistics = (month = null, year = null) => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat statistik dashboard');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat statistik dashboard',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -65,8 +56,6 @@ export const useBookingStatistics = (month = null, year = null) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const fetchBookingStatistics = async () => {
         setLoading(true);
         setError(null);
@@ -83,13 +72,7 @@ export const useBookingStatistics = (month = null, year = null) => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat statistik peminjaman');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat statistik peminjaman',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -114,8 +97,6 @@ export const useTransactionStatistics = (month = null, year = null) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const fetchTransactionStatistics = async () => {
         setLoading(true);
         setError(null);
@@ -132,13 +113,7 @@ export const useTransactionStatistics = (month = null, year = null) => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat statistik transaksi');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat statistik transaksi',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }

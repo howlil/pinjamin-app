@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { buildingManagementAPI } from './buildingManagementAPI';
 
 export const useBuildingManagement = (filters = {}) => {
@@ -8,36 +8,41 @@ export const useBuildingManagement = (filters = {}) => {
     const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({
         page: 1,
+        currentPage: 1,
         limit: 10,
+        itemsPerPage: 10,
         total: 0,
+        totalItems: 0,
         totalPages: 0
     });
-
-    const toast = useToast();
 
     const fetchBuildings = async (params = {}) => {
         setLoading(true);
         setError(null);
 
         try {
-            const response = await buildingManagementAPI.getAdminBuildings({
-                ...filters,
-                ...params
+            const queryParams = {};
+            const allParams = { ...filters, ...params };
+
+            Object.keys(allParams).forEach(key => {
+                const value = allParams[key];
+                if (value !== '' && value !== null && value !== undefined) {
+                    queryParams[key] = value;
+                }
             });
 
-            if (response.status === 'success') {
-                setBuildings(response.data.buildings || []);
-                setPagination(response.data.pagination || pagination);
+            const response = await buildingManagementAPI.getAdminBuildings(queryParams);
+
+            if (response.data) {
+                const buildingsData = response.data || [];
+                const paginationData = response.pagination || pagination;
+
+                setBuildings(buildingsData);
+                setPagination(paginationData);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat data gedung');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat data gedung',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -45,7 +50,7 @@ export const useBuildingManagement = (filters = {}) => {
 
     useEffect(() => {
         fetchBuildings();
-    }, []);
+    }, [JSON.stringify(filters)]); // Re-fetch when filters change
 
     const refetch = () => fetchBuildings();
 
@@ -63,8 +68,6 @@ export const useCreateBuilding = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const createBuilding = async (buildingData) => {
         setLoading(true);
         setError(null);
@@ -72,25 +75,12 @@ export const useCreateBuilding = () => {
         try {
             const response = await buildingManagementAPI.createBuilding(buildingData);
 
-            if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Gedung berhasil dibuat',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
-                return response.data;
+            if (response.data && response.data.status === 'success') {
+                toast.success('Gedung berhasil dibuat');
+                return response.data.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal membuat gedung');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal membuat gedung',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -108,8 +98,6 @@ export const useUpdateBuilding = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const updateBuilding = async (id, buildingData) => {
         setLoading(true);
         setError(null);
@@ -117,25 +105,12 @@ export const useUpdateBuilding = () => {
         try {
             const response = await buildingManagementAPI.updateBuilding(id, buildingData);
 
-            if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Gedung berhasil diperbarui',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
-                return response.data;
+            if (response.data && response.data.status === 'success') {
+                toast.success('Gedung berhasil diperbarui');
+                return response.data.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memperbarui gedung');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memperbarui gedung',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -153,8 +128,6 @@ export const useDeleteBuilding = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const deleteBuilding = async (id) => {
         setLoading(true);
         setError(null);
@@ -162,25 +135,12 @@ export const useDeleteBuilding = () => {
         try {
             const response = await buildingManagementAPI.deleteBuilding(id);
 
-            if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Gedung berhasil dihapus',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
-                return response.data;
+            if (response.data && response.data.status === 'success') {
+                toast.success('Gedung berhasil dihapus');
+                return response.data.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal menghapus gedung');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal menghapus gedung',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);

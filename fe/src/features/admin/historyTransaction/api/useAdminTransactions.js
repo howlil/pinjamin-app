@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { adminTransactionAPI } from './adminTransactionAPI';
 
 export const useAdminTransactions = (filters = {}) => {
@@ -13,8 +13,6 @@ export const useAdminTransactions = (filters = {}) => {
         itemsPerPage: 10
     });
 
-    const toast = useToast();
-
     const fetchTransactions = async (params = {}) => {
         setLoading(true);
         setError(null);
@@ -25,27 +23,28 @@ export const useAdminTransactions = (filters = {}) => {
                 ...params
             });
 
-            if (response.status === 'success') {
+            // Handle both array and object response formats
+            if (Array.isArray(response)) {
+                // Direct array response
+                setTransactions(response);
+                setPagination({
+                    totalItems: response.length,
+                    totalPages: Math.ceil(response.length / 10),
+                    currentPage: params.page || 1,
+                    itemsPerPage: 10
+                });
+            } else if (response.status === 'success') {
+                // Response with status object
                 setTransactions(response.data || []);
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat data transaksi');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat data transaksi',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
 
     const refetch = () => fetchTransactions();
 
@@ -63,8 +62,6 @@ export const useExportTransactions = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const exportTransactions = async (month = null, year = null) => {
         setLoading(true);
         setError(null);
@@ -76,25 +73,12 @@ export const useExportTransactions = () => {
 
             const response = await adminTransactionAPI.exportTransactions(params);
 
-            if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Export transaksi berhasil dibuat',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
-                return response.data;
+            if (response.status === 'success' || response.data) {
+                toast.success('Export transaksi berhasil diunduh');
+                return response.data || response;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal mengexport transaksi');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal mengexport transaksi',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);

@@ -21,7 +21,6 @@ const PaginationControls = ({
             backdropFilter="blur(15px)"
             borderRadius="24px"
             border="1px solid rgba(215, 215, 215, 0.5)"
-            boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
             p={4}
         >
             <HStack justify="space-between" align="center">

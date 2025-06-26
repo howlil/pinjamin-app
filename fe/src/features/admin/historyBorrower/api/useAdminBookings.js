@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import { useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { adminBookingAPI } from './adminBookingAPI';
 
 export const usePendingBookings = (filters = {}) => {
@@ -13,9 +13,7 @@ export const usePendingBookings = (filters = {}) => {
         itemsPerPage: 10
     });
 
-    const toast = useToast();
-
-    const fetchPendingBookings = async (params = {}) => {
+    const fetchPendingBookings = useCallback(async (params = {}) => {
         setLoading(true);
         setError(null);
 
@@ -31,23 +29,13 @@ export const usePendingBookings = (filters = {}) => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat data peminjaman pending');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat data peminjaman pending',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters]);
 
-    useEffect(() => {
-        fetchPendingBookings();
-    }, []);
-
-    const refetch = () => fetchPendingBookings();
+    const refetch = useCallback(() => fetchPendingBookings(), [fetchPendingBookings]);
 
     return {
         bookings,
@@ -59,7 +47,7 @@ export const usePendingBookings = (filters = {}) => {
     };
 };
 
-export const useAdminBookingHistory = (filters = {}) => {
+export const useAdminBookingHistory = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -70,41 +58,59 @@ export const useAdminBookingHistory = (filters = {}) => {
         itemsPerPage: 10
     });
 
-    const toast = useToast();
-
-    const fetchBookingHistory = async (params = {}) => {
+    const fetchBookingHistory = useCallback(async (params = {}) => {
         setLoading(true);
         setError(null);
 
         try {
-            const response = await adminBookingAPI.getBookingHistory({
-                ...filters,
-                ...params
-            });
+            // Extract status for frontend filtering
+            const { status, ...apiParams } = params;
+
+            console.log('Fetching booking history with params:', apiParams);
+
+            const response = await adminBookingAPI.getBookingHistory(apiParams);
+
+            console.log('API Response:', response);
 
             if (response.status === 'success') {
-                setBookings(response.data || []);
-                setPagination(response.pagination || pagination);
+                let filteredBookings = response.data || [];
+
+                console.log('Raw bookings from API:', filteredBookings);
+
+                // Filter out PROCESSING status bookings on frontend
+                filteredBookings = filteredBookings.filter(booking =>
+                    booking.status !== 'PROCESSING'
+                );
+
+                // Apply status filter if provided
+                if (status) {
+                    filteredBookings = filteredBookings.filter(booking =>
+                        booking.status === status
+                    );
+                }
+
+                console.log('Filtered bookings:', filteredBookings);
+
+                setBookings(filteredBookings);
+
+                // Set pagination properly
+                setPagination(response.pagination || {
+                    totalItems: filteredBookings.length,
+                    totalPages: Math.ceil(filteredBookings.length / (params.limit || 10)),
+                    currentPage: params.page || 1,
+                    itemsPerPage: params.limit || 10
+                });
             }
         } catch (err) {
+            console.error('Error fetching booking history:', err);
             setError(err.response?.data?.message || 'Gagal memuat riwayat peminjaman');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat riwayat peminjaman',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        fetchBookingHistory();
     }, []);
 
-    const refetch = () => fetchBookingHistory();
+    const refetch = useCallback(() => fetchBookingHistory(), [fetchBookingHistory]);
 
     return {
         bookings,
@@ -120,8 +126,6 @@ export const useBookingApproval = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const approveOrRejectBooking = async (id, approvalData) => {
         setLoading(true);
         setError(null);
@@ -131,24 +135,11 @@ export const useBookingApproval = () => {
 
             if (response.status === 'success') {
                 const action = approvalData.bookingStatus === 'APPROVED' ? 'disetujui' : 'ditolak';
-                toast({
-                    title: 'Berhasil',
-                    description: `Peminjaman berhasil ${action}`,
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success(`Peminjaman berhasil ${action}`);
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memproses approval peminjaman');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memproses approval peminjaman',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -166,8 +157,6 @@ export const useBookingRefund = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const processRefund = async (id, refundData) => {
         setLoading(true);
         setError(null);
@@ -176,24 +165,11 @@ export const useBookingRefund = () => {
             const response = await adminBookingAPI.processRefund(id, refundData);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Refund berhasil diproses',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Refund berhasil diproses');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memproses refund');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memproses refund',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);

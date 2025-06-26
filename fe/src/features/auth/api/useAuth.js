@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@chakra-ui/react';
-import { authAPI } from './authAPI';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/shared/store/authStore';
+import { authAPI } from './authAPI';
 
 export const useAuth = () => {
-    const [isLoading, setIsLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const {
         login: storeLogin,
         logout: storeLogout,
-        setLoading,
+        setLoading: setAuthLoading,
         updateUser,
         user,
         isAuthenticated,
@@ -21,11 +22,11 @@ export const useAuth = () => {
     } = useAuthStore();
 
     const navigate = useNavigate();
-    const toast = useToast();
 
     const login = async (credentials) => {
-        setIsLoading(true);
         setLoading(true);
+        setAuthLoading(true);
+        setError(null);
 
         try {
             if (!credentials.email || !credentials.password) {
@@ -34,43 +35,33 @@ export const useAuth = () => {
 
             const response = await authAPI.login(credentials);
 
-            if (response.status !== 'success') {
-                throw new Error(response.message || 'Login gagal');
+            if (response.status === 'success') {
+                const { user, token } = response.data;
+
+                // Set auth state
+                storeLogin(user, token);
+
+                // Navigate based on user role
+                const redirectPath = user.role === 'ADMIN' ? '/admin' : '/';
+
+                toast.success(`Selamat datang, ${user.fullName}!`);
+                navigate(redirectPath);
+
+                return response.data;
             }
-
-            const { token, user } = response.data;
-            storeLogin(user, token);
-
-            const redirectPath = user.role === 'ADMIN' ? '/admin' : '/';
-
-            toast({
-                title: "Login Berhasil",
-                description: `Selamat datang, ${user.fullName}`,
-                status: "success",
-                duration: 3000,
-                isClosable: true,
-            });
-
-            navigate(redirectPath);
-            return true;
-        } catch (error) {
-            toast({
-                title: "Login Gagal",
-                description: error.message || 'Terjadi kesalahan saat login',
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-            return false;
+        } catch (err) {
+            setError(err.response?.data?.message || 'Login gagal');
+            throw err;
         } finally {
-            setIsLoading(false);
             setLoading(false);
+            setAuthLoading(false);
         }
     };
 
     const register = async (userData) => {
-        setIsLoading(true);
         setLoading(true);
+        setAuthLoading(true);
+        setError(null);
 
         try {
             if (!userData.fullName || !userData.email || !userData.password) {
@@ -83,32 +74,17 @@ export const useAuth = () => {
 
             const response = await authAPI.register(userData);
 
-            if (response.status !== 'success') {
-                throw new Error(response.message || 'Registrasi gagal');
+            if (response.status === 'success') {
+                toast.success('Registrasi berhasil! Silakan login.');
+                navigate('/login');
+                return response.data;
             }
-
-            toast({
-                title: "Registrasi Berhasil",
-                description: "Silakan login dengan akun yang telah dibuat",
-                status: "success",
-                duration: 3000,
-                isClosable: true,
-            });
-
-            navigate('/login');
-            return true;
-        } catch (error) {
-            toast({
-                title: "Registrasi Gagal",
-                description: error.message,
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-            return false;
+        } catch (err) {
+            setError(err.response?.data?.message || 'Registrasi gagal');
+            throw err;
         } finally {
-            setIsLoading(false);
             setLoading(false);
+            setAuthLoading(false);
         }
     };
 
@@ -120,18 +96,13 @@ export const useAuth = () => {
         }
 
         storeLogout();
-        toast({
-            title: "Logout Berhasil",
-            status: "success",
-            duration: 2000,
-            isClosable: true,
-        });
+        toast.success('Berhasil logout');
         navigate('/login');
     };
 
     const getProfile = async () => {
         try {
-            setIsLoading(true);
+            setLoading(true);
             const response = await authAPI.getProfile();
 
             if (response.status === 'success') {
@@ -139,132 +110,88 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (error) {
-            toast({
-                title: "Gagal Memuat Profile",
-                description: error.message || 'Terjadi kesalahan saat memuat profile',
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error(error.response?.data?.message || 'Terjadi kesalahan saat memuat profile');
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
     const updateProfile = async (profileData) => {
+        setLoading(true);
+        setError(null);
+
         try {
-            setIsLoading(true);
             const response = await authAPI.updateProfile(profileData);
 
             if (response.status === 'success') {
+                // Update auth state with new user data
                 updateUser(response.data);
-                toast({
-                    title: "Profile Berhasil Diperbarui",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
-                return true;
+                toast.success('Profil berhasil diperbarui');
+                return response.data;
             }
-        } catch (error) {
-            toast({
-                title: "Gagal Memperbarui Profile",
-                description: error.message || 'Terjadi kesalahan saat memperbarui profile',
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-            return false;
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal memperbarui profil');
+            throw err;
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
     const changePassword = async (passwordData) => {
+        setLoading(true);
+        setError(null);
+
         try {
-            setIsLoading(true);
             const response = await authAPI.changePassword(passwordData);
 
             if (response.status === 'success') {
-                toast({
-                    title: "Password Berhasil Diubah",
-                    description: "Password Anda telah berhasil diperbarui",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
-                return true;
+                toast.success('Password berhasil diubah');
+                return response.data;
             }
-        } catch (error) {
-            toast({
-                title: "Gagal Mengubah Password",
-                description: error.message || 'Terjadi kesalahan saat mengubah password',
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-            return false;
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal mengubah password');
+            throw err;
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
     const forgotPassword = async (email) => {
+        setLoading(true);
+        setError(null);
+
         try {
-            setIsLoading(true);
             const response = await authAPI.forgotPassword(email);
 
             if (response.status === 'success') {
-                toast({
-                    title: "Email Reset Password Terkirim",
-                    description: "Silakan cek email Anda untuk instruksi reset password",
-                    status: "success",
-                    duration: 5000,
-                    isClosable: true,
-                });
-                return true;
+                toast.success('Email reset password telah dikirim. Silakan cek email Anda.');
+                return response.data;
             }
-        } catch (error) {
-            toast({
-                title: "Gagal Mengirim Email Reset",
-                description: error.message || 'Terjadi kesalahan saat mengirim email reset',
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-            return false;
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal mengirim email reset password');
+            throw err;
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
     const resetPassword = async (resetData) => {
+        setLoading(true);
+        setError(null);
+
         try {
-            setIsLoading(true);
             const response = await authAPI.resetPassword(resetData);
 
             if (response.status === 'success') {
-                toast({
-                    title: "Password Berhasil Direset",
-                    description: "Silakan login dengan password baru Anda",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
+                toast.success('Password berhasil direset. Silakan login.');
                 navigate('/login');
-                return true;
+                return response.data;
             }
-        } catch (error) {
-            toast({
-                title: "Gagal Reset Password",
-                description: error.message || 'Terjadi kesalahan saat reset password',
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-            return false;
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal reset password');
+            throw err;
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
@@ -294,7 +221,8 @@ export const useAuth = () => {
         changePassword,
         forgotPassword,
         resetPassword,
-        isLoading,
+        loading,
+        error,
         user,
         isAuthenticated,
         hasRole,
@@ -330,8 +258,7 @@ export const useLogin = () => {
         password: ''
     });
     const [showPassword, setShowPassword] = useState(false);
-    const { login, isLoading } = useAuth();
-    const toast = useToast();
+    const { login, loading } = useAuth();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -356,7 +283,6 @@ export const useLogin = () => {
             password: ''
         });
         setShowPassword(false);
-        toast.closeAll();
     };
 
     // Reset form ketika component mount
@@ -367,7 +293,7 @@ export const useLogin = () => {
     return {
         formData,
         showPassword,
-        isLoading,
+        loading,
         handleChange,
         handleSubmit,
         togglePasswordVisibility,
@@ -386,8 +312,7 @@ export const useRegister = () => {
         bankNumber: ''
     });
     const [showPassword, setShowPassword] = useState(false);
-    const { register, isLoading } = useAuth();
-    const toast = useToast();
+    const { register, loading } = useAuth();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -417,7 +342,6 @@ export const useRegister = () => {
             bankNumber: ''
         });
         setShowPassword(false);
-        toast.closeAll();
     };
 
     // Reset form ketika component mount
@@ -428,7 +352,7 @@ export const useRegister = () => {
     return {
         formData,
         showPassword,
-        isLoading,
+        loading,
         handleChange,
         handleSubmit,
         togglePasswordVisibility,
@@ -438,7 +362,7 @@ export const useRegister = () => {
 
 export const useForgotPassword = () => {
     const [email, setEmail] = useState('');
-    const { forgotPassword, isLoading } = useAuth();
+    const { forgotPassword, loading } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -448,7 +372,7 @@ export const useForgotPassword = () => {
     return {
         email,
         setEmail,
-        isLoading,
+        loading,
         handleSubmit
     };
 };
@@ -460,8 +384,7 @@ export const useResetPassword = () => {
         confirmPassword: ''
     });
     const [showPassword, setShowPassword] = useState(false);
-    const { resetPassword, isLoading } = useAuth();
-    const toast = useToast();
+    const { resetPassword, loading } = useAuth();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -474,13 +397,7 @@ export const useResetPassword = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.newPassword !== formData.confirmPassword) {
-            toast({
-                title: "Password Tidak Cocok",
-                description: "Konfirmasi password harus sama dengan password baru",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error('Konfirmasi password harus sama dengan password baru');
             return;
         }
         await resetPassword(formData);
@@ -493,7 +410,7 @@ export const useResetPassword = () => {
     return {
         formData,
         showPassword,
-        isLoading,
+        loading,
         handleChange,
         handleSubmit,
         togglePasswordVisibility
@@ -511,8 +428,7 @@ export const useChangePassword = () => {
         new: false,
         confirm: false
     });
-    const { changePassword, isLoading } = useAuth();
-    const toast = useToast();
+    const { changePassword, loading } = useAuth();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -525,13 +441,7 @@ export const useChangePassword = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.newPassword !== formData.confirmPassword) {
-            toast({
-                title: "Password Tidak Cocok",
-                description: "Konfirmasi password harus sama dengan password baru",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error('Konfirmasi password harus sama dengan password baru');
             return;
         }
         await changePassword(formData);
@@ -547,7 +457,7 @@ export const useChangePassword = () => {
     return {
         formData,
         showPasswords,
-        isLoading,
+        loading,
         handleChange,
         handleSubmit,
         togglePasswordVisibility
@@ -563,7 +473,7 @@ export const useUpdateProfile = () => {
         bankName: '',
         bankNumber: ''
     });
-    const { updateProfile, getProfile, isLoading, user } = useAuth();
+    const { updateProfile, getProfile, loading, user } = useAuth();
 
     const loadProfile = async () => {
         if (user) {
@@ -595,7 +505,7 @@ export const useUpdateProfile = () => {
 
     return {
         formData,
-        isLoading,
+        loading,
         handleChange,
         handleSubmit,
         loadProfile

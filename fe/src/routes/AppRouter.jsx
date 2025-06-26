@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 // Layout Components
 import Layout from '../shared/components/Layout';
 import PrivateLayout from '../shared/components/PrivateLayout';
+import PrivateAdminLayout from '../shared/components/PrivateAdminLayout';
 
 // Page Components
 import AuthPage from '../features/auth/AuthPage';
@@ -13,8 +14,8 @@ import UserTransactionPage from '../features/user/transaction/UserTransactionPag
 import UserHistoryPage from '../features/user/history/UserHistoryPage';
 import BuildingDetailPage from '../features/buildingDetail/BuildingDetailPage';
 
-// Admin Pages (for future use)
-import AdminDashboardPage from '../features/admin/dashboard/AdminDashboardPage';
+// Admin Router
+import AdminRouter from './AdminRouter';
 
 const AppRouter = () => {
     return (
@@ -62,10 +63,11 @@ const AppRouter = () => {
                 </PrivateLayout>
             } />
 
+            {/* Admin Routes */}
             <Route path="/admin/*" element={
-                <PrivateLayout allowedRoles={['ADMIN']}>
-                    <AdminDashboardPage />
-                </PrivateLayout>
+                <PrivateAdminLayout allowedRoles={['ADMIN']}>
+                    <AdminRouter />
+                </PrivateAdminLayout>
             } />
 
             {/* 404 - Redirect to home */}

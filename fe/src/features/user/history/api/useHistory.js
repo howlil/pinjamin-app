@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { historyAPI } from './historyAPI';
-import { showToast } from '@/shared/services/apiErrorHandler';
 
-export const useBookingHistory = (filters = {}) => {
+export const useHistory = (filters = {}) => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -13,41 +13,40 @@ export const useBookingHistory = (filters = {}) => {
         itemsPerPage: 10
     });
 
-    const fetchBookingHistory = async (params = {}) => {
+    const fetchHistory = async (params = {}) => {
         setLoading(true);
         setError(null);
 
         try {
-            const response = await historyAPI.getBookingHistory({
+            const response = await historyAPI.getUserBookingHistory({
                 ...filters,
                 ...params
             });
 
             if (response.status === 'success') {
                 setBookings(response.data || []);
-                setPagination(response.pagination || {
-                    totalItems: 0,
-                    totalPages: 0,
-                    currentPage: params.page || 1,
-                    itemsPerPage: params.limit || 10
-                });
+                setPagination(response.pagination || pagination);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat riwayat peminjaman');
-            showToast('error', err.response?.data?.message || 'Gagal memuat riwayat peminjaman');
+            throw err;
         } finally {
             setLoading(false);
         }
     };
 
-    const refetch = () => fetchBookingHistory(filters);
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
+    const refetch = () => fetchHistory();
 
     return {
         bookings,
         loading,
         error,
         pagination,
-        fetchBookingHistory,
+        fetchHistory,
         refetch
     };
 };

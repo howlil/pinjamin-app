@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { buildingsAPI } from './buildingsAPI';
 import { homeAPI } from './homeAPI';
 
@@ -8,13 +8,11 @@ export const useBuildings = (filters = {}) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
+        totalItems: 0,
+        totalPages: 0,
+        currentPage: 1,
+        itemsPerPage: 10
     });
-
-    const toast = useToast();
 
     const fetchBuildings = async (params = {}) => {
         setLoading(true);
@@ -27,21 +25,12 @@ export const useBuildings = (filters = {}) => {
             });
 
             if (response.status === 'success') {
-                setBuildings(response.data.buildings || response.data || []);
-                setPagination(response.data.pagination || pagination);
-            } else {
-                throw new Error(response.message || 'Gagal memuat data gedung');
+                setBuildings(response.data || []);
+                setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || err.message || 'Gagal memuat data gedung';
-            setError(errorMessage);
-            toast({
-                title: 'Error',
-                description: errorMessage,
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            setError(err.response?.data?.message || 'Gagal memuat data gedung');
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -68,8 +57,6 @@ export const useBuildingDetail = (buildingId) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const fetchBuilding = async () => {
         if (!buildingId) return;
 
@@ -87,13 +74,7 @@ export const useBuildingDetail = (buildingId) => {
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Gagal memuat detail gedung';
             setError(errorMessage);
-            toast({
-                title: 'Error',
-                description: errorMessage,
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -115,8 +96,6 @@ export const useAvailabilityCheck = () => {
     const [availableBuildings, setAvailableBuildings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const toast = useToast();
 
     const checkAvailability = async (date, time) => {
         setLoading(true);
@@ -166,13 +145,7 @@ export const useAvailabilityCheck = () => {
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Gagal mengecek ketersediaan';
             setError(errorMessage);
-            toast({
-                title: 'Error',
-                description: errorMessage,
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            toast.error(errorMessage);
             return null;
         } finally {
             setLoading(false);
@@ -191,8 +164,6 @@ export const useTodayBookings = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    const toast = useToast();
 
     const fetchTodayBookings = async () => {
         setLoading(true);
@@ -224,5 +195,37 @@ export const useTodayBookings = () => {
         loading,
         error,
         refetch: fetchTodayBookings
+    };
+};
+
+export const useAvailabilityChecker = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [results, setResults] = useState(null);
+
+    const checkAvailability = async (checkData) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await buildingsAPI.checkAvailability(checkData);
+
+            if (response.status === 'success') {
+                setResults(response.data);
+                return response.data;
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal mengecek ketersediaan gedung');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return {
+        checkAvailability,
+        loading,
+        error,
+        results
     };
 }; 

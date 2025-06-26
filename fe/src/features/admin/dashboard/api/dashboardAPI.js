@@ -9,12 +9,12 @@ export const dashboardAPI = {
     // GET /api/v1/dashboard/statistics/bookings
     getBookingStatistics: async (params = {}) => {
         const response = await apiClient.get('/dashboard/statistics/bookings', { params });
-        return response.data;
+        return response;
     },
 
     // GET /api/v1/dashboard/statistics/transactions
     getTransactionStatistics: async (params = {}) => {
         const response = await apiClient.get('/dashboard/statistics/transactions', { params });
-        return response.data;
+        return response;
     }
 }; 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { transactionAPI } from './transactionAPI';
-import { showToast } from '@/shared/services/apiErrorHandler';
 
-export const useTransactionHistory = (filters = {}) => {
+export const useTransactions = (filters = {}) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -13,56 +13,71 @@ export const useTransactionHistory = (filters = {}) => {
         itemsPerPage: 10
     });
 
-    const fetchTransactionHistory = async (params = {}) => {
+    const fetchTransactions = async (params = {}) => {
         setLoading(true);
         setError(null);
 
         try {
-            const response = await transactionAPI.getTransactionHistory({
+            const response = await transactionAPI.getUserTransactions({
                 ...filters,
                 ...params
             });
 
             if (response.status === 'success') {
                 setTransactions(response.data || []);
-                setPagination(response.pagination || {
-                    totalItems: 0,
-                    totalPages: 0,
-                    currentPage: params.page || 1,
-                    itemsPerPage: params.limit || 10
-                });
+                setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            let errorMessage = err.response?.data?.message || 'Gagal memuat riwayat transaksi';
-
-            // Jika ada detail errors, tambahkan ke pesan
-            if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
-                const detailErrors = err.response.data.errors
-                    .map(error => `${error.field}: ${error.message}`)
-                    .join(', ');
-                errorMessage = `${errorMessage}. Detail: ${detailErrors}`;
-            }
-
-            setError(errorMessage);
-            showToast('error', errorMessage);
+            setError(err.response?.data?.message || 'Gagal memuat data transaksi');
+            throw err;
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchTransactionHistory(filters);
-    }, [filters.page]);
+        fetchTransactions();
+    }, []);
 
-    const refetch = () => fetchTransactionHistory();
+    const refetch = () => fetchTransactions();
 
     return {
         transactions,
         loading,
         error,
         pagination,
-        fetchTransactionHistory,
+        fetchTransactions,
         refetch
+    };
+};
+
+export const useCreateTransaction = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const createTransaction = async (transactionData) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await transactionAPI.createTransaction(transactionData);
+
+            if (response.status === 'success') {
+                toast.success('Transaksi berhasil dibuat');
+                return response.data;
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal membuat transaksi');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return {
+        createTransaction,
+        loading,
+        error
     };
 };
 
@@ -74,7 +89,7 @@ export const useTransactionInvoice = () => {
         try {
             // Validasi bookingsId sebelum request
             if (!bookingsId) {
-                showToast('error', 'ID booking tidak ditemukan');
+                toast.error('ID booking tidak ditemukan');
                 return false;
             }
 
@@ -88,7 +103,7 @@ export const useTransactionInvoice = () => {
                     : `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000'}${response.data.invoiceUrl}`;
 
                 window.open(invoiceUrl, '_blank');
-                showToast('success', 'Invoice berhasil dibuat dan akan diunduh');
+                toast.success('Invoice berhasil dibuat dan akan diunduh');
                 return true;
             }
         } catch (err) {
@@ -102,7 +117,7 @@ export const useTransactionInvoice = () => {
                 errorMessage = `${errorMessage}. Detail: ${detailErrors}`;
             }
 
-            showToast('error', errorMessage);
+            toast.error(errorMessage);
             return false;
         } finally {
             setLoading(false);

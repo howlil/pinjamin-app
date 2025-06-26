@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { buildingManagerAPI } from './buildingManagerAPI';
 
 export const useBuildingManagerManagement = (filters = {}) => {
@@ -13,8 +13,6 @@ export const useBuildingManagerManagement = (filters = {}) => {
         itemsPerPage: 10
     });
 
-    const toast = useToast();
-
     const fetchManagers = async (params = {}) => {
         setLoading(true);
         setError(null);
@@ -25,19 +23,13 @@ export const useBuildingManagerManagement = (filters = {}) => {
                 ...params
             });
 
-            if (response.status === 'success') {
+            if (response.data) {
                 setManagers(response.data || []);
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat data building manager');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat data building manager',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -64,8 +56,6 @@ export const useAvailableBuildingManagers = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const fetchAvailableManagers = async () => {
         setLoading(true);
         setError(null);
@@ -78,13 +68,7 @@ export const useAvailableBuildingManagers = () => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat data building manager tersedia');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat data building manager tersedia',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -108,8 +92,6 @@ export const useCreateBuildingManager = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const createBuildingManager = async (managerData) => {
         setLoading(true);
         setError(null);
@@ -118,24 +100,11 @@ export const useCreateBuildingManager = () => {
             const response = await buildingManagerAPI.createBuildingManager(managerData);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Building manager berhasil dibuat',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Building manager berhasil dibuat');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal membuat building manager');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal membuat building manager',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -153,8 +122,6 @@ export const useAssignBuildingManager = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const assignBuildingManager = async (assignmentData) => {
         setLoading(true);
         setError(null);
@@ -163,24 +130,11 @@ export const useAssignBuildingManager = () => {
             const response = await buildingManagerAPI.assignBuildingManager(assignmentData);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Building manager berhasil ditugaskan',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Building manager berhasil ditugaskan');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal menugaskan building manager');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal menugaskan building manager',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -198,8 +152,6 @@ export const useUpdateBuildingManager = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const updateBuildingManager = async (id, managerData) => {
         setLoading(true);
         setError(null);
@@ -208,24 +160,11 @@ export const useUpdateBuildingManager = () => {
             const response = await buildingManagerAPI.updateBuildingManager(id, managerData);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Building manager berhasil diperbarui',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Building manager berhasil diperbarui');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memperbarui building manager');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memperbarui building manager',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -243,8 +182,6 @@ export const useDeleteBuildingManager = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const deleteBuildingManager = async (id) => {
         setLoading(true);
         setError(null);
@@ -253,24 +190,11 @@ export const useDeleteBuildingManager = () => {
             const response = await buildingManagerAPI.deleteBuildingManager(id);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Building manager berhasil dihapus',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Building manager berhasil dihapus');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal menghapus building manager');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal menghapus building manager',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);

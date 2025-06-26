@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { facilityManagementAPI } from './facilityManagementAPI';
 
 export const useFacilityManagement = (filters = {}) => {
@@ -12,8 +12,6 @@ export const useFacilityManagement = (filters = {}) => {
         currentPage: 1,
         itemsPerPage: 10
     });
-
-    const toast = useToast();
 
     const fetchFacilities = async (params = {}) => {
         setLoading(true);
@@ -31,13 +29,7 @@ export const useFacilityManagement = (filters = {}) => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memuat data fasilitas');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memuat data fasilitas',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -63,8 +55,6 @@ export const useCreateFacility = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const createFacility = async (facilityData) => {
         setLoading(true);
         setError(null);
@@ -73,24 +63,11 @@ export const useCreateFacility = () => {
             const response = await facilityManagementAPI.createFacility(facilityData);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Fasilitas berhasil dibuat',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Fasilitas berhasil dibuat');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal membuat fasilitas');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal membuat fasilitas',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -108,8 +85,6 @@ export const useUpdateFacility = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const updateFacility = async (id, facilityData) => {
         setLoading(true);
         setError(null);
@@ -118,24 +93,11 @@ export const useUpdateFacility = () => {
             const response = await facilityManagementAPI.updateFacility(id, facilityData);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Fasilitas berhasil diperbarui',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Fasilitas berhasil diperbarui');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal memperbarui fasilitas');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal memperbarui fasilitas',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);
@@ -153,8 +115,6 @@ export const useDeleteFacility = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const toast = useToast();
-
     const deleteFacility = async (id) => {
         setLoading(true);
         setError(null);
@@ -163,24 +123,11 @@ export const useDeleteFacility = () => {
             const response = await facilityManagementAPI.deleteFacility(id);
 
             if (response.status === 'success') {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Fasilitas berhasil dihapus',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true
-                });
+                toast.success('Fasilitas berhasil dihapus');
                 return response.data;
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Gagal menghapus fasilitas');
-            toast({
-                title: 'Error',
-                description: err.response?.data?.message || 'Gagal menghapus fasilitas',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
             throw err;
         } finally {
             setLoading(false);

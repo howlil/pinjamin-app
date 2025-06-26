@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { bookingAPI } from './bookingAPI';
 import { useAuthStore } from '@/shared/store/authStore';
-import { showToast } from '@/shared/services/apiErrorHandler';
 
 export const useBooking = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -129,13 +129,13 @@ export const useBooking = () => {
 
     const checkAuthAndRedirect = () => {
         if (!isAuthenticated || !user) {
-            showToast('warning', 'Silakan login terlebih dahulu untuk mengajukan peminjaman');
+            toast.error('Silakan login terlebih dahulu untuk mengajukan peminjaman');
             navigate('/auth');
             return false;
         }
 
         if (user.role === 'ADMIN') {
-            showToast('error', 'Admin tidak dapat mengajukan peminjaman');
+            toast.error('Admin tidak dapat mengajukan peminjaman');
             return false;
         }
 
@@ -162,7 +162,7 @@ export const useBooking = () => {
         }
 
         if (!validateForm()) {
-            showToast('error', 'Mohon perbaiki data yang tidak valid');
+            toast.error('Mohon perbaiki data yang tidak valid');
             return false;
         }
 
@@ -172,7 +172,7 @@ export const useBooking = () => {
             const response = await bookingAPI.createBooking(submissionData);
 
             if (response.status === 'success') {
-                showToast('success', 'Peminjaman berhasil diajukan. Anda akan diarahkan ke halaman pembayaran.');
+                toast.success('Peminjaman berhasil diajukan. Anda akan diarahkan ke halaman pembayaran.');
 
                 resetForm();
 
@@ -195,7 +195,7 @@ export const useBooking = () => {
                 const errorMessages = error.response.data.errors.map(err => err.message);
                 const allErrorMessages = errorMessages.join(', ');
 
-                showToast('error', `Data form tidak valid: ${allErrorMessages}`);
+                toast.error(`Data form tidak valid: ${allErrorMessages}`);
 
                 // Set field errors
                 const apiErrors = {};
@@ -205,7 +205,7 @@ export const useBooking = () => {
                 setErrors(prev => ({ ...prev, ...apiErrors }));
             } else {
                 const errorMessage = error.response?.data?.message || 'Gagal mengajukan peminjaman';
-                showToast('error', errorMessage);
+                toast.error(errorMessage);
             }
 
             return false;
@@ -282,7 +282,7 @@ export const useBookingHistory = () => {
                 }
             }
         } catch (error) {
-            showToast('error', error.response?.data?.message || 'Gagal memuat riwayat peminjaman');
+            toast.error(error.response?.data?.message || 'Gagal memuat riwayat peminjaman');
         } finally {
             setLoading(false);
         }
@@ -293,5 +293,67 @@ export const useBookingHistory = () => {
         loading,
         pagination,
         fetchBookingHistory
+    };
+};
+
+export const useCreateBooking = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
+    const createBooking = async (bookingData) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await bookingAPI.createBooking(bookingData);
+
+            if (response.status === 'success') {
+                toast.success('Booking berhasil dibuat');
+                navigate('/schedule');
+                return response.data;
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal membuat booking');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return {
+        createBooking,
+        loading,
+        error
+    };
+};
+
+export const useBookingRefund = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const processRefund = async (bookingId, refundData) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await bookingAPI.processRefund(bookingId, refundData);
+
+            if (response.status === 'success') {
+                toast.success('Refund berhasil diproses');
+                return response.data;
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal memproses refund');
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return {
+        processRefund,
+        loading,
+        error
     };
 }; 

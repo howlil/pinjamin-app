@@ -1,11 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useToast } from '@chakra-ui/react';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../shared/store/authStore';
 
 const ProtectedRoute = ({ children, requiredRoles = [], redirectTo = '/login', allowedForAuthenticated = true }) => {
     const { isAuthenticated, token, user } = useAuthStore();
     const location = useLocation();
-    const toast = useToast();
 
     if (!isAuthenticated || !token) {
         return <Navigate to={redirectTo} state={{ from: location }} replace />;
@@ -21,14 +20,7 @@ const ProtectedRoute = ({ children, requiredRoles = [], redirectTo = '/login', a
         const hasRequiredRole = requiredRoles.includes(userRole);
 
         if (!hasRequiredRole) {
-            // Show unauthorized toast
-            toast({
-                title: "Akses Ditolak",
-                description: "Anda tidak memiliki izin untuk mengakses halaman ini",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
+            toast.error("Anda tidak memiliki izin untuk mengakses halaman ini");
 
             // Redirect based on user role
             const defaultRedirect = userRole === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
