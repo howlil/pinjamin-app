@@ -1,0 +1,242 @@
+{
+    "project_info": {
+      "name": "Express.js API Generator",
+      "description": "Prompt untuk generate API Express.js dengan struktur yang konsisten dan modular",
+      "framework": "Express.js",
+      "architecture": "Layered Architecture (Controller-Service-Repository Pattern)",
+      "database": "MySQL dengan Prisma ORM"
+    },
+    "folder_structure": {
+      "src/": {
+        "controllers/": "HTTP request handlers yang memanggil services dan mengembalikan response",
+        "services/": "Business logic dan data processing",
+        "routes/": "Definisi endpoint dan routing dengan middleware",
+        "validations/": "Input validation schemas menggunakan Joi",
+        "middlewares/": "Authentication, authorization, dan validation middleware",
+        "libs/": "Utility functions dan external integrations"
+      },
+      "prisma/": "Database schema dan migrations",
+      "uploads/": "File storage untuk documents dan images"
+    },
+    "code_patterns": {
+      "controller_pattern": {
+        "structure": {
+          "imports": [
+            "const ServiceName = require('../services/[name].service');",
+            "const ResponseHelper = require('../libs/response.lib');",
+            "const logger = require('../libs/logger.lib');"
+          ],
+          "export_pattern": "const ControllerName = { methodName: async (req, res) => { /* implementation */ } }; module.exports = ControllerName;",
+          "method_structure": {
+            "try_catch": "Selalu gunakan try-catch wrapper",
+            "input_extraction": "Extract parameter dari req.body, req.params, req.query, req.user",
+            "service_call": "Panggil service method dengan parameter yang sesuai",
+            "response": "Gunakan ResponseHelper untuk return response",
+            "error_handling": "Log error dengan logger dan return appropriate error response"
+          },
+          "response_methods": {
+            "success": "ResponseHelper.success(res, message, data, statusCode)",
+            "created": "ResponseHelper.created(res, message, data)",
+            "error": "ResponseHelper.error(res, message, statusCode)",
+            "badRequest": "ResponseHelper.badRequest(res, message)",
+            "unauthorized": "ResponseHelper.unauthorized(res, message)",
+            "forbidden": "ResponseHelper.forbidden(res, message)",
+            "notFound": "ResponseHelper.notFound(res, message)",
+            "conflict": "ResponseHelper.conflict(res, message)"
+          }
+        }
+      },
+      "service_pattern": {
+        "structure": {
+          "imports": [
+            "const prisma = require('../libs/database.lib');",
+            "const logger = require('../libs/logger.lib');",
+            "const { v4: uuidv4 } = require('uuid');"
+          ],
+          "export_pattern": "const ServiceName = { methodName: async (params) => { /* implementation */ } }; module.exports = ServiceName;",
+          "method_structure": {
+            "try_catch": "Gunakan try-catch dengan logger.error",
+            "validation": "Validasi input parameters",
+            "database_operations": "Gunakan Prisma untuk database operations",
+            "business_logic": "Implementasi business rules dan data processing",
+            "error_throwing": "Throw specific error messages untuk error handling di controller"
+          },
+          "prisma_patterns": {
+            "create": "await prisma.model.create({ data: { id: uuidv4(), ...data } })",
+            "findUnique": "await prisma.model.findUnique({ where: { id }, select: { ...fields } })",
+            "findMany": "await prisma.model.findMany({ where: conditions, include: relations })",
+            "update": "await prisma.model.update({ where: { id }, data: updateData })",
+            "delete": "await prisma.model.delete({ where: { id } })"
+          }
+        }
+      },
+      "route_pattern": {
+        "structure": {
+          "imports": [
+            "const express = require('express');",
+            "const ControllerName = require('../controllers/[name].controller');",
+            "const ValidationMiddleware = require('../middlewares/validation.middleware');",
+            "const ValidationSchema = require('../validations/[name].validation');",
+            "const AuthMiddleware = require('../middlewares/auth.middleware');"
+          ],
+          "router_setup": "const router = express.Router();",
+          "route_definition": "router.method('/path', [middlewares], ControllerName.methodName);",
+          "export": "module.exports = router;"
+        },
+        "middleware_usage": {
+          "authentication": "AuthMiddleware.authenticate",
+          "authorization": "AuthMiddleware.requireAdmin, AuthMiddleware.requireBorrower",
+          "validation": "ValidationMiddleware.validate(ValidationSchema.schemaName)",
+          "file_upload": "multer middleware untuk file upload"
+        }
+      },
+      "validation_pattern": {
+        "structure": {
+          "import": "const Joi = require('joi');",
+          "schema_definition": "schemaName: Joi.object({ field: Joi.type().rules().messages({}) })",
+          "export": "const ValidationName = { schemas... }; module.exports = ValidationName;"
+        },
+        "common_validations": {
+          "uuid": "Joi.string().uuid().required()",
+          "email": "Joi.string().email().required()",
+          "password": "Joi.string().min(8).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])/).required()",
+          "phone": "Joi.string().pattern(/^08[0-9]{8,16}$/).required()",
+          "required_string": "Joi.string().min(1).max(255).required()",
+          "optional_string": "Joi.string().min(1).max(255).optional()",
+          "enum": "Joi.string().valid('VALUE1', 'VALUE2').required()",
+          "date": "Joi.string().pattern(/^\\d{4}-\\d{2}-\\d{2}$/).required()",
+          "time": "Joi.string().pattern(/^\\d{2}:\\d{2}$/).required()"
+        },
+        "custom_messages": "Selalu sediakan custom error messages untuk setiap validation rule"
+      },
+      "middleware_pattern": {
+        "authentication": {
+          "authenticate": "Verify JWT token and attach user to req.user",
+          "requireAdmin": "Check if user role is ADMIN",
+          "requireBorrower": "Check if user role is BORROWER",
+          "optionalAuth": "Optional authentication yang tidak fail jika no token"
+        },
+        "validation": {
+          "validate": "Middleware function yang menerima Joi schema dan validate req.body"
+        }
+      }
+    },
+    "naming_conventions": {
+      "files": {
+        "controllers": "[entity].controller.js",
+        "services": "[entity].service.js",
+        "routes": "[entity].routes.js",
+        "validations": "[entity].validation.js",
+        "middlewares": "[purpose].middleware.js",
+        "libs": "[purpose].lib.js"
+      },
+      "variables": {
+        "camelCase": "untuk variable names, function names, property names",
+        "PascalCase": "untuk class names, constructor functions",
+        "UPPER_CASE": "untuk constants dan enum values"
+      },
+      "database": {
+        "table_names": "PascalCase (User, Booking, Payment)",
+        "field_names": "camelCase (fullName, phoneNumber, createdAt)",
+        "enum_names": "UPPER_CASE (USER_TYPE, BOOKING_STATUS)"
+      }
+    },
+    "response_standards": {
+      "success_format": {
+        "status": "success",
+        "message": "Descriptive success message",
+        "data": "Response data (optional)"
+      },
+      "error_format": {
+        "status": "error",
+        "message": "Descriptive error message",
+        "errors": "Detailed errors (optional)"
+      },
+      "pagination_format": {
+        "status": "success",
+        "message": "Success message",
+        "data": "Array of items",
+        "pagination": {
+          "totalItems": "number",
+          "totalPages": "number",
+          "currentPage": "number",
+          "itemsPerPage": "number"
+        }
+      }
+    },
+    "error_handling": {
+      "controller_level": "Catch errors dari service, log dengan logger, return appropriate HTTP response",
+      "service_level": "Throw specific error messages yang akan di-handle oleh controller",
+      "common_errors": {
+        "validation": "400 Bad Request dengan detail validation errors",
+        "authentication": "401 Unauthorized",
+        "authorization": "403 Forbidden",
+        "not_found": "404 Not Found",
+        "conflict": "409 Conflict (duplicate data)",
+        "server_error": "500 Internal Server Error"
+      }
+    },
+    "database_patterns": {
+      "prisma_schema": {
+        "model_definition": "model ModelName { id String @id @default(uuid()), createdAt DateTime @default(now()), updatedAt DateTime @updatedAt }",
+        "relationships": "Gunakan proper foreign keys dan relations",
+        "enums": "Define enums untuk status fields"
+      },
+      "common_fields": {
+        "id": "String @id @default(uuid())",
+        "createdAt": "DateTime @default(now())",
+        "updatedAt": "DateTime @updatedAt",
+        "status_fields": "Gunakan enum types untuk status"
+      }
+    },
+    "security_best_practices": {
+      "authentication": "JWT tokens dengan database storage untuk validation",
+      "password_hashing": "bcryptjs dengan salt rounds 12",
+      "input_validation": "Joi validation untuk semua input",
+      "error_messages": "Tidak expose sensitive information di error messages",
+      "file_upload": "Validate file types dan sizes",
+      "rate_limiting": "Implement rate limiting berdasarkan user role"
+    },
+    "code_generation_instructions": {
+      "when_creating_new_api": [
+        "1. Buat Prisma model di schema.prisma jika diperlukan",
+        "2. Generate dan jalankan migration",
+        "3. Buat validation schema dengan Joi",
+        "4. Buat service dengan business logic",
+        "5. Buat controller yang menggunakan service",
+        "6. Buat routes dengan proper middleware",
+        "7. Registrasi routes di src/routes/index.js",
+        "8. Update Swagger documentation jika diperlukan"
+      ],
+      "code_quality": [
+        "Gunakan async/await untuk semua async operations",
+        "Selalu handle errors dengan proper try-catch",
+        "Log semua errors untuk debugging",
+        "Gunakan meaningful variable dan function names",
+        "Konsisten dengan existing code style",
+        "Tambahkan comments untuk complex business logic"
+      ],
+      "testing_considerations": [
+        "Controller harus mudah di-test dengan mock services",
+        "Service methods harus pure functions sebisa mungkin",
+        "Validation schemas harus comprehensive",
+        "Error cases harus ter-handle dengan baik"
+      ]
+    },
+    "external_integrations": {
+      "available_libs": {
+        "response.lib.js": "Standard response formatting",
+        "jwt.lib.js": "JWT token operations",
+        "database.lib.js": "Prisma client instance",
+        "logger.lib.js": "Winston logging",
+        "multer.lib.js": "File upload handling",
+        "xendit.lib.js": "Payment gateway integration",
+        "pusher.lib.js": "Real-time notifications"
+      }
+    },
+    "example_usage": {
+      "input_format": "Berikan API specification, ERD, dan business logic requirements",
+      "output_expectation": "Generate complete API dengan semua files (controller, service, routes, validation) yang mengikuti pattern di atas",
+      "customization": "AI agent harus bisa adapt pattern ini untuk berbagai jenis entity dan business requirements"
+    }
+  }

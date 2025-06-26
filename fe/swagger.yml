@@ -44,6 +44,36 @@ tags:
     description: Building manager management operations
 
 paths:
+  /:
+    get:
+      summary: Redirect to API documentation
+      tags: [General]
+      responses:
+        '302':
+          description: Redirect to /api-docs
+
+  /health:
+    get:
+      summary: Health check endpoint
+      tags: [General]
+      responses:
+        '200':
+          description: API health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "API is running"
+                  timestamp:
+                    type: string
+                    format: date-time
+
   /api/v1:
     get:
       summary: Get API information
@@ -73,100 +103,6 @@ paths:
                           timestamp:
                             type: string
                             format: date-time
-
-  # Test endpoints for API Testing
-  /api/v1/test:
-    get:
-      summary: Test endpoint to verify API is working
-      tags: [General]
-      responses:
-        '200':
-          description: API is working properly
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          message:
-                            type: string
-                            example: "API is working properly"
-                          timestamp:
-                            type: string
-                            format: date-time
-                            example: "2023-06-25T10:00:00Z"
-    
-  /api/v1/test/secured:
-    get:
-      summary: Test endpoint to verify authentication is working
-      tags: [General]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Authentication is working properly
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          message:
-                            type: string
-                            example: "Authentication is working properly"
-                          user:
-                            $ref: '#/components/schemas/User'
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-    
-  /api/v1/test/admin:
-    get:
-      summary: Test endpoint to verify admin authorization is working
-      tags: [General]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Admin authorization is working properly
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          message:
-                            type: string
-                            example: "Admin authorization is working properly"
-                          user:
-                            $ref: '#/components/schemas/User'
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Forbidden - Admin access required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/auth/register:
     post:
@@ -734,7 +670,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/buildings/admin:
+  /api/v1/buildings/admin/list:
     get:
       summary: Get all buildings (Admin view with additional details)
       tags: [Admin - Buildings]
@@ -810,6 +746,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/buildings/admin:
     post:
       summary: Create a new building
       tags: [Admin - Buildings]
@@ -825,7 +763,7 @@ paths:
               properties:
                 buildingName:
                   type: string
-                  minLength: 2
+                  minLength: 3
                   maxLength: 100
                   example: "Conference Room A"
                 description:
@@ -835,7 +773,7 @@ paths:
                   example: "Modern conference room with projector and air conditioning"
                 rentalPrice:
                   type: number
-                  minimum: 0
+                  minimum: 1000
                   example: 500000
                 capacity:
                   type: integer
@@ -849,27 +787,17 @@ paths:
                 buildingType:
                   type: string
                   enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
-                image:
+                buildingPhoto:
                   type: string
                   format: binary
                   description: Building image file (jpg, jpeg, png, gif)
-                facilityIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: string
-                        format: uuid
-                    - type: string
-                  description: Array of facility IDs or JSON string array of facility IDs to associate with this building. Use GET /facilities to get available facility IDs.
+                facilities:
+                  type: string
+                  description: JSON string array of facility IDs to associate with this building
                   example: '["123e4567-e89b-12d3-a456-426614174000", "456e7890-e89b-12d3-a456-426614174001"]'
-                buildingManagerIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: string
-                        format: uuid
-                    - type: string
-                  description: Array of building manager IDs or JSON string array of building manager IDs to assign to this building. Use GET /building-managers/available to get available manager IDs.
+                buildingManagers:
+                  type: string
+                  description: JSON string array of building manager IDs to assign to this building
                   example: '["789e0123-e89b-12d3-a456-426614174002", "012e3456-e89b-12d3-a456-426614174003"]'
       responses:
         '201':
@@ -951,27 +879,17 @@ paths:
                 buildingType:
                   type: string
                   enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
-                image:
+                buildingPhoto:
                   type: string
                   format: binary
                   description: Building image file (jpg, jpeg, png, gif)
-                facilityIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: string
-                        format: uuid
-                    - type: string
-                  description: Array of facility IDs or JSON string array of facility IDs to associate with this building. Use GET /facilities to get available facility IDs.
+                facilities:
+                  type: string
+                  description: JSON string array of facility IDs to associate with this building. Use GET /facilities to get available facility IDs.
                   example: '["123e4567-e89b-12d3-a456-426614174000", "456e7890-e89b-12d3-a456-426614174001"]'
-                buildingManagerIds:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: string
-                        format: uuid
-                    - type: string
-                  description: Array of building manager IDs or JSON string array of building manager IDs to assign to this building. Use GET /building-managers/available to get available manager IDs. Use empty array to unassign all.
+                buildingManagers:
+                  type: string
+                  description: JSON string array of building manager IDs to assign to this building. Use GET /building-managers/available to get available manager IDs. Use empty array to unassign all.
                   example: '["789e0123-e89b-12d3-a456-426614174002"]'
       responses:
         '200':
@@ -1547,7 +1465,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/bookings/admin:
+  /api/v1/bookings/admin/list:
     get:
       summary: Get pending bookings (Admin) - Only shows PROCESSING status bookings
       tags: [Admin - Bookings]
@@ -1655,7 +1573,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/bookings/{id}/approval:
+  /api/v1/bookings/admin/{id}/approval:
     patch:
       summary: Approve or reject a booking (Admin)
       tags: [Admin - Bookings]
@@ -2969,7 +2887,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/bookings/{id}/refund:
+  /api/v1/transactions/{id}/invoice:
+    get:
+      summary: Generate invoice for a transaction
+      tags: [Transactions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Transaction ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Invoice generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          invoiceUrl:
+                            type: string
+                            description: URL to download invoice
+                            example: "/uploads/exports/invoice_transaction_123e4567.pdf"
+        '400':
+          description: Invalid transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Can only generate invoice for own transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transaction not found or transaction not paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/admin/{id}/refund:
     post:
       summary: Process refund for a booking (Admin)
       tags: [Admin - Bookings]
@@ -3085,7 +3060,7 @@ components:
         phoneNumber:
           type: string
           description: Phone number of the user
-          example: '+62812345678'
+          example: '081234567890'
         bankName:
           type: string
           description: Bank name for payment
@@ -3123,7 +3098,7 @@ components:
           description: Description of the building
           example: 'Modern conference room with projector and air conditioning'
         rentalPrice:
-          type: number
+          type: integer
           description: Rental price per session
           example: 500000
         capacity:
@@ -3138,9 +3113,9 @@ components:
           type: string
           enum: ['CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR']
           description: Type of building
-        imageUrl:
+        buildingPhoto:
           type: string
-          description: URL of building image
+          description: URL of building photo
           example: 'https://example.com/image.jpg'
         facilities:
           type: array
@@ -3193,15 +3168,23 @@ components:
         phoneNumber:
           type: string
           description: Phone number of the manager
-          example: '+62812345679'
+          example: '081234567890'
         buildingId:
           type: string
           format: uuid
-          description: ID of the associated building
-        buildingName:
-          type: string
-          description: Name of the associated building
-          example: 'Conference Room A'
+          nullable: true
+          description: ID of the associated building (can be null if not assigned)
+        building:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            buildingName:
+              type: string
+              example: 'Conference Room A'
+          description: Associated building details (null if not assigned)
         createdAt:
           type: string
           format: date-time
@@ -3216,6 +3199,11 @@ components:
           type: string
           format: uuid
           description: Unique identifier for the notification
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the user who receives the notification
         notificationType:
           type: string
           enum: ['PAYMENT', 'BOOKING']
@@ -3239,7 +3227,152 @@ components:
         createdAt:
           type: string
           format: date-time
-          description: Notification creation timestamp 
+          description: Notification creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Notification last update timestamp
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the payment
+        xenditTransactionId:
+          type: string
+          description: Xendit transaction ID
+        bookingId:
+          type: string
+          format: uuid
+          description: Associated booking ID
+        invoiceNumber:
+          type: string
+          nullable: true
+          description: Invoice number
+        paymentDate:
+          type: string
+          description: Payment date in DD-MM-YYYY format
+        paymentAmount:
+          type: integer
+          description: Payment amount
+        totalAmount:
+          type: integer
+          description: Total amount to be paid
+        paymentMethod:
+          type: string
+          description: Payment method used
+        paymentUrl:
+          type: string
+          description: Xendit payment URL
+        snapToken:
+          type: string
+          description: Snap token for payment
+        paymentStatus:
+          type: string
+          enum: ['UNPAID', 'PAID', 'PENDING', 'SETTLED', 'EXPIRED', 'ACTIVE', 'STOPPED']
+          description: Current payment status
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Refund:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the refund
+        paymentId:
+          type: string
+          format: uuid
+          description: Associated payment ID
+        refundAmount:
+          type: integer
+          description: Amount to be refunded
+        refundStatus:
+          type: string
+          enum: ['SUCCEEDED', 'FAILED', 'PENDING']
+          description: Current refund status
+        refundReason:
+          type: string
+          description: Reason for the refund
+        xenditRefundTransactionId:
+          type: string
+          description: Xendit refund transaction ID
+        refundDate:
+          type: string
+          description: Refund date in DD-MM-YYYY format
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the booking
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the user who made the booking
+        buildingId:
+          type: string
+          format: uuid
+          description: ID of the booked building
+        activityName:
+          type: string
+          description: Name of the activity
+        startDate:
+          type: string
+          description: Start date in DD-MM-YYYY format
+        endDate:
+          type: string
+          nullable: true
+          description: End date in DD-MM-YYYY format
+        startTime:
+          type: string
+          description: Start time in HH:MM format
+        endTime:
+          type: string
+          description: End time in HH:MM format
+        proposalLetter:
+          type: string
+          description: Path to uploaded proposal letter
+        rejectionReason:
+          type: string
+          nullable: true
+          description: Reason for rejection if booking was rejected
+        bookingStatus:
+          type: string
+          enum: ['PROCESSING', 'APPROVED', 'REJECTED', 'COMPLETED']
+          description: Current booking status
+        payment:
+          allOf:
+            - $ref: '#/components/schemas/Payment'
+          nullable: true
+        user:
+          allOf:
+            - $ref: '#/components/schemas/User'
+          nullable: true
+        building:
+          $ref: '#/components/schemas/Building'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time 
 
     ApiResponse:
       type: object
@@ -3270,7 +3403,7 @@ components:
         message:
           type: string
           description: Error message
-          example: 'Validation failed'
+          example: 'Data tidak valid'
         errors:
           type: array
           items:
@@ -3279,10 +3412,12 @@ components:
               field:
                 type: string
                 description: Field that caused the error
+                example: 'email'
               message:
                 type: string
                 description: Detailed error message
-          description: Detailed validation errors
+                example: 'Email is required'
+          description: Detailed validation errors (only present for validation errors)
           example:
             - field: 'email'
               message: 'Email is required'
@@ -3303,25 +3438,36 @@ components:
         email:
           type: string
           format: email
-          example: 'john.doe@example.com'
+          example: 'john.doe@unand.id'
+          description: For INTERNAL_UNAND, email must use @unand.id domain
         password:
           type: string
           format: password
           minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])'
           example: 'Password123!'
+          description: Must contain at least one lowercase letter, one uppercase letter, one number, and one special character
         borrowerType:
           type: string
           enum: ['INTERNAL_UNAND', 'EXTERNAL_UNAND']
           example: 'INTERNAL_UNAND'
         phoneNumber:
           type: string
-          example: '+62812345678'
+          pattern: '^08[0-9]{8,16}$'
+          example: '081234567890'
+          description: Phone number must start with 08 and contain 10-18 digits
         bankName:
           type: string
+          minLength: 2
+          maxLength: 50
           example: 'Bank BCA'
         bankNumber:
           type: string
+          pattern: '^[0-9]+$'
+          minLength: 8
+          maxLength: 20
           example: '1234567890'
+          description: Bank number must contain only digits
       required:
         - fullName
         - email

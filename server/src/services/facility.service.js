@@ -1,119 +1,167 @@
-const { prisma } = require('../configs');
-const { ErrorHandler, Logger } = require('../utils');
+const { v4: uuidv4 } = require('uuid');
+const prisma = require('../libs/database.lib');
+const logger = require('../libs/logger.lib');
 
 const FacilityService = {
-    async getAllFacilities(page = 1, limit = 10) {
+    // Get all facilities with pagination
+    async getFacilities(pagination) {
         try {
-            // Calculate offset
-            const offset = (page - 1) * limit;
+            const { page = 1, limit = 10 } = pagination;
+            const skip = (page - 1) * limit;
 
-            // Get total count
-            const totalItems = await prisma.facility.count();
-
-            // Get facilities
-            const facilities = await prisma.facility.findMany({
-                orderBy: {
-                    createdAt: 'desc'
-                },
-                skip: offset,
-                take: limit
-            });
-
-            // Calculate pagination data
-            const totalPages = Math.ceil(totalItems / limit);
+            const [facilities, totalItems] = await Promise.all([
+                prisma.facility.findMany({
+                    select: {
+                        id: true,
+                        facilityName: true,
+                        iconUrl: true,
+                        createdAt: true,
+                        updatedAt: true
+                    },
+                    orderBy: {
+                        facilityName: 'asc'
+                    },
+                    skip,
+                    take: limit
+                }),
+                prisma.facility.count()
+            ]);
 
             return {
-                data: facilities,
-                pagination: {
-                    totalItems,
-                    totalPages,
-                    currentPage: page,
-                    itemsPerPage: limit
-                }
+                facilities,
+                totalItems,
+                totalPages: Math.ceil(totalItems / limit),
+                currentPage: parseInt(page),
+                itemsPerPage: parseInt(limit)
             };
         } catch (error) {
-            Logger.error('Error getting all facilities:', error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to get facilities');
+            logger.error('Get facilities service error:', error);
+            throw error;
         }
     },
 
-
-
+    // Create facility
     async createFacility(facilityData) {
         try {
             const { facilityName, iconUrl } = facilityData;
 
-            // Create the facility
-            const newFacility = await prisma.facility.create({
+            // Check if facility with same name already exists
+            const existingFacility = await prisma.facility.findFirst({
+                where: { facilityName }
+            });
+
+            if (existingFacility) {
+                throw new Error('Fasilitas dengan nama tersebut sudah ada');
+            }
+
+            const facilityId = uuidv4();
+
+            const facility = await prisma.facility.create({
                 data: {
+                    id: facilityId,
                     facilityName,
-                    iconUrl
+                    iconUrl: iconUrl || null
                 }
             });
 
-            return newFacility;
+            logger.info(`Facility created: ${facilityId}`);
+
+            return {
+                id: facility.id,
+                facilityName: facility.facilityName,
+                iconUrl: facility.iconUrl,
+                createdAt: facility.createdAt,
+                updatedAt: facility.updatedAt
+            };
         } catch (error) {
-            Logger.error('Error creating facility:', error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to create facility');
+            logger.error('Create facility service error:', error);
+            throw error;
         }
     },
 
-    async updateFacility(id, updateData) {
+    // Update facility
+    async updateFacility(facilityId, facilityData) {
         try {
-            // Check if facility exists
             const existingFacility = await prisma.facility.findUnique({
-                where: { id }
+                where: { id: facilityId }
             });
 
             if (!existingFacility) {
-                throw ErrorHandler.notFound(`Facility with ID ${id} not found`);
+                throw new Error('Fasilitas tidak ditemukan');
             }
 
-            // Update the facility
+            const { facilityName, iconUrl } = facilityData;
+
+            // Check if another facility with same name exists
+            if (facilityName && facilityName !== existingFacility.facilityName) {
+                const duplicateFacility = await prisma.facility.findFirst({
+                    where: {
+                        facilityName,
+                        id: { not: facilityId }
+                    }
+                });
+
+                if (duplicateFacility) {
+                    throw new Error('Fasilitas dengan nama tersebut sudah ada');
+                }
+            }
+
+            const updateData = {};
+            if (facilityName) updateData.facilityName = facilityName;
+            if (iconUrl !== undefined) updateData.iconUrl = iconUrl;
+
             const updatedFacility = await prisma.facility.update({
-                where: { id },
+                where: { id: facilityId },
                 data: updateData
             });
 
-            return updatedFacility;
+            logger.info(`Facility updated: ${facilityId}`);
+
+            return {
+                id: updatedFacility.id,
+                facilityName: updatedFacility.facilityName,
+                iconUrl: updatedFacility.iconUrl,
+                createdAt: updatedFacility.createdAt,
+                updatedAt: updatedFacility.updatedAt
+            };
         } catch (error) {
-            Logger.error(`Error updating facility with ID ${id}:`, error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to update facility');
+            logger.error('Update facility service error:', error);
+            throw error;
         }
     },
 
-    async deleteFacility(id) {
+    // Delete facility
+    async deleteFacility(facilityId) {
         try {
-            // Check if facility exists and get its data
             const existingFacility = await prisma.facility.findUnique({
-                where: { id },
+                where: { id: facilityId },
                 include: {
                     facilityBuilding: true
                 }
             });
 
             if (!existingFacility) {
-                throw ErrorHandler.notFound(`Facility with ID ${id} not found`);
+                throw new Error('Fasilitas tidak ditemukan');
             }
 
-            // Check if facility is associated with any buildings
+            // Check if facility is being used by any building
             if (existingFacility.facilityBuilding.length > 0) {
-                throw ErrorHandler.badRequest(`Cannot delete facility as it is associated with ${existingFacility.facilityBuilding.length} building(s)`);
+                throw new Error('Fasilitas tidak bisa dihapus karena masih digunakan oleh building');
             }
 
-            // Delete the facility
             await prisma.facility.delete({
-                where: { id }
+                where: { id: facilityId }
             });
 
-            return { success: true };
+            logger.info(`Facility deleted: ${facilityId}`);
+
+            return {
+                id: facilityId,
+                facilityName: existingFacility.facilityName
+            };
         } catch (error) {
-            Logger.error(`Error deleting facility with ID ${id}:`, error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to delete facility');
+            logger.error('Delete facility service error:', error);
+            throw error;
         }
     }
 };

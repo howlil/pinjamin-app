@@ -4,354 +4,158 @@
   "stateManagement": "Zustand",
   "design": {
     "style": "glassmorphism",
-    "theme": "dark-modern",
+    "theme": "white-modern",
     "colors": {
-      "primary": {
-        "50": "#e9f1e8",
-        "100": "#d3e3d1",
-        "200": "#bdd4ba",
-        "300": "#a7c6a3",
-        "400": "#91b88c",
-        "500": "#749c73",
-        "600": "#5f7e5e",
-        "700": "#4c6a4b",
-        "800": "#395238",
-        "900": "#263a25"
-      },
-      "secondary": {
-        "50": "#fafafa",
-        "100": "#f4f4f5",
-        "500": "#71717a",
-        "900": "#18181b"
-      },
-
-      "background": {
-        "primary": "#0a0a0a",
-        "secondary": "#111111",
-        "tertiary": "#1a1a1a",
-        "glass": "rgba(255, 255, 255, 0.05)",
-        "glassDark": "rgba(0, 0, 0, 0.3)"
-      },
-      "text": {
-        "primary": "#ffffff",
-        "secondary": "#a1a1aa",
-        "muted": "#71717a",
-        "inverse": "#000000"
-      },
-      "border": {
-        "primary": "rgba(255, 255, 255, 0.1)",
-        "secondary": "rgba(255, 255, 255, 0.05)",
-        "glass": "rgba(255, 255, 255, 0.2)"
-      },
-      "gradient": {
-        "primary": "linear-gradient(135deg, #749c73 0%, #4c6a4b 100%)",
-        "secondary": "linear-gradient(135deg, #91b88c 0%, #5f7e5e 100%)",
-        "accent": "linear-gradient(135deg, #a7c6a3 0%, #749c73 100%)",
-        "nature": "linear-gradient(135deg, #bdd4ba 0%, #91b88c 100%)",
-        "forest": "linear-gradient(135deg, #395238 0%, #263a25 100%)",
-        "emerald": "linear-gradient(135deg, #749c73 0%, #22c55e 100%)",
-        "mint": "linear-gradient(135deg, #d3e3d1 0%, #a7c6a3 100%)",
-        "ai": "linear-gradient(135deg, #749c73 0%, #4ade80 100%)",
-        "glass": "linear-gradient(135deg, rgba(116,156,115,0.1) 0%, rgba(116,156,115,0.05) 100%)",
-        "glassLight": "linear-gradient(135deg, rgba(167,198,163,0.15) 0%, rgba(116,156,115,0.08) 100%)"
-      }
+      "primary": "#21D179FF",
+      "background": "#EDFFF4FF",
+      "text": "#2A2A2AFF"
+    },
+    "color-accent": {
+      "accent": "#C8E4FF",
+      "accent-2": "#C8FFDB",
+      "accent-3": "#FFEBC8"
     },
     "typography": {
-      "fontFamily": {
-        "primary": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-        "secondary": "SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif",
-        "mono": "JetBrains Mono, Consolas, monospace"
-      },
-      "fontSize": {
-        "xs": "0.75rem",
-        "sm": "0.875rem",
-        "base": "1rem",
-        "lg": "1.125rem",
-        "xl": "1.25rem",
-        "2xl": "1.5rem",
-        "3xl": "1.875rem",
-        "4xl": "2.25rem",
-        "5xl": "3rem",
-        "6xl": "3.75rem"
-      },
-      "fontWeight": {
-        "light": 300,
-        "normal": 400,
-        "medium": 500,
-        "semibold": 600,
-        "bold": 700,
-        "extrabold": 800
-      },
-      "lineHeight": {
-        "tight": 1.25,
-        "normal": 1.5,
-        "relaxed": 1.75
-      }
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "1rem",
+      "fontWeight": "normal"
     },
     "spacing": {
       "unit": 4,
-      "scale": [0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128]
+      "scale": [
+        0,
+        4,
+        8,
+        12,
+        16
+      ]
     },
     "cornerRadius": {
-      "none": 0,
-      "sm": 4,
-      "default": 8,
-      "md": 12,
-      "lg": 16,
-      "xl": 20,
-      "2xl": 24,
-      "3xl": 32,
-      "full": 9999
-    },
-    "effects": {
-      "glass": {
-        "primary": {
-          "background": "rgba(255, 255, 255, 0.05)",
-          "backdropFilter": "blur(20px)",
-          "border": "1px solid rgba(255, 255, 255, 0.1)",
-          "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.3)"
-        },
-        "secondary": {
-          "background": "rgba(255, 255, 255, 0.03)",
-          "backdropFilter": "blur(16px)",
-          "border": "1px solid rgba(255, 255, 255, 0.05)",
-          "boxShadow": "0 4px 24px rgba(0, 0, 0, 0.2)"
-        },
-        "elevated": {
-          "background": "rgba(255, 255, 255, 0.08)",
-          "backdropFilter": "blur(24px)",
-          "border": "1px solid rgba(255, 255, 255, 0.15)",
-          "boxShadow": "0 12px 40px rgba(0, 0, 0, 0.4)"
-        }
+      "rules": {
+        "default": 24,
+        "full": 9999
       },
-      "shadow": {
-        "sm": "0 2px 8px rgba(0, 0, 0, 0.1)",
-        "default": "0 4px 16px rgba(0, 0, 0, 0.15)",
-        "lg": "0 8px 24px rgba(0, 0, 0, 0.2)",
-        "xl": "0 12px 32px rgba(0, 0, 0, 0.25)",
-        "glow": "0 0 20px rgba(99, 102, 241, 0.3)"
-      },
-      "transition": {
-        "fast": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
-        "normal": "250ms cubic-bezier(0.4, 0, 0.2, 1)",
-        "slow": "350ms cubic-bezier(0.4, 0, 0.2, 1)"
-      }
-    },
-    "animationLibrary": "framer-motion",
-    "iconLibrary": "lucide-react",
-    "defaultAnimation": {
-      "initial": { "opacity": 0, "y": 20 },
-      "animate": { "opacity": 1, "y": 0, "transition": { "duration": 0.4, "ease": "easeOut" } },
-      "exit": { "opacity": 0, "y": -20, "transition": { "duration": 0.3 } }
-    },
-    "pageTransitions": {
-      "slideUp": {
-        "initial": { "opacity": 0, "y": 100 },
-        "animate": { "opacity": 1, "y": 0, "transition": { "duration": 0.5, "ease": "easeOut" } },
-        "exit": { "opacity": 0, "y": -100, "transition": { "duration": 0.3 } }
-      },
-      "fade": {
-        "initial": { "opacity": 0 },
-        "animate": { "opacity": 1, "transition": { "duration": 0.6 } },
-        "exit": { "opacity": 0, "transition": { "duration": 0.3 } }
-      },
-      "scale": {
-        "initial": { "opacity": 0, "scale": 0.95 },
-        "animate": { "opacity": 1, "scale": 1, "transition": { "duration": 0.4 } },
-        "exit": { "opacity": 0, "scale": 1.05, "transition": { "duration": 0.3 } }
+      "rules-for-components": {
+        "default": [
+          "cards",
+          "modal",
+          "form",
+          "table"
+        ],
+        "full": [
+          "input",
+          "button"
+        ]
       }
     }
   },
-  "folderStructure": {
-    "src": {
-      "assets": {
-        "images": {},
-        "icons": {},
-        "animations": {}
-      },
+  "example-structure": {
+    "features": {
+      "auth": {
+        "components": [
+          "LoginForm.js",
+          "RegisterForm.js"
+        ],
+        "api": [
+          "useAuth.js",
+          "authService.js",
+          "authStore.js (if necessary)",
+          "authValidation.js"
+        ],
+        "AuthPage.js": "AuthPage.js"
+      }
+    },
+    "shared": {
       "components": {
-        "navigation": {
-          "Header": {
-            "file": "Header.js",
-            "features": ["glassmorphism", "sticky", "responsive"],
-            "animation": {
-              "initial": { "y": -80, "opacity": 0 },
-              "animate": { "y": 0, "opacity": 1, "transition": { "duration": 0.5 } }
-            }
-          },
-          "Sidebar": {
-            "file": "Sidebar.js",
-            "features": ["collapsible", "glass-effect", "smooth-transitions"],
-            "animation": {
-              "initial": { "x": -280, "opacity": 0 },
-              "animate": { "x": 0, "opacity": 1, "transition": { "duration": 0.4 } }
-            }
-          },
-          "Breadcrumb": {
-            "file": "Breadcrumb.js",
-            "animation": {
-              "initial": { "opacity": 0 },
-              "animate": { "opacity": 1, "transition": { "staggerChildren": 0.1 } }
-            }
-          },
-          "TabNavigation": {
-            "file": "TabNavigation.js",
-            "features": ["glass-indicator", "smooth-slide"]
-          }
-        },
-        "dashboard": {
-          "DashboardGrid": {
-            "file": "DashboardGrid.js",
-            "features": ["drag-drop", "responsive-grid", "glass-widgets"]
-          },
-          "MetricCard": {
-            "file": "MetricCard.js",
-            "variants": ["simple", "detailed", "trending"],
-            "animation": {
-              "initial": { "scale": 0.9, "opacity": 0 },
-              "animate": { "scale": 1, "opacity": 1, "transition": { "duration": 0.3 } },
-              "whileHover": { "scale": 1.02 }
-            }
-          },
-          "Chart": {
-            "file": "Chart.js",
-            "types": ["line", "bar", "pie", "area", "heatmap"],
-            "features": ["interactive", "real-time", "glass-overlay"]
-          }
-        },
-        "layout": {
-          "Container": {
-            "file": "Container.js",
-            "variants": ["full", "constrained", "centered"]
-          },
-          "Grid": {
-            "file": "Grid.js",
-            "features": ["responsive", "gap-control", "auto-fit"]
-          },
-          "Section": {
-            "file": "Section.js",
-            "variants": ["hero", "feature", "pricing", "testimonial"]
-          }
+        "Button.js": "Button.js",
+        "Modal.js": "Modal.js"
+      },
+      "services": {
+        "apiClient.js": {
+          "file": "apiClient.js",
+          "functions": [
+            "get",
+            "post",
+            "patch",
+            "delete"
+          ]
         }
       },
       "hooks": {
-        "useAnimation": "useAnimation.js",
-        "useGlass": "useGlass.js",
-        "useTheme": "useTheme.js",
-        "useResponsive": "useResponsive.js"
-      },
-      "routes": {
-        "index.js": "Main router with protected routes and page transitions",
-        "ProtectedRoute.js": "HOC for route protection with smooth redirects"
-      },
-      "services": {
-        "api": {
-          "auth": "authService.js",
-          "user": "userService.js"
-        },
-        "notification": "notificationService.js"
+        "useLocalStorage.js": "useLocalStorage.js"
       },
       "utils": {
-        "helpers": "helpers.js",
-        "validators": "validators.js",
-        "animations": "animationUtils.js",
-        "glassmorphism": "glassmorphismUtils.js",
-        "responsive": "responsiveUtils.js"
-      },
-      "store": {
-        "authStore": "authStore.js",
-        "uiStore": "uiStore.js",
-        "dataStore": "dataStore.js",
-        "settingsStore": "settingsStore.js"
+        "helpers.js": "helpers.js",
+        "theme.js": "theme.js",
+        "designTokens.js": "designTokens.js"
       }
+    },
+    "routes": {
+      "index.js": "Main router with protected routes"
     }
+  },
+  "importAlias": {
+    "@components": "./src/components",
+    "@services": "./src/services",
+    "@hooks": "./src/hooks",
+    "@utils": "./src/utils",
+    "@styles": "./src/styles"
   },
   "codingStandards": {
     "variableNaming": {
-      "camelCase": true,
-      "descriptive": true,
-      "constants": "UPPER_SNAKE_CASE"
+      "camelCase": true
     },
     "designPrinciples": {
       "modularDesign": true,
-      "avoidOverengineering": true,
       "KISS": true,
       "DRY": true,
-      "YAGNI": true,
-      "noSpaghettiCode": true,
-      "atomicDesign": true,
-      "designSystemFirst": true
+      "YAGNI": true
     },
     "UI/UX": {
       "glassmorphism": {
-        "consistentBlur": "Always use standardized blur values",
-        "layeredTransparency": "Use multiple transparency layers for depth",
-        "subtleBorders": "Always include subtle border highlights",
-        "consistentSpacing": "Maintain consistent internal spacing"
-      },
-      "accessibility": {
-        "colorContrast": "Minimum 4.5:1 ratio",
-        "focusIndicators": "Clear focus states for all interactive elements",
-        "semanticHTML": "Use proper HTML5 semantic elements",
-        "screenReaderSupport": "Include proper ARIA labels"
-      },
-      "responsiveDesign": {
-        "mobileFirst": true,
-        "breakpoints": {
-          "sm": "640px",
-          "md": "768px",
-          "lg": "1024px",
-          "xl": "1280px",
-          "2xl": "1536px"
+        "consistentBlur": true,
+        "blurRadius": 10,
+        "blurOpacity": 0.5,
+        "blurBackground": "#D7D7D7FF",
+        "blurBackgroundOpacity": 0.5,
+        "outline": {
+          "color": "#D7D7D7FF",
+          "width": 1,
+          "style": "solid"
         }
       },
-      "microInteractions": {
-        "hoverEffects": "Subtle elevation and glow effects",
-        "loadingStates": "Skeleton screens and smooth transitions",
-        "formFeedback": "Real-time validation with smooth animations"
-      },
-      "useToasterForResponseMessage": true
-    },
-    "routing": {
-      "protectRouteBasedOnToken": true,
-      "lazyLoading": "Implement code splitting for all routes",
-      "pageTransitions": "Smooth transitions between routes"
-    },
-    "codeOrganization": {
-      "useHOC": true,
-      "customHooks": "Extract logic into reusable hooks",
-      "componentComposition": "Favor composition over inheritance",
-      "propsInterface": "Define clear prop interfaces for all components"
-    },
-    "performance": {
-      "memoization": "Use React.memo and useMemo appropriately",
-      "bundleSplitting": "Split code by routes and features",
-      "imageOptimization": "Use optimized image formats and lazy loading",
-      "stateOptimization": "Minimize unnecessary re-renders"
+      "responsiveDesign": {
+        "useResponsiveDesign": true
+      }
     },
     "codeRules": {
+      "comments": {
+        "useComments": false,
+        "useCommentsForFunctions": false
+      },
+      "documentation": {
+        "useDocumentation": false,
+        "noCreateFileMDforAPI": true
+      },
+      "validation": {
+        "useValidation": [
+          "POST",
+          "PATCH",
+          "PUT"
+        ]
+      },
+      "index": {
+        "useIndex": false
+      },
       "modularization": {
-        "limitStateLifting": "Lift state only when necessary to avoid prop drilling",
-        "separateBusinessLogic": "Business logic in services/hooks, not in components",
-        "useReusableComponents": "Create atomic, reusable components with clear APIs",
-        "featureBasedStructure": "Organize by features, not by file types"
+        "separateBusinessLogic": true,
+        "useReusableComponents": true
       },
-      "noSpaghettiCode": {
-        "avoidDeepNesting": "Max 3 levels of component nesting",
-        "singleResponsibility": "One responsibility per component/function",
-        "clearCodeFlow": "Linear, predictable code flow",
-        "earlyReturns": "Use early returns to reduce nesting"
+      "avoidDeepNesting": {
+        "avoidDeepNesting": true
       },
-      "consistency": {
-        "namingConventions": "Consistent naming across all files",
-        "fileStructure": "Standardized file organization",
-        "importOrder": "Consistent import ordering (external, internal, relative)",
-        "glassEffectUsage": "Consistent application of glass effects across UI"
-      },
-      "noDocumentationInCode": {
-        "noInlineComments": "Self-documenting code over comments",
-        "noFunctionDocstrings": "Clear function names instead of documentation",
-        "typeDefinitions": "Use TypeScript for self-documenting interfaces"
+      "apiDataPlacement": {
+        "rule": "Ensure that API calls and data are placed in the correct module. For example, if the module is related to buildings, it should handle building-related API requests. If a home page is involved and it needs building data, it should import from the building module."
       }
     }
   }

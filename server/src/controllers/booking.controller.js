@@ -1,222 +1,229 @@
-const { BookingService } = require('../services');
-const { Response, ErrorHandler } = require('../utils');
+const BookingService = require('../services/booking.service');
+const ResponseHelper = require('../libs/response.lib');
+const logger = require('../libs/logger.lib');
 
 const BookingController = {
-    async getTodayBookings(req, res, next) {
+    // Get today's bookings
+    async getTodayBookings(req, res) {
         try {
-            // Get today's bookings
-            const result = await BookingService.getTodayBookings();
-
-            return Response.success(res, result, "Today's bookings retrieved successfully");
+            const bookings = await BookingService.getTodayBookings();
+            return ResponseHelper.success(res, 'Booking hari ini berhasil diambil', bookings);
         } catch (error) {
-            next(error);
+            logger.error('Get today bookings controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil booking hari ini', 500);
         }
     },
 
-    async create(req, res, next) {
+    // Create booking
+    async createBooking(req, res) {
         try {
-            // Check if file is uploaded
-            if (!req.file) {
-                throw new ErrorHandler(400, 'Proposal letter file is required');
-            }
-
-            // Get user ID from authenticated user
             const userId = req.user.id;
+            const bookingData = req.body;
+            const proposalLetter = req.file;
 
-            // Prepare booking data
-            const bookingData = {
-                buildingId: req.body.buildingId,
-                activityName: req.body.activityName,
-                startDate: req.body.startDate,
-                endDate: req.body.endDate,
-                startTime: req.body.startTime,
-                endTime: req.body.endTime
-            };
+            if (!proposalLetter) {
+                return ResponseHelper.validationError(res, 'Proposal letter wajib diupload');
+            }
 
-            // File path for proposal letter
-            const proposalLetterPath = req.file.path;
-
-            // Create booking
-            const result = await BookingService.createBooking(userId, bookingData, proposalLetterPath);
-
-            return Response.success(res, result, 'Booking created successfully', 201);
+            const result = await BookingService.createBooking(userId, bookingData, proposalLetter);
+            return ResponseHelper.success(res, 'Booking berhasil dibuat', result, 201);
         } catch (error) {
-            next(error);
+            logger.error('Create booking controller error:', error);
+
+            if (error.message === 'Building tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message.includes('tidak tersedia')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            if (error.message.includes('Gagal membuat invoice pembayaran')) {
+                return ResponseHelper.error(res, error.message, 503);
+            }
+
+            if (error.message.includes('Xendit') || error.message.includes('invoice')) {
+                return ResponseHelper.error(res, 'Layanan pembayaran sedang tidak tersedia. Silakan coba lagi nanti.', 503);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat membuat booking', 500);
         }
     },
 
-    async getHistory(req, res, next) {
+    // Process payment
+    async processPayment(req, res) {
         try {
-            // Get user ID from authenticated user
-            const userId = req.user.id;
-
-            // Get pagination parameters
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
-
-            // Validate pagination parameters
-            if (page < 1) {
-                throw new ErrorHandler(400, 'Page must be greater than 0');
-            }
-            if (limit < 1 || limit > 100) {
-                throw new ErrorHandler(400, 'Limit must be between 1 and 100');
-            }
-
-            // Get booking history
-            const result = await BookingService.getBookingHistory(userId, page, limit);
-
-            return Response.success(res, result.data, 'Booking history retrieved successfully', 200, result.pagination);
-        } catch (error) {
-            next(error);
-        }
-    },
-
-    async processPayment(req, res, next) {
-        try {
-            // Get booking ID from params
             const { id } = req.params;
-
-            // Get user ID from authenticated user
             const userId = req.user.id;
 
-            // Process payment
             const result = await BookingService.processPayment(id, userId);
-
-            return Response.success(res, result, 'Payment processed successfully');
+            return ResponseHelper.success(res, 'Payment berhasil diproses', result);
         } catch (error) {
-            next(error);
+            logger.error('Process payment controller error:', error);
+
+            if (error.message === 'Booking tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message === 'Tidak memiliki akses ke booking ini') {
+                return ResponseHelper.forbidden(res, error.message);
+            }
+
+            if (error.message.includes('tidak bisa')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat memproses payment', 500);
         }
     },
 
-    async getAdminBookings(req, res, next) {
+    // Get booking history
+    async getBookingHistory(req, res) {
         try {
-            // Get query parameters
-            const status = req.query.status || 'PROCESSING';
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
+            const userId = req.user.id;
+            const { status, page, limit } = req.query;
 
-            // Validate status
-            const validStatuses = ['PROCESSING', 'APPROVED', 'REJECTED', 'COMPLETED'];
-            if (status && !validStatuses.includes(status)) {
-                throw new ErrorHandler(400, `Invalid status. Must be one of: ${validStatuses.join(', ')}`);
-            }
+            const result = await BookingService.getBookingHistory(userId, { status }, { page, limit });
 
-            // Validate pagination parameters
-            if (page < 1) {
-                throw new ErrorHandler(400, 'Page must be greater than 0');
-            }
-            if (limit < 1 || limit > 100) {
-                throw new ErrorHandler(400, 'Limit must be between 1 and 100');
-            }
-
-            // Get bookings
-            const result = await BookingService.getAdminBookings(status, page, limit);
-
-            return Response.success(res, result.data, 'Admin bookings retrieved successfully', 200, result.pagination);
+            return ResponseHelper.successWithPagination(
+                res,
+                'History booking berhasil diambil',
+                result.bookings,
+                {
+                    totalItems: result.totalItems,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    itemsPerPage: result.itemsPerPage
+                }
+            );
         } catch (error) {
-            next(error);
+            logger.error('Get booking history controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil history booking', 500);
         }
     },
 
-    async approveRejectBooking(req, res, next) {
+    // Generate invoice
+    async generateInvoice(req, res) {
         try {
-            // Get booking ID from params
             const { id } = req.params;
+            const userId = req.user.id;
 
-            // Get data from request body
+            const invoice = await BookingService.generateInvoice(id, userId);
+            return ResponseHelper.success(res, 'Invoice berhasil dibuat', invoice);
+        } catch (error) {
+            logger.error('Generate invoice controller error:', error);
+
+            if (error.message === 'Booking tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message === 'Tidak memiliki akses ke booking ini') {
+                return ResponseHelper.forbidden(res, error.message);
+            }
+
+            if (error.message.includes('belum')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat membuat invoice', 500);
+        }
+    },
+
+    // ===== ADMIN FUNCTIONS =====
+
+    // Get bookings with filters (admin)
+    async adminGetBookings(req, res) {
+        try {
+            const { status, page, limit } = req.query;
+
+            const result = await BookingService.adminGetBookings({ status, page, limit });
+
+            return ResponseHelper.successWithPagination(
+                res,
+                'Data booking berhasil diambil',
+                result.bookings,
+                {
+                    totalItems: result.totalItems,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    itemsPerPage: result.itemsPerPage
+                }
+            );
+        } catch (error) {
+            logger.error('Admin get bookings controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil data booking', 500);
+        }
+    },
+
+    // Approve/Reject booking
+    async approveRejectBooking(req, res) {
+        try {
+            const { id } = req.params;
             const { bookingStatus, rejectionReason } = req.body;
 
-            // Validate required fields
-            if (!bookingStatus) {
-                throw new ErrorHandler(400, 'Booking status is required');
-            }
-
-            // Approve or reject booking
             const result = await BookingService.approveRejectBooking(id, bookingStatus, rejectionReason);
-
-            const message = bookingStatus === 'APPROVED'
-                ? 'Booking approved successfully'
-                : 'Booking rejected successfully';
-
-            return Response.success(res, result, message);
+            return ResponseHelper.success(res, 'Status booking berhasil diperbarui', result);
         } catch (error) {
-            next(error);
+            logger.error('Admin approve/reject booking controller error:', error);
+
+            if (error.message === 'Booking tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message.includes('tidak bisa')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat memperbarui status booking', 500);
         }
     },
 
-    async getAdminBookingHistory(req, res, next) {
+    // Get booking history with filters (admin)
+    async adminGetBookingHistory(req, res) {
         try {
-            // Get query parameters
-            const { buildingId, startDate, endDate } = req.query;
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
+            const { buildingId, startDate, endDate, page, limit } = req.query;
 
-            // Validate buildingId if provided
-            if (buildingId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(buildingId)) {
-                throw new ErrorHandler(400, 'Invalid building ID format');
-            }
+            const result = await BookingService.adminGetBookingHistory({
+                buildingId, startDate, endDate, page, limit
+            });
 
-            // Validate date formats if provided
-            if (startDate && !/^\d{2}-\d{2}-\d{4}$/.test(startDate)) {
-                throw new ErrorHandler(400, 'Start date must be in DD-MM-YYYY format');
-            }
-            if (endDate && !/^\d{2}-\d{2}-\d{4}$/.test(endDate)) {
-                throw new ErrorHandler(400, 'End date must be in DD-MM-YYYY format');
-            }
-
-            // Validate pagination parameters
-            if (page < 1) {
-                throw new ErrorHandler(400, 'Page must be greater than 0');
-            }
-            if (limit < 1 || limit > 100) {
-                throw new ErrorHandler(400, 'Limit must be between 1 and 100');
-            }
-
-            // Get booking history
-            const result = await BookingService.getBookingHistoryWithFilters(buildingId, startDate, endDate, page, limit);
-
-            return Response.success(res, result.data, 'Booking history retrieved successfully', 200, result.pagination);
+            return ResponseHelper.successWithPagination(
+                res,
+                'History booking berhasil diambil',
+                result.bookings,
+                {
+                    totalItems: result.totalItems,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    itemsPerPage: result.itemsPerPage
+                }
+            );
         } catch (error) {
-            next(error);
+            logger.error('Admin get booking history controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil history booking', 500);
         }
     },
 
-    async processRefund(req, res, next) {
+    // Process refund
+    async processRefund(req, res) {
         try {
-            // Get booking ID from params
             const { id } = req.params;
-
-            // Get refund reason from request body
             const { refundReason } = req.body;
 
-            // Validate required fields
-            if (!refundReason) {
-                throw new ErrorHandler(400, 'Refund reason is required');
+            const result = await BookingService.processRefund(id, refundReason);
+            return ResponseHelper.success(res, 'Refund berhasil diproses', result);
+        } catch (error) {
+            logger.error('Admin process refund controller error:', error);
+
+            if (error.message === 'Booking tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
             }
 
-            // Process refund
-            const result = await BookingService.processRefund(id, refundReason);
+            if (error.message.includes('tidak bisa')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
 
-            return Response.success(res, result, 'Refund processed successfully');
-        } catch (error) {
-            next(error);
-        }
-    },
-
-    async generateInvoice(req, res, next) {
-        try {
-            // Get booking ID from params
-            const { id } = req.params;
-
-            // Get user ID from authenticated user
-            const userId = req.user.id;
-
-            // Generate invoice
-            const result = await BookingService.generateInvoice(id, userId);
-
-            return Response.success(res, result, 'Invoice generated successfully');
-        } catch (error) {
-            next(error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat memproses refund', 500);
         }
     }
 };

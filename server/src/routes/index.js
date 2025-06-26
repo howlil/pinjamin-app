@@ -1,24 +1,23 @@
 const express = require('express');
-const authRoutes = require('./auth.route');
-const buildingRoutes = require('./building.route');
-const bookingRoutes = require('./booking.route');
-const dashboardRoutes = require('./dashboard.route');
-const facilityRoutes = require('./facility.route');
-const buildingManagerRoutes = require('./building-manager.route');
-const transactionRoutes = require('./transaction.route');
-const notificationRoutes = require('./notification.route');
-
 const router = express.Router();
+const authRoutes = require('./auth.routes');
+const buildingRoutes = require('./building.routes');
+const bookingRoutes = require('./booking.routes');
+const transactionRoutes = require('./transaction.routes');
+const dashboardRoutes = require('./dashboard.routes');
+const webhookRoutes = require('./webhook.routes');
+const notificationRoutes = require('./notification.routes');
+const facilityRoutes = require('./facility.routes');
+const buildingManagerRoutes = require('./building-manager.routes');
 
+router.use(authRoutes);
+router.use(buildingRoutes);
+router.use(bookingRoutes);
+router.use(transactionRoutes);
+router.use(dashboardRoutes);
+router.use(webhookRoutes);
+router.use(notificationRoutes);
+router.use(facilityRoutes);
+router.use(buildingManagerRoutes);
 
-// Main routes
-router.use('/auth', authRoutes);
-router.use('/buildings', buildingRoutes);
-router.use('/bookings', bookingRoutes);
-router.use('/dashboard', dashboardRoutes);
-router.use('/facilities', facilityRoutes);
-router.use('/building-managers', buildingManagerRoutes);
-router.use('/transactions', transactionRoutes);
-router.use('/notifications', notificationRoutes);
-
-module.exports = router; 
+module.exports = router;

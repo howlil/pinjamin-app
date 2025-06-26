@@ -1,73 +1,85 @@
-const { FacilityService } = require('../services');
-const { Response, ErrorHandler } = require('../utils');
+const FacilityService = require('../services/facility.service');
+const ResponseHelper = require('../libs/response.lib');
+const logger = require('../libs/logger.lib');
 
 const FacilityController = {
     // Get all facilities
-    getAllFacilities: ErrorHandler.asyncHandler(async (req, res) => {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+    async getFacilities(req, res) {
+        try {
+            const { page, limit } = req.query;
 
-        // Validate pagination parameters
-        if (page < 1) {
-            throw ErrorHandler.badRequest('Page must be greater than 0');
+            const result = await FacilityService.getFacilities({ page, limit });
+
+            return ResponseHelper.successWithPagination(
+                res,
+                'Data fasilitas berhasil diambil',
+                result.facilities,
+                {
+                    totalItems: result.totalItems,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    itemsPerPage: result.itemsPerPage
+                }
+            );
+        } catch (error) {
+            logger.error('Get facilities controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil data fasilitas', 500);
         }
-        if (limit < 1 || limit > 100) {
-            throw ErrorHandler.badRequest('Limit must be between 1 and 100');
+    },
+
+    // Create facility
+    async createFacility(req, res) {
+        try {
+            const facilityData = req.body;
+
+            const result = await FacilityService.createFacility(facilityData);
+            return ResponseHelper.success(res, 'Fasilitas berhasil dibuat', result, 201);
+        } catch (error) {
+            logger.error('Create facility controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat membuat fasilitas', 500);
         }
-
-        const result = await FacilityService.getAllFacilities(page, limit);
-
-        return Response.success(res, result.data, 'All facilities retrieved successfully', 200, result.pagination);
-    }),
-
-
-
-    // Create new facility
-    createFacility: ErrorHandler.asyncHandler(async (req, res) => {
-        const { facilityName, iconUrl } = req.body;
-
-        if (!facilityName) {
-            throw ErrorHandler.badRequest('Facility name is required');
-        }
-
-        const newFacility = await FacilityService.createFacility({
-            facilityName,
-            iconUrl
-        });
-
-        return Response.success(res, newFacility, 'Facility created successfully', 201);
-    }),
+    },
 
     // Update facility
-    updateFacility: ErrorHandler.asyncHandler(async (req, res) => {
-        const { id } = req.params;
-        const { facilityName, iconUrl } = req.body;
+    async updateFacility(req, res) {
+        try {
+            const { id } = req.params;
+            const facilityData = req.body;
 
-        if (!id) {
-            throw ErrorHandler.badRequest('Facility ID is required');
+            const result = await FacilityService.updateFacility(id, facilityData);
+            return ResponseHelper.success(res, 'Fasilitas berhasil diperbarui', result);
+        } catch (error) {
+            logger.error('Update facility controller error:', error);
+
+            if (error.message === 'Fasilitas tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat memperbarui fasilitas', 500);
         }
-
-        const updateData = {};
-        if (facilityName !== undefined) updateData.facilityName = facilityName;
-        if (iconUrl !== undefined) updateData.iconUrl = iconUrl;
-
-        const updatedFacility = await FacilityService.updateFacility(id, updateData);
-
-        return Response.success(res, updatedFacility, 'Facility updated successfully');
-    }),
+    },
 
     // Delete facility
-    deleteFacility: ErrorHandler.asyncHandler(async (req, res) => {
-        const { id } = req.params;
+    async deleteFacility(req, res) {
+        try {
+            const { id } = req.params;
 
-        if (!id) {
-            throw ErrorHandler.badRequest('Facility ID is required');
+            const result = await FacilityService.deleteFacility(id);
+            return ResponseHelper.success(res, 'Fasilitas berhasil dihapus', result);
+        } catch (error) {
+            logger.error('Delete facility controller error:', error);
+
+            if (error.message === 'Fasilitas tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message.includes('tidak bisa dihapus')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat menghapus fasilitas', 500);
         }
-
-        await FacilityService.deleteFacility(id);
-
-        return Response.success(res, { id }, 'Facility deleted successfully');
-    })
+    }
 };
 
 module.exports = FacilityController; 

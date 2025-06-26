@@ -1,44 +1,72 @@
-const { NotificationService } = require('../services');
-const { Response, ErrorHandler } = require('../utils');
+const NotificationService = require('../services/notification.service');
+const ResponseHelper = require('../libs/response.lib');
+const logger = require('../libs/logger.lib');
 
 const NotificationController = {
-    getNotifications: ErrorHandler.asyncHandler(async (req, res) => {
-        const userId = req.user.id;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+    // Get notifications
+    async getNotifications(req, res) {
+        try {
+            const userId = req.user.id;
+            const { page, limit } = req.query;
 
-        // Validate pagination parameters
-        if (page < 1) {
-            throw ErrorHandler.badRequest('Page must be greater than 0');
+            const result = await NotificationService.getNotifications(userId, { page, limit });
+
+            return ResponseHelper.successWithPagination(
+                res,
+                'Notifikasi berhasil diambil',
+                result.notifications,
+                {
+                    totalItems: result.totalItems,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    itemsPerPage: result.itemsPerPage
+                }
+            );
+        } catch (error) {
+            logger.error('Get notifications controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil notifikasi', 500);
         }
-        if (limit < 1 || limit > 100) {
-            throw ErrorHandler.badRequest('Limit must be between 1 and 100');
+    },
+
+    // Get unread notification count
+    async getUnreadCount(req, res) {
+        try {
+            const userId = req.user.id;
+
+            const unreadCount = await NotificationService.getUnreadCount(userId);
+
+            return ResponseHelper.success(res, 'Jumlah notifikasi belum dibaca berhasil diambil', {
+                unreadCount
+            });
+        } catch (error) {
+            logger.error('Get unread count controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil jumlah notifikasi', 500);
         }
+    },
 
-        const result = await NotificationService.getNotifications(userId, page, limit);
+    // Mark notification as read
+    async markAsRead(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
 
-        return Response.success(res, result.data, 'Notifications retrieved successfully', 200, result.pagination);
-    }),
+            await NotificationService.markAsRead(id, userId);
 
-    getUnreadCount: ErrorHandler.asyncHandler(async (req, res) => {
-        const userId = req.user.id;
-        const result = await NotificationService.getUserUnreadCount(userId);
+            return ResponseHelper.success(res, 'Notifikasi berhasil ditandai sebagai dibaca');
+        } catch (error) {
+            logger.error('Mark notification as read controller error:', error);
 
-        return Response.success(res, result, 'Unread notification count retrieved successfully');
-    }),
+            if (error.message === 'Notifikasi tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
 
-    markAsRead: ErrorHandler.asyncHandler(async (req, res) => {
-        const userId = req.user.id;
-        const { notificationId } = req.params;
+            if (error.message === 'Tidak memiliki akses ke notifikasi ini') {
+                return ResponseHelper.forbidden(res, error.message);
+            }
 
-        if (!notificationId) {
-            throw ErrorHandler.badRequest('Notification ID is required');
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat menandai notifikasi', 500);
         }
-
-        await NotificationService.markAsRead(notificationId, userId);
-
-        return Response.success(res, { success: true }, 'Notification marked as read');
-    })
+    }
 };
 
 module.exports = NotificationController; 

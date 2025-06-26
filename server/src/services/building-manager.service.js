@@ -1,87 +1,111 @@
-const { prisma } = require('../configs');
-const { ErrorHandler, Logger } = require('../utils');
+const { v4: uuidv4 } = require('uuid');
+const prisma = require('../libs/database.lib');
+const logger = require('../libs/logger.lib');
 
 const BuildingManagerService = {
-    async getAllBuildingManagers(page = 1, limit = 10, buildingId = null) {
+    // Get all building managers with optional filters
+    async getBuildingManagers(filters) {
         try {
-            // Calculate offset
-            const offset = (page - 1) * limit;
+            const { buildingId, page = 1, limit = 10 } = filters;
+            const skip = (page - 1) * limit;
 
-            // Prepare filter condition
-            const whereCondition = buildingId ? { buildingId } : {};
+            const whereClause = {};
+            if (buildingId) {
+                whereClause.buildingId = buildingId;
+            }
 
-            // Get total count
-            const totalItems = await prisma.buildingManager.count({
-                where: whereCondition
-            });
-
-            // Get building managers
-            const buildingManagers = await prisma.buildingManager.findMany({
-                where: whereCondition,
-                include: {
-                    building: {
-                        select: {
-                            buildingName: true
+            const [buildingManagers, totalItems] = await Promise.all([
+                prisma.buildingManager.findMany({
+                    where: whereClause,
+                    include: {
+                        building: {
+                            select: {
+                                id: true,
+                                buildingName: true
+                            }
                         }
-                    }
-                },
-                orderBy: {
-                    createdAt: 'desc'
-                },
-                skip: offset,
-                take: limit
-            });
+                    },
+                    orderBy: {
+                        managerName: 'asc'
+                    },
+                    skip,
+                    take: limit
+                }),
+                prisma.buildingManager.count({
+                    where: whereClause
+                })
+            ]);
 
-            // Format building managers data
             const formattedBuildingManagers = buildingManagers.map(manager => ({
                 id: manager.id,
                 managerName: manager.managerName,
                 phoneNumber: manager.phoneNumber,
                 buildingId: manager.buildingId,
-                buildingName: manager.building?.buildingName || 'Not Assigned',
+                buildingName: manager.building?.buildingName || null,
                 createdAt: manager.createdAt,
                 updatedAt: manager.updatedAt
             }));
 
-            // Calculate pagination data
-            const totalPages = Math.ceil(totalItems / limit);
-
             return {
-                data: formattedBuildingManagers,
-                pagination: {
-                    totalItems,
-                    totalPages,
-                    currentPage: page,
-                    itemsPerPage: limit
-                }
+                buildingManagers: formattedBuildingManagers,
+                totalItems,
+                totalPages: Math.ceil(totalItems / limit),
+                currentPage: parseInt(page),
+                itemsPerPage: parseInt(limit)
             };
         } catch (error) {
-            Logger.error('Error getting all building managers:', error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to get building managers');
+            logger.error('Get building managers service error:', error);
+            throw error;
         }
     },
 
-
-
-    async createBuildingManager(managerData) {
+    // Get available building managers (not assigned to any building)
+    async getAvailableBuildingManagers() {
         try {
-            const { managerName, phoneNumber, buildingId } = managerData;
+            const availableManagers = await prisma.buildingManager.findMany({
+                where: {
+                    buildingId: null
+                },
+                select: {
+                    id: true,
+                    managerName: true,
+                    phoneNumber: true,
+                    createdAt: true,
+                    updatedAt: true
+                },
+                orderBy: {
+                    managerName: 'asc'
+                }
+            });
 
-            // Check if building exists (optional)
+            return availableManagers;
+        } catch (error) {
+            logger.error('Get available building managers service error:', error);
+            throw error;
+        }
+    },
+
+    // Create building manager
+    async createBuildingManager(buildingManagerData) {
+        try {
+            const { managerName, phoneNumber, buildingId } = buildingManagerData;
+
+            // If buildingId is provided, check if building exists
             if (buildingId) {
                 const building = await prisma.building.findUnique({
                     where: { id: buildingId }
                 });
 
                 if (!building) {
-                    throw ErrorHandler.notFound(`Building with ID ${buildingId} not found`);
+                    throw new Error('Building tidak ditemukan');
                 }
             }
 
-            // Create building manager
-            const newBuildingManager = await prisma.buildingManager.create({
+            const managerId = uuidv4();
+
+            const buildingManager = await prisma.buildingManager.create({
                 data: {
+                    id: managerId,
                     managerName,
                     phoneNumber,
                     buildingId: buildingId || null
@@ -89,175 +113,40 @@ const BuildingManagerService = {
                 include: {
                     building: {
                         select: {
+                            id: true,
                             buildingName: true
                         }
                     }
                 }
             });
 
-            // Format building manager data
-            const formattedBuildingManager = {
-                id: newBuildingManager.id,
-                managerName: newBuildingManager.managerName,
-                phoneNumber: newBuildingManager.phoneNumber,
-                buildingId: newBuildingManager.buildingId,
-                buildingName: newBuildingManager.building?.buildingName || 'Not Assigned',
-                createdAt: newBuildingManager.createdAt,
-                updatedAt: newBuildingManager.updatedAt
-            };
-
-            return formattedBuildingManager;
-        } catch (error) {
-            Logger.error('Error creating building manager:', error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to create building manager');
-        }
-    },
-
-    async updateBuildingManager(id, updateData) {
-        try {
-            // Check if building manager exists
-            const existingBuildingManager = await prisma.buildingManager.findUnique({
-                where: { id }
-            });
-
-            if (!existingBuildingManager) {
-                throw ErrorHandler.notFound(`Building manager with ID ${id} not found`);
-            }
-
-            // Check if building exists if buildingId is being updated (but not null)
-            if (updateData.buildingId !== undefined && updateData.buildingId !== null) {
-                const building = await prisma.building.findUnique({
-                    where: { id: updateData.buildingId }
-                });
-
-                if (!building) {
-                    throw ErrorHandler.notFound(`Building with ID ${updateData.buildingId} not found`);
-                }
-            }
-
-            // Update building manager (handles both assign and unassign cases)
-            const updatedBuildingManager = await prisma.buildingManager.update({
-                where: { id },
-                data: updateData,
-                include: {
-                    building: {
-                        select: {
-                            buildingName: true
-                        }
-                    }
-                }
-            });
-
-            // Format building manager data
-            const formattedBuildingManager = {
-                id: updatedBuildingManager.id,
-                managerName: updatedBuildingManager.managerName,
-                phoneNumber: updatedBuildingManager.phoneNumber,
-                buildingId: updatedBuildingManager.buildingId,
-                buildingName: updatedBuildingManager.building?.buildingName || 'Not Assigned',
-                createdAt: updatedBuildingManager.createdAt,
-                updatedAt: updatedBuildingManager.updatedAt
-            };
-
-            return formattedBuildingManager;
-        } catch (error) {
-            Logger.error(`Error updating building manager with ID ${id}:`, error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to update building manager');
-        }
-    },
-
-    async deleteBuildingManager(id) {
-        try {
-            // Check if building manager exists
-            const existingBuildingManager = await prisma.buildingManager.findUnique({
-                where: { id }
-            });
-
-            if (!existingBuildingManager) {
-                throw ErrorHandler.notFound(`Building manager with ID ${id} not found`);
-            }
-
-            // Delete building manager
-            await prisma.buildingManager.delete({
-                where: { id }
-            });
-
-            return { success: true };
-        } catch (error) {
-            Logger.error(`Error deleting building manager with ID ${id}:`, error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to delete building manager');
-        }
-    },
-
-    async getAvailableManagers(page = 1, limit = 10) {
-        try {
-            // Calculate offset
-            const offset = (page - 1) * limit;
-
-            // Get total count of unassigned managers
-            const totalItems = await prisma.buildingManager.count({
-                where: {
-                    buildingId: null
-                }
-            });
-
-            // Get unassigned building managers
-            const availableManagers = await prisma.buildingManager.findMany({
-                where: {
-                    buildingId: null
-                },
-                orderBy: {
-                    createdAt: 'desc'
-                },
-                skip: offset,
-                take: limit
-            });
-
-            // Format managers data
-            const formattedManagers = availableManagers.map(manager => ({
-                id: manager.id,
-                managerName: manager.managerName,
-                phoneNumber: manager.phoneNumber,
-                createdAt: manager.createdAt,
-                updatedAt: manager.updatedAt
-            }));
-
-            // Calculate pagination data
-            const totalPages = Math.ceil(totalItems / limit);
+            logger.info(`Building manager created: ${managerId}`);
 
             return {
-                data: formattedManagers,
-                pagination: {
-                    totalItems,
-                    totalPages,
-                    currentPage: page,
-                    itemsPerPage: limit
-                }
+                id: buildingManager.id,
+                managerName: buildingManager.managerName,
+                phoneNumber: buildingManager.phoneNumber,
+                buildingId: buildingManager.buildingId,
+                buildingName: buildingManager.building?.buildingName || null,
+                createdAt: buildingManager.createdAt,
+                updatedAt: buildingManager.updatedAt
             };
         } catch (error) {
-            Logger.error('Error getting available managers:', error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to get available managers');
+            logger.error('Create building manager service error:', error);
+            throw error;
         }
     },
 
-    async assignManagerToBuilding(managerId, buildingId) {
+    // Assign building manager to building
+    async assignBuildingManager(managerId, buildingId) {
         try {
-            // Check if manager exists
-            const manager = await prisma.buildingManager.findUnique({
+            // Check if building manager exists
+            const buildingManager = await prisma.buildingManager.findUnique({
                 where: { id: managerId }
             });
 
-            if (!manager) {
-                throw ErrorHandler.notFound(`Building manager with ID ${managerId} not found`);
-            }
-
-            // Check if manager is already assigned
-            if (manager.buildingId) {
-                throw ErrorHandler.badRequest('Building manager is already assigned to a building');
+            if (!buildingManager) {
+                throw new Error('Building manager tidak ditemukan');
             }
 
             // Check if building exists
@@ -266,38 +155,129 @@ const BuildingManagerService = {
             });
 
             if (!building) {
-                throw ErrorHandler.notFound(`Building with ID ${buildingId} not found`);
+                throw new Error('Building tidak ditemukan');
             }
 
-            // Assign manager to building
+            // Check if manager is already assigned to a building
+            if (buildingManager.buildingId) {
+                throw new Error('Building manager sudah ditugaskan ke building lain');
+            }
+
             const updatedManager = await prisma.buildingManager.update({
                 where: { id: managerId },
                 data: { buildingId },
                 include: {
                     building: {
                         select: {
+                            id: true,
                             buildingName: true
                         }
                     }
                 }
             });
 
-            // Format response
-            const formattedManager = {
+            logger.info(`Building manager assigned: ${managerId} to building: ${buildingId}`);
+
+            return {
                 id: updatedManager.id,
                 managerName: updatedManager.managerName,
                 phoneNumber: updatedManager.phoneNumber,
                 buildingId: updatedManager.buildingId,
-                buildingName: updatedManager.building?.buildingName || 'Not Assigned',
+                buildingName: updatedManager.building.buildingName,
                 createdAt: updatedManager.createdAt,
                 updatedAt: updatedManager.updatedAt
             };
-
-            return formattedManager;
         } catch (error) {
-            Logger.error(`Error assigning manager ${managerId} to building ${buildingId}:`, error);
-            if (error.status) throw error;
-            throw ErrorHandler.internalServerError('Failed to assign manager to building');
+            logger.error('Assign building manager service error:', error);
+            throw error;
+        }
+    },
+
+    // Update building manager
+    async updateBuildingManager(managerId, buildingManagerData) {
+        try {
+            const existingManager = await prisma.buildingManager.findUnique({
+                where: { id: managerId }
+            });
+
+            if (!existingManager) {
+                throw new Error('Building manager tidak ditemukan');
+            }
+
+            const { managerName, phoneNumber, buildingId } = buildingManagerData;
+
+            // If buildingId is provided (including null), validate it
+            if (buildingId !== undefined) {
+                if (buildingId !== null) {
+                    const building = await prisma.building.findUnique({
+                        where: { id: buildingId }
+                    });
+
+                    if (!building) {
+                        throw new Error('Building tidak ditemukan');
+                    }
+                }
+            }
+
+            const updateData = {};
+            if (managerName) updateData.managerName = managerName;
+            if (phoneNumber) updateData.phoneNumber = phoneNumber;
+            if (buildingId !== undefined) updateData.buildingId = buildingId;
+
+            const updatedManager = await prisma.buildingManager.update({
+                where: { id: managerId },
+                data: updateData,
+                include: {
+                    building: {
+                        select: {
+                            id: true,
+                            buildingName: true
+                        }
+                    }
+                }
+            });
+
+            logger.info(`Building manager updated: ${managerId}`);
+
+            return {
+                id: updatedManager.id,
+                managerName: updatedManager.managerName,
+                phoneNumber: updatedManager.phoneNumber,
+                buildingId: updatedManager.buildingId,
+                buildingName: updatedManager.building?.buildingName || null,
+                createdAt: updatedManager.createdAt,
+                updatedAt: updatedManager.updatedAt
+            };
+        } catch (error) {
+            logger.error('Update building manager service error:', error);
+            throw error;
+        }
+    },
+
+    // Delete building manager
+    async deleteBuildingManager(managerId) {
+        try {
+            const existingManager = await prisma.buildingManager.findUnique({
+                where: { id: managerId }
+            });
+
+            if (!existingManager) {
+                throw new Error('Building manager tidak ditemukan');
+            }
+
+            await prisma.buildingManager.delete({
+                where: { id: managerId }
+            });
+
+            logger.info(`Building manager deleted: ${managerId}`);
+
+            return {
+                id: managerId,
+                managerName: existingManager.managerName
+            };
+        } catch (error) {
+            logger.error('Delete building manager service error:', error);
+            throw error;
         }
     }
 };

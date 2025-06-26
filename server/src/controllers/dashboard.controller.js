@@ -1,54 +1,31 @@
-const { DashboardService } = require('../services');
-const { Response, ErrorHandler } = require('../utils');
+const DashboardService = require('../services/dashboard.service');
+const ResponseHelper = require('../libs/response.lib');
+const logger = require('../libs/logger.lib');
 
 const DashboardController = {
-    async getBookingStatistics(req, res, next) {
+    // Get booking statistics
+    async getBookingStatistics(req, res) {
         try {
-            // Get month and year from query parameters
-            const month = req.query.month ? parseInt(req.query.month) : null;
-            const year = req.query.year ? parseInt(req.query.year) : null;
+            const { month, year } = req.query;
 
-            // Validate month if provided
-            if (month !== null && (month < 1 || month > 12)) {
-                throw new ErrorHandler(400, 'Month must be between 1 and 12');
-            }
-
-            // Validate year if provided
-            if (year !== null && (year < 2000 || year > 2100)) {
-                throw new ErrorHandler(400, 'Year must be between 2000 and 2100');
-            }
-
-            // Get booking statistics
             const statistics = await DashboardService.getBookingStatistics(month, year);
-
-            return Response.success(res, statistics, 'Booking statistics retrieved successfully');
+            return ResponseHelper.success(res, 'Statistik booking berhasil diambil', statistics);
         } catch (error) {
-            next(error);
+            logger.error('Get booking statistics controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil statistik booking', 500);
         }
     },
 
-    async getTransactionStatistics(req, res, next) {
+    // Get transaction statistics
+    async getTransactionStatistics(req, res) {
         try {
-            // Get month and year from query parameters
-            const month = req.query.month ? parseInt(req.query.month) : null;
-            const year = req.query.year ? parseInt(req.query.year) : null;
+            const { month, year } = req.query;
 
-            // Validate month if provided
-            if (month !== null && (month < 1 || month > 12)) {
-                throw new ErrorHandler(400, 'Month must be between 1 and 12');
-            }
-
-            // Validate year if provided
-            if (year !== null && (year < 2000 || year > 2100)) {
-                throw new ErrorHandler(400, 'Year must be between 2000 and 2100');
-            }
-
-            // Get transaction statistics
             const statistics = await DashboardService.getTransactionStatistics(month, year);
-
-            return Response.success(res, statistics, 'Transaction statistics retrieved successfully');
+            return ResponseHelper.success(res, 'Statistik transaksi berhasil diambil', statistics);
         } catch (error) {
-            next(error);
+            logger.error('Get transaction statistics controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil statistik transaksi', 500);
         }
     }
 };

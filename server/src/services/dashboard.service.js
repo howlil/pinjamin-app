@@ -1,100 +1,117 @@
-const { prisma } = require('../configs');
-const { ErrorHandler } = require('../utils');
+const prisma = require('../libs/database.lib');
+const logger = require('../libs/logger.lib');
 const moment = require('moment');
 
 const DashboardService = {
+    // Get booking statistics by building
     async getBookingStatistics(month, year) {
         try {
-            // Use current month/year if not provided
-            const currentDate = moment();
-            const targetMonth = month || currentDate.month() + 1; // moment months are 0-based
-            const targetYear = year || currentDate.year();
+            const currentDate = new Date();
+            const targetMonth = month || (currentDate.getMonth() + 1);
+            const targetYear = year || currentDate.getFullYear();
 
             // Create date range for the month
-            const startOfMonth = moment(`${targetYear}-${targetMonth}-01`, 'YYYY-MM-DD').startOf('month');
-            const endOfMonth = moment(`${targetYear}-${targetMonth}-01`, 'YYYY-MM-DD').endOf('month');
+            const startDate = moment(`01-${targetMonth.toString().padStart(2, '0')}-${targetYear}`, 'DD-MM-YYYY');
+            const endDate = startDate.clone().endOf('month');
 
-            // Get all bookings for the specified month
-            const bookings = await prisma.booking.findMany({
+            const bookingStats = await prisma.booking.groupBy({
+                by: ['buildingId'],
                 where: {
                     createdAt: {
-                        gte: startOfMonth.toDate(),
-                        lte: endOfMonth.toDate()
+                        gte: startDate.toDate(),
+                        lte: endDate.toDate()
                     },
                     bookingStatus: {
                         in: ['APPROVED', 'COMPLETED']
                     }
                 },
-                include: {
-                    building: true
+                _count: {
+                    id: true
                 }
             });
 
-            // Group bookings by building
-            const buildingStats = {};
-            bookings.forEach(booking => {
-                const buildingName = booking.building.buildingName;
-                if (!buildingStats[buildingName]) {
-                    buildingStats[buildingName] = 0;
+            // Get building names
+            const buildingIds = bookingStats.map(stat => stat.buildingId);
+            const buildings = await prisma.building.findMany({
+                where: {
+                    id: {
+                        in: buildingIds
+                    }
+                },
+                select: {
+                    id: true,
+                    buildingName: true
                 }
-                buildingStats[buildingName]++;
             });
 
-            // Convert to array format
-            const statistics = Object.entries(buildingStats).map(([buildingName, totalBookings]) => ({
-                buildingName,
-                totalBookings
+            const buildingMap = buildings.reduce((map, building) => {
+                map[building.id] = building.buildingName;
+                return map;
+            }, {});
+
+            const statistics = bookingStats.map(stat => ({
+                buildingName: buildingMap[stat.buildingId] || 'Unknown Building',
+                totalBookings: stat._count.id
             }));
 
-            // Sort by total bookings descending
-            statistics.sort((a, b) => b.totalBookings - a.totalBookings);
-
+            logger.info(`Booking statistics retrieved for ${targetMonth}/${targetYear}`);
             return statistics;
         } catch (error) {
-            if (error.status) throw error;
-            throw new ErrorHandler(500, error.message || 'Failed to get booking statistics');
+            logger.error('Get booking statistics service error:', error);
+            throw error;
         }
     },
 
+    // Get transaction statistics by month
     async getTransactionStatistics(month, year) {
         try {
-            // Use current month/year if not provided
-            const currentDate = moment();
-            const targetMonth = month || currentDate.month() + 1; // moment months are 0-based
-            const targetYear = year || currentDate.year();
+            const currentDate = new Date();
+            const targetMonth = month || (currentDate.getMonth() + 1);
+            const targetYear = year || currentDate.getFullYear();
 
-            // Create date range for the month
-            const startOfMonth = moment(`${targetYear}-${targetMonth}-01`, 'YYYY-MM-DD').startOf('month');
-            const endOfMonth = moment(`${targetYear}-${targetMonth}-01`, 'YYYY-MM-DD').endOf('month');
+            // Get statistics for multiple months (for comparison)
+            const months = [];
+            for (let i = 5; i >= 0; i--) {
+                const date = moment(`01-${targetMonth.toString().padStart(2, '0')}-${targetYear}`, 'DD-MM-YYYY')
+                    .subtract(i, 'months');
+                months.push({
+                    month: date.format('MM-YYYY'),
+                    startDate: date.format('DD-MM-YYYY'),
+                    endDate: date.clone().endOf('month').format('DD-MM-YYYY')
+                });
+            }
 
-            // Get all payments for the specified month
-            const payments = await prisma.payment.findMany({
-                where: {
-                    createdAt: {
-                        gte: startOfMonth.toDate(),
-                        lte: endOfMonth.toDate()
+            const statistics = [];
+
+            for (const monthData of months) {
+                const transactions = await prisma.payment.findMany({
+                    where: {
+                        paymentDate: {
+                            gte: monthData.startDate,
+                            lte: monthData.endDate
+                        },
+                        paymentStatus: 'PAID'
                     },
-                    paymentStatus: {
-                        in: ['PAID', 'SETTLED']
+                    select: {
+                        totalAmount: true
                     }
-                }
-            });
+                });
 
-            // Calculate totals
-            let totalTransactions = payments.length;
-            let totalRevenue = payments.reduce((sum, payment) => sum + payment.totalAmount, 0);
+                const totalTransactions = transactions.length;
+                const totalRevenue = transactions.reduce((sum, transaction) => sum + transaction.totalAmount, 0);
 
-            // Format month as MM-YYYY
-            const monthString = moment(`${targetYear}-${targetMonth}-01`).format('MM-YYYY');
+                statistics.push({
+                    month: monthData.month,
+                    totalTransactions,
+                    totalRevenue
+                });
+            }
 
-            return [{
-                month: monthString,
-                totalTransactions,
-                totalRevenue
-            }];
+            logger.info(`Transaction statistics retrieved for ${targetMonth}/${targetYear}`);
+            return statistics;
         } catch (error) {
-            if (error.status) throw error;
-            throw new ErrorHandler(500, error.message || 'Failed to get transaction statistics');
+            logger.error('Get transaction statistics service error:', error);
+            throw error;
         }
     }
 };
