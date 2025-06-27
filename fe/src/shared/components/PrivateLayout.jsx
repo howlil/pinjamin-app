@@ -8,14 +8,6 @@ const PrivateLayout = ({ children, allowedRoles = ['BORROWER'] }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    // Debug logging
-    console.log('PrivateLayout Debug:', {
-        user,
-        loading,
-        allowedRoles,
-        userRole: user?.role,
-        pathname: location.pathname
-    });
 
     // Tampilkan loading state
     if (loading) {

@@ -10,16 +10,31 @@ const DashboardService = {
             const targetMonth = month || (currentDate.getMonth() + 1);
             const targetYear = year || currentDate.getFullYear();
 
+            logger.info(`Getting booking statistics for month: ${targetMonth}, year: ${targetYear}`);
+
             // Create date range for the month
-            const startDate = moment(`01-${targetMonth.toString().padStart(2, '0')}-${targetYear}`, 'DD-MM-YYYY');
-            const endDate = startDate.clone().endOf('month');
+            const startDate = moment()
+                .year(targetYear)
+                .month(targetMonth - 1) // moment month is 0-indexed
+                .startOf('month')
+                .toDate();
+            const endDate = moment()
+                .year(targetYear)
+                .month(targetMonth - 1)
+                .endOf('month')
+                .toDate();
+
+            logger.info('Date range:', {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
 
             const bookingStats = await prisma.booking.groupBy({
                 by: ['buildingId'],
                 where: {
                     createdAt: {
-                        gte: startDate.toDate(),
-                        lte: endDate.toDate()
+                        gte: startDate,
+                        lte: endDate
                     },
                     bookingStatus: {
                         in: ['APPROVED', 'COMPLETED']
@@ -29,6 +44,8 @@ const DashboardService = {
                     id: true
                 }
             });
+
+            logger.info(`Found ${bookingStats.length} buildings with bookings in the specified period`);
 
             // Get building names
             const buildingIds = bookingStats.map(stat => stat.buildingId);
@@ -54,7 +71,7 @@ const DashboardService = {
                 totalBookings: stat._count.id
             }));
 
-            logger.info(`Booking statistics retrieved for ${targetMonth}/${targetYear}`);
+            logger.info(`Booking statistics retrieved for ${targetMonth}/${targetYear}: ${statistics.length} buildings`);
             return statistics;
         } catch (error) {
             logger.error('Get booking statistics service error:', error);
@@ -69,45 +86,57 @@ const DashboardService = {
             const targetMonth = month || (currentDate.getMonth() + 1);
             const targetYear = year || currentDate.getFullYear();
 
-            // Get statistics for multiple months (for comparison)
-            const months = [];
-            for (let i = 5; i >= 0; i--) {
-                const date = moment(`01-${targetMonth.toString().padStart(2, '0')}-${targetYear}`, 'DD-MM-YYYY')
-                    .subtract(i, 'months');
-                months.push({
-                    month: date.format('MM-YYYY'),
-                    startDate: date.format('DD-MM-YYYY'),
-                    endDate: date.clone().endOf('month').format('DD-MM-YYYY')
-                });
-            }
+            logger.info(`Getting transaction statistics for month: ${targetMonth}, year: ${targetYear}`);
 
-            const statistics = [];
+            // Create date range for the specific month only
+            const startDate = moment()
+                .year(targetYear)
+                .month(targetMonth - 1) // moment month is 0-indexed
+                .startOf('month')
+                .toDate();
+            const endDate = moment()
+                .year(targetYear)
+                .month(targetMonth - 1)
+                .endOf('month')
+                .toDate();
 
-            for (const monthData of months) {
-                const transactions = await prisma.payment.findMany({
-                    where: {
-                        paymentDate: {
-                            gte: monthData.startDate,
-                            lte: monthData.endDate
-                        },
-                        paymentStatus: 'PAID'
+            logger.info('Date range:', {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            });
+
+            const transactions = await prisma.payment.findMany({
+                where: {
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
                     },
-                    select: {
-                        totalAmount: true
-                    }
-                });
+                    paymentStatus: 'PAID'
+                },
+                select: {
+                    totalAmount: true,
+                    createdAt: true
+                }
+            });
 
-                const totalTransactions = transactions.length;
-                const totalRevenue = transactions.reduce((sum, transaction) => sum + transaction.totalAmount, 0);
+            const totalTransactions = transactions.length;
+            const totalRevenue = transactions.reduce((sum, transaction) => sum + transaction.totalAmount, 0);
 
-                statistics.push({
-                    month: monthData.month,
-                    totalTransactions,
-                    totalRevenue
-                });
-            }
+            const monthName = moment()
+                .year(targetYear)
+                .month(targetMonth - 1)
+                .format('MMMM YYYY');
 
-            logger.info(`Transaction statistics retrieved for ${targetMonth}/${targetYear}`);
+            logger.info(`Transaction statistics for ${monthName}: ${totalTransactions} transactions, Revenue: ${totalRevenue}`);
+
+            const statistics = [{
+                month: moment().year(targetYear).month(targetMonth - 1).format('MM-YYYY'),
+                monthName: monthName,
+                totalTransactions,
+                totalRevenue
+            }];
+
+            logger.info(`Transaction statistics retrieved for ${targetMonth}/${targetYear}: single month data`);
             return statistics;
         } catch (error) {
             logger.error('Get transaction statistics service error:', error);

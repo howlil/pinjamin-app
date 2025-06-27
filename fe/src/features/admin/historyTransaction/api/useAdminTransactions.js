@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { adminTransactionAPI } from './adminTransactionAPI';
 
-export const useAdminTransactions = (filters = {}) => {
+export const useAdminTransactions = () => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -18,10 +18,7 @@ export const useAdminTransactions = (filters = {}) => {
         setError(null);
 
         try {
-            const response = await adminTransactionAPI.getAdminTransactions({
-                ...filters,
-                ...params
-            });
+            const response = await adminTransactionAPI.getAdminTransactions(params);
 
             // Handle both array and object response formats
             if (Array.isArray(response)) {
@@ -62,16 +59,12 @@ export const useExportTransactions = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const exportTransactions = async (month = null, year = null) => {
+    const exportTransactions = async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const params = {};
-            if (month) params.month = month;
-            if (year) params.year = year;
-
-            const response = await adminTransactionAPI.exportTransactions(params);
+            const response = await adminTransactionAPI.exportTransactions();
 
             if (response.status === 'success' || response.data) {
                 toast.success('Export transaksi berhasil diunduh');

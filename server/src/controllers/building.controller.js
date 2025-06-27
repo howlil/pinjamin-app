@@ -81,9 +81,12 @@ const BuildingController = {
     // Get all buildings (admin)
     async adminGetBuildings(req, res) {
         try {
-            const { page, limit } = req.query;
+            const { search, buildingType, page, limit } = req.query;
 
-            const result = await BuildingService.adminGetBuildings({ page, limit });
+            const filters = { search, buildingType };
+            const pagination = { page, limit };
+
+            const result = await BuildingService.adminGetBuildings(filters, pagination);
 
             return ResponseHelper.successWithPagination(
                 res,

@@ -13,11 +13,10 @@ export const adminTransactionAPI = {
     },
 
     // GET /api/v1/transactions/admin/export
-    exportTransactions: async (params = {}) => {
+    exportTransactions: async () => {
         try {
             // Use axios instance directly for blob response
             const response = await apiClient.axios.get('/api/v1/transactions/admin/export', {
-                params,
                 responseType: 'blob',
                 headers: {
                     'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -31,7 +30,7 @@ export const adminTransactionAPI = {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `transactions_${params.month || 'all'}_${params.year || 'all'}.xlsx`;
+            link.download = `transactions_export.xlsx`;
             document.body.appendChild(link);
             link.click();
 

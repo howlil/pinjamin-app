@@ -20,7 +20,12 @@ import {
     DrawerCloseButton,
     useDisclosure,
     Badge,
-    Divider
+    Divider,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverHeader,
+    PopoverBody
 } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
@@ -34,7 +39,11 @@ import {
     LogOut,
     Menu as MenuIcon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Bell,
+    User,
+    Settings,
+    Home
 } from 'lucide-react';
 import { COLORS, GLASSMORPHISM, CORNER_RADIUS } from '../utils/designTokens';
 import { useAuth } from '@/features/auth/api/useAuth';
@@ -91,9 +100,40 @@ const SidebarItem = ({ to, children, icon: Icon, isActive, isCollapsed, badge })
 const AdminLayout = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const { isOpen: isNotifOpen, onToggle: onNotifToggle, onClose: onNotifClose } = useDisclosure();
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+
+    // Mock notifications data
+    const [notifications] = useState([
+        {
+            id: 1,
+            title: 'Booking Baru',
+            message: 'Ada booking baru dari John Doe untuk Ruang A301',
+            time: '5 menit yang lalu',
+            isRead: false,
+            type: 'booking'
+        },
+        {
+            id: 2,
+            title: 'Pembayaran Diterima',
+            message: 'Pembayaran untuk booking #12345 telah dikonfirmasi',
+            time: '1 jam yang lalu',
+            isRead: false,
+            type: 'payment'
+        },
+        {
+            id: 3,
+            title: 'Building Manager Baru',
+            message: 'Sarah Wilson telah ditambahkan sebagai building manager',
+            time: '2 jam yang lalu',
+            isRead: true,
+            type: 'system'
+        }
+    ]);
+
+    const unreadCount = notifications.filter(n => !n.isRead).length;
 
     const sidebarItems = [
         {
@@ -139,6 +179,19 @@ const AdminLayout = () => {
             navigate('/');
         } catch (error) {
             console.error('Logout error:', error);
+        }
+    };
+
+    const handleGoHome = () => {
+        navigate('/');
+    };
+
+    const getNotificationIcon = (type) => {
+        switch (type) {
+            case 'booking': return '📅';
+            case 'payment': return '💳';
+            case 'system': return '⚙️';
+            default: return '📢';
         }
     };
 
@@ -246,6 +299,8 @@ const AdminLayout = () => {
                     display="flex"
                     alignItems="center"
                     justifyContent="space-between"
+                    position="relative"
+                    zIndex={100}
                 >
                     <HStack spacing={4}>
                         {/* Mobile Menu Button */}
@@ -269,33 +324,265 @@ const AdminLayout = () => {
                     </HStack>
 
                     {/* Header Actions */}
-                    <HStack spacing={3} display={{ base: 'none', md: 'flex' }}>
-                        <Menu>
-                            <MenuButton>
-                                <HStack spacing={2}>
+                    <HStack spacing={4} display={{ base: 'none', md: 'flex' }}>
+                        {/* Bell Notification */}
+                        <Popover
+                            isOpen={isNotifOpen}
+                            onClose={onNotifClose}
+                            placement="bottom-end"
+                            closeOnBlur={true}
+                            boundary="clippingParents"
+                            strategy="fixed"
+                        >
+                            <PopoverTrigger>
+                                <Box position="relative">
+                                    <IconButton
+                                        icon={<Bell size={20} />}
+                                        variant="ghost"
+                                        size="md"
+                                        onClick={onNotifToggle}
+                                        bg="rgba(255, 255, 255, 0.6)"
+                                        backdropFilter="blur(10px)"
+                                        border="1px solid rgba(215, 215, 215, 0.5)"
+                                        borderRadius="full"
+                                        _hover={{
+                                            bg: "rgba(255, 255, 255, 0.8)",
+                                            transform: "translateY(-1px)",
+                                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+                                        }}
+                                        transition="all 0.2s"
+                                    />
+                                    {unreadCount > 0 && (
+                                        <Badge
+                                            colorScheme="red"
+                                            borderRadius="full"
+                                            position="absolute"
+                                            top="-2px"
+                                            right="-2px"
+                                            fontSize="xs"
+                                            minW="18px"
+                                            h="18px"
+                                            display="flex"
+                                            alignItems="center"
+                                            justifyContent="center"
+                                        >
+                                            {unreadCount}
+                                        </Badge>
+                                    )}
+                                </Box>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                w="350px"
+                                bg="rgba(255, 255, 255, 0.95)"
+                                backdropFilter="blur(15px)"
+                                border="1px solid rgba(215, 215, 215, 0.5)"
+                                borderRadius="24px"
+                                boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
+                                _focus={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)" }}
+                                zIndex={1000}
+                            >
+                                <PopoverHeader
+                                    fontWeight="700"
+                                    fontSize="lg"
+                                    fontFamily="Inter, sans-serif"
+                                    borderBottom="1px solid rgba(215, 215, 215, 0.3)"
+                                    py={4}
+                                >
+                                    <HStack justify="space-between">
+                                        <Text>Notifikasi</Text>
+                                        {unreadCount > 0 && (
+                                            <Badge colorScheme="red" borderRadius="full">
+                                                {unreadCount} baru
+                                            </Badge>
+                                        )}
+                                    </HStack>
+                                </PopoverHeader>
+                                <PopoverBody p={0} maxH="400px" overflowY="auto">
+                                    {notifications.length > 0 ? (
+                                        <VStack spacing={0} align="stretch">
+                                            {notifications.map((notif, index) => (
+                                                <Box
+                                                    key={notif.id}
+                                                    p={4}
+                                                    borderBottom={index < notifications.length - 1 ? "1px solid rgba(215, 215, 215, 0.3)" : "none"}
+                                                    cursor="pointer"
+                                                    bg={notif.isRead ? "transparent" : "rgba(33, 209, 121, 0.05)"}
+                                                    _hover={{
+                                                        bg: "rgba(33, 209, 121, 0.08)"
+                                                    }}
+                                                    transition="background 0.2s"
+                                                >
+                                                    <HStack align="start" spacing={3}>
+                                                        <Text fontSize="lg">
+                                                            {getNotificationIcon(notif.type)}
+                                                        </Text>
+                                                        <VStack align="start" spacing={1} flex="1">
+                                                            <Text
+                                                                fontWeight={notif.isRead ? "500" : "700"}
+                                                                fontSize="sm"
+                                                                fontFamily="Inter, sans-serif"
+                                                                color={COLORS.text}
+                                                            >
+                                                                {notif.title}
+                                                            </Text>
+                                                            <Text
+                                                                fontSize="xs"
+                                                                color="gray.600"
+                                                                fontFamily="Inter, sans-serif"
+                                                                lineHeight="short"
+                                                            >
+                                                                {notif.message}
+                                                            </Text>
+                                                            <Text
+                                                                fontSize="xs"
+                                                                color="gray.500"
+                                                                fontFamily="Inter, sans-serif"
+                                                            >
+                                                                {notif.time}
+                                                            </Text>
+                                                        </VStack>
+                                                        {!notif.isRead && (
+                                                            <Box
+                                                                w="8px"
+                                                                h="8px"
+                                                                bg={COLORS.primary}
+                                                                borderRadius="full"
+                                                                mt={1}
+                                                            />
+                                                        )}
+                                                    </HStack>
+                                                </Box>
+                                            ))}
+                                        </VStack>
+                                    ) : (
+                                        <Box p={6} textAlign="center">
+                                            <Text
+                                                fontSize="sm"
+                                                color="gray.500"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                Tidak ada notifikasi
+                                            </Text>
+                                        </Box>
+                                    )}
+                                </PopoverBody>
+                            </PopoverContent>
+                        </Popover>
+
+                        {/* Profile Menu */}
+                        <Menu
+                            placement="bottom-end"
+                            strategy="fixed"
+                        >
+                            <MenuButton
+                                as={Button}
+                                variant="ghost"
+                                p={2}
+                                h="auto"
+                                bg="rgba(255, 255, 255, 0.6)"
+                                backdropFilter="blur(10px)"
+                                border="1px solid rgba(215, 215, 215, 0.5)"
+                                borderRadius="full"
+                                _hover={{
+                                    bg: "rgba(255, 255, 255, 0.8)",
+                                    transform: "translateY(-1px)",
+                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+                                }}
+                                _active={{
+                                    bg: "rgba(255, 255, 255, 0.9)"
+                                }}
+                                transition="all 0.2s"
+                            >
+                                <HStack spacing={3}>
                                     <Avatar
                                         size="sm"
                                         name={user?.fullName || user?.email}
                                         src={user?.avatar}
                                         bg={COLORS.primary}
+                                        color="white"
                                     />
-                                    <VStack spacing={0} align="start" display={{ base: 'none', md: 'flex' }}>
-                                        <Text fontSize="sm" fontWeight="600" color={COLORS.text}>
+                                    <VStack spacing={0} align="start" display={{ base: "none", md: "flex" }}>
+                                        <Text
+                                            fontSize="sm"
+                                            fontWeight="600"
+                                            fontFamily="Inter, sans-serif"
+                                            color={COLORS.text}
+                                        >
                                             {user?.fullName || 'Admin'}
                                         </Text>
-                                        <Text fontSize="xs" color="gray.500">
+                                        <Text
+                                            fontSize="xs"
+                                            color="gray.600"
+                                            fontFamily="Inter, sans-serif"
+                                        >
                                             Administrator
                                         </Text>
                                     </VStack>
                                 </HStack>
                             </MenuButton>
-                            <MenuList>
+                            <MenuList
+                                bg="rgba(255, 255, 255, 0.95)"
+                                backdropFilter="blur(15px)"
+                                border="1px solid rgba(215, 215, 215, 0.5)"
+                                borderRadius="24px"
+                                boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
+                                py={2}
+                                minW="200px"
+                                zIndex={1000}
+                            >
+                                <MenuItem
+                                    icon={<User size={16} />}
+                                    onClick={() => navigate('/profile')}
+                                    bg="transparent"
+                                    _hover={{
+                                        bg: "rgba(33, 209, 121, 0.08)"
+                                    }}
+                                    borderRadius="12px"
+                                    mx={2}
+                                    fontFamily="Inter, sans-serif"
+                                >
+                                    Profile
+                                </MenuItem>
+                                <MenuItem
+                                    icon={<Settings size={16} />}
+                                    bg="transparent"
+                                    _hover={{
+                                        bg: "rgba(33, 209, 121, 0.08)"
+                                    }}
+                                    borderRadius="12px"
+                                    mx={2}
+                                    fontFamily="Inter, sans-serif"
+                                >
+                                    Pengaturan
+                                </MenuItem>
+                                <MenuDivider borderColor="rgba(215, 215, 215, 0.5)" />
+                                <MenuItem
+                                    icon={<Home size={16} />}
+                                    onClick={handleGoHome}
+                                    bg="transparent"
+                                    _hover={{
+                                        bg: "rgba(33, 209, 121, 0.08)"
+                                    }}
+                                    borderRadius="12px"
+                                    mx={2}
+                                    fontFamily="Inter, sans-serif"
+                                >
+                                    Ke Beranda
+                                </MenuItem>
                                 <MenuItem
                                     icon={<LogOut size={16} />}
                                     onClick={handleLogout}
+                                    bg="transparent"
+                                    _hover={{
+                                        bg: "rgba(239, 68, 68, 0.08)",
+                                        color: "red.500"
+                                    }}
+                                    borderRadius="12px"
+                                    mx={2}
+                                    fontFamily="Inter, sans-serif"
                                     color="red.500"
                                 >
-                                    Keluar
+                                    Logout
                                 </MenuItem>
                             </MenuList>
                         </Menu>

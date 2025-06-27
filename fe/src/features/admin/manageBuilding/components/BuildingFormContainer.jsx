@@ -50,14 +50,24 @@ const BuildingFormContainer = () => {
 
     const handleLoadManagers = async () => {
         try {
-            const response = await buildingManagerAPI.getAvailableBuildingManagers();
+            // Load ALL managers (both available and assigned)
+            const response = await buildingManagerAPI.getBuildingManagers();
             if (response.status === 'success') {
                 return response.data || [];
             }
             return [];
         } catch (error) {
-            // Error handled in apiClient
-            return [];
+            // If getAllManagers doesn't exist, fallback to available managers
+            try {
+                const fallbackResponse = await buildingManagerAPI.getAvailableBuildingManagers();
+                if (fallbackResponse.status === 'success') {
+                    return fallbackResponse.data || [];
+                }
+                return [];
+            } catch (fallbackError) {
+                // Error handled in apiClient
+                return [];
+            }
         }
     };
 

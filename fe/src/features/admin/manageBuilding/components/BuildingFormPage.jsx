@@ -22,10 +22,12 @@ import {
     Text,
     Breadcrumb,
     BreadcrumbItem,
-    BreadcrumbLink
+    BreadcrumbLink,
+    Image,
+    IconButton
 } from '@chakra-ui/react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Building, ArrowLeft } from 'lucide-react';
+import { Building, ArrowLeft, Camera, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { COLORS } from '@utils/designTokens';
 import Input from '@shared/components/Input';
@@ -66,11 +68,12 @@ const BuildingFormPage = ({
     });
 
     const [facilities, setFacilities] = useState([]);
-    const [availableManagers, setAvailableManagers] = useState([]);
+    const [allManagers, setAllManagers] = useState([]);
     const [buildingData, setBuildingData] = useState(null);
     const [loadingData, setLoadingData] = useState(false);
     const [loadingBuilding, setLoadingBuilding] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [photoPreview, setPhotoPreview] = useState(null);
 
     useEffect(() => {
         loadFormData();
@@ -91,10 +94,10 @@ const BuildingFormPage = ({
             ]);
 
             console.log('Loaded facilities:', facilitiesData);
-            console.log('Loaded managers:', managersData);
+            console.log('Loaded all managers:', managersData);
 
             setFacilities(facilitiesData || []);
-            setAvailableManagers(managersData || []);
+            setAllManagers(managersData || []);
         } catch (error) {
             // Error handled in apiClient
         } finally {
@@ -112,6 +115,12 @@ const BuildingFormPage = ({
                 console.log('Building managers:', building.buildingManagers);
 
                 setBuildingData(building);
+
+                // Set photo preview if exists
+                if (building.buildingPhoto) {
+                    setPhotoPreview(building.buildingPhoto);
+                }
+
                 setFormData({
                     buildingName: building.buildingName || '',
                     description: building.description || '',
@@ -119,14 +128,14 @@ const BuildingFormPage = ({
                     capacity: building.capacity || '',
                     location: building.location || '',
                     buildingType: building.buildingType || '',
-                    buildingPhoto: null,
-                    facilities: building.facilities?.map(f => f.id) || [],
-                    buildingManagers: building.buildingManagers?.map(m => m.id) || []
+                    buildingPhoto: null, // Reset photo, keep preview
+                    facilities: building.facilities?.map(f => f.id.toString()) || [],
+                    buildingManagers: building.buildingManagers?.map(m => m.id.toString()) || []
                 });
 
                 console.log('Form data after loading:', {
-                    facilities: building.facilities?.map(f => f.id) || [],
-                    buildingManagers: building.buildingManagers?.map(m => m.id) || []
+                    facilities: building.facilities?.map(f => f.id.toString()) || [],
+                    buildingManagers: building.buildingManagers?.map(m => m.id.toString()) || []
                 });
             } else {
                 toast.error('Gedung tidak ditemukan');
@@ -151,7 +160,13 @@ const BuildingFormPage = ({
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setFormData(prev => ({ ...prev, buildingPhoto: file }));
+        if (file) {
+            setFormData(prev => ({ ...prev, buildingPhoto: file }));
+
+            // Create preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setPhotoPreview(previewUrl);
+        }
     };
 
     const handleFacilitiesChange = (values) => {
@@ -160,6 +175,10 @@ const BuildingFormPage = ({
 
     const handleManagersChange = (values) => {
         setFormData(prev => ({ ...prev, buildingManagers: values }));
+    };
+
+    const handlePhotoClick = () => {
+        fileInputRef.current?.click();
     };
 
     const handleSubmit = async (e) => {
@@ -353,40 +372,99 @@ const BuildingFormPage = ({
                                 <Box>
                                     <H3 mb={4}>Foto Gedung</H3>
                                     <FormControl>
-                                        <Box
-                                            as="button"
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            w="100%"
-                                            h="200px"
-                                            bg="rgba(33, 209, 121, 0.05)"
-                                            border="2px dashed"
-                                            borderColor={formData.buildingPhoto ? COLORS.primary : "rgba(215, 215, 215, 0.5)"}
-                                            borderRadius="16px"
-                                            display="flex"
-                                            flexDirection="column"
-                                            alignItems="center"
-                                            justifyContent="center"
-                                            cursor="pointer"
-                                            _hover={{
-                                                bg: "rgba(33, 209, 121, 0.08)",
-                                                borderColor: COLORS.primary
-                                            }}
-                                            transition="all 0.2s"
-                                        >
-                                            <VStack spacing={3}>
-                                                <Building size={48} color={COLORS.primary} />
-                                                <Text fontSize="lg" color="gray.600" textAlign="center">
-                                                    {formData.buildingPhoto
-                                                        ? formData.buildingPhoto.name
-                                                        : "Klik untuk upload foto gedung"
+                                        {photoPreview ? (
+                                            // Show photo preview with edit overlay
+                                            <Box
+                                                position="relative"
+                                                w="100%"
+                                                h="300px"
+                                                borderRadius="16px"
+                                                overflow="hidden"
+                                                cursor="pointer"
+                                                onClick={handlePhotoClick}
+                                                _hover={{
+                                                    '&::after': {
+                                                        opacity: 1
                                                     }
-                                                </Text>
-                                                <Text fontSize="sm" color="gray.500">
-                                                    Format: JPG, JPEG, PNG, GIF
-                                                </Text>
-                                            </VStack>
-                                        </Box>
+                                                }}
+                                                transition="all 0.2s"
+                                            >
+                                                <Image
+                                                    src={photoPreview}
+                                                    alt="Preview"
+                                                    w="100%"
+                                                    h="100%"
+                                                    objectFit="cover"
+                                                />
+
+                                                {/* Overlay */}
+                                                <Box
+                                                    position="absolute"
+                                                    top="0"
+                                                    left="0"
+                                                    right="0"
+                                                    bottom="0"
+                                                    bg="rgba(0, 0, 0, 0.6)"
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    justifyContent="center"
+                                                    opacity="0"
+                                                    transition="opacity 0.2s"
+                                                    _after={{
+                                                        content: '""',
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        right: 0,
+                                                        bottom: 0
+                                                    }}
+                                                >
+                                                    <VStack spacing={2} color="white" zIndex="1">
+                                                        <Camera size={32} />
+                                                        <Text fontSize="sm" fontWeight="600">
+                                                            Klik untuk mengubah foto
+                                                        </Text>
+                                                    </VStack>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            // Show upload area when no photo
+                                            <Box
+                                                as="button"
+                                                type="button"
+                                                onClick={handlePhotoClick}
+                                                w="100%"
+                                                h="200px"
+                                                bg="rgba(33, 209, 121, 0.05)"
+                                                border="2px dashed"
+                                                borderColor={formData.buildingPhoto ? COLORS.primary : "rgba(215, 215, 215, 0.5)"}
+                                                borderRadius="16px"
+                                                display="flex"
+                                                flexDirection="column"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                                cursor="pointer"
+                                                _hover={{
+                                                    bg: "rgba(33, 209, 121, 0.08)",
+                                                    borderColor: COLORS.primary
+                                                }}
+                                                transition="all 0.2s"
+                                            >
+                                                <VStack spacing={3}>
+                                                    <Upload size={48} color={COLORS.primary} />
+                                                    <Text fontSize="lg" color="gray.600" textAlign="center">
+                                                        {formData.buildingPhoto
+                                                            ? formData.buildingPhoto.name
+                                                            : "Klik untuk upload foto gedung"
+                                                        }
+                                                    </Text>
+                                                    <Text fontSize="sm" color="gray.500">
+                                                        Format: JPG, JPEG, PNG, GIF
+                                                    </Text>
+                                                </VStack>
+                                            </Box>
+                                        )}
+
                                         <input
                                             ref={fileInputRef}
                                             type="file"
@@ -407,7 +485,7 @@ const BuildingFormPage = ({
                                             >
                                                 <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
                                                     {facilities.map(facility => (
-                                                        <Checkbox key={facility.id} value={facility.id}>
+                                                        <Checkbox key={facility.id} value={facility.id.toString()}>
                                                             {facility.facilityName}
                                                         </Checkbox>
                                                     ))}
@@ -417,20 +495,33 @@ const BuildingFormPage = ({
                                     </Box>
                                 )}
 
-                                {availableManagers.length > 0 && (
+                                {allManagers.length > 0 && (
                                     <Box>
                                         <H3 mb={4}>Building Manager</H3>
+                                        <Text fontSize="sm" color="gray.600" mb={4}>
+                                            Pilih building manager yang akan bertanggung jawab atas gedung ini
+                                        </Text>
                                         <FormControl>
                                             <CheckboxGroup
                                                 value={formData.buildingManagers}
                                                 onChange={handleManagersChange}
                                             >
                                                 <Stack spacing={3}>
-                                                    {availableManagers.map(manager => (
-                                                        <Checkbox key={manager.id} value={manager.id}>
+                                                    {allManagers.map(manager => (
+                                                        <Checkbox
+                                                            key={manager.id}
+                                                            value={manager.id.toString()}
+                                                            colorScheme="green"
+                                                        >
                                                             <Box>
                                                                 <Text fontWeight="medium">{manager.managerName}</Text>
                                                                 <Text fontSize="sm" color="gray.600">{manager.phoneNumber}</Text>
+                                                                {/* Show if manager is currently assigned to this building */}
+                                                                {isEdit && buildingData?.buildingManagers?.some(bm => bm.id === manager.id) && (
+                                                                    <Text fontSize="xs" color={COLORS.primary} fontWeight="600">
+                                                                        ✓ Saat ini ditugaskan
+                                                                    </Text>
+                                                                )}
                                                             </Box>
                                                         </Checkbox>
                                                     ))}

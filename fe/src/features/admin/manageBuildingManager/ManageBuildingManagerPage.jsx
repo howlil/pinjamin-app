@@ -12,7 +12,6 @@ import { PrimaryButton } from '@shared/components/Button';
 import { H2, Text as CustomText } from '@shared/components/Typography';
 import { ConfirmModal } from '@shared/components/Modal';
 import LoadingSkeleton from '@shared/components/LoadingSkeleton';
-import PaginationControls from '@shared/components/PaginationControls';
 import { useBuildingManagerManagement } from './api/useBuildingManagerManagement';
 import BuildingManagerTable from './components/BuildingManagerTable';
 import BuildingManagerFormModal from './components/BuildingManagerFormModal';
@@ -184,20 +183,13 @@ const ManageBuildingManagerPage = () => {
                     <BuildingManagerTable
                         managers={managers}
                         loading={loading}
+                        pagination={pagination}
                         onEditManager={handleEditManager}
                         onDeleteManager={handleDeleteClick}
                         onAssignBuilding={handleAssignClick}
-                    />
-                </Box>
-
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                    <PaginationControls
-                        currentPage={pagination.currentPage}
-                        totalPages={pagination.totalPages}
                         onPageChange={handlePageChange}
                     />
-                )}
+                </Box>
             </VStack>
 
             {/* Form Modal */}

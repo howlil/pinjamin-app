@@ -13,7 +13,7 @@ import {
 import { Grid, Table } from 'lucide-react';
 import { H1, H3 } from '@shared/components/Typography';
 import PaginationControls from '@shared/components/PaginationControls';
-import { useTransactionHistory } from './api/useTransactions';
+import { useTransactions } from './api/useTransactions';
 import TransactionTable from './components/TransactionTable';
 import TransactionEmptyState from './components/TransactionEmptyState';
 
@@ -26,12 +26,12 @@ const UserTransactionPage = () => {
         loading: transactionsLoading,
         error: transactionsError,
         pagination: transactionsPagination,
-        fetchTransactionHistory
-    } = useTransactionHistory({ page: currentPage, limit: 10 });
+        fetchTransactions
+    } = useTransactions({ page: currentPage, limit: 10 });
 
     const handleTransactionPageChange = (page) => {
         setCurrentPage(page);
-        fetchTransactionHistory({ page, limit: 10 });
+        fetchTransactions({ page, limit: 10 });
     };
 
     return (

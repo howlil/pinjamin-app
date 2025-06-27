@@ -656,7 +656,16 @@ const BuildingService = {
                     // Try to parse as JSON array
                     try {
                         const parsed = JSON.parse(trimmedData);
-                        return Array.isArray(parsed) ? parsed : [];
+                        if (Array.isArray(parsed)) {
+                            // Check if it's array of UUID strings like ["uuid1", "uuid2"]
+                            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                            if (parsed.every(item => typeof item === 'string' && uuidRegex.test(item))) {
+                                logger.info(`Received JSON array of UUIDs for ${fieldName}:`, parsed);
+                                return parsed.map(id => ({ id }));
+                            }
+                            return parsed;
+                        }
+                        return [];
                     } catch (parseError) {
                         logger.error(`Invalid JSON format for ${fieldName}:`, {
                             data: trimmedData,
@@ -675,6 +684,17 @@ const BuildingService = {
             // Parse JSON strings safely
             const parsedFacilities = safeJsonParse(facilities, 'facilities');
             const parsedManagers = safeJsonParse(buildingManagers, 'buildingManagers');
+
+            // Debug logging untuk update building
+            logger.info('Update building - input received:', {
+                buildingId,
+                facilitiesInput: facilities,
+                facilitiesType: typeof facilities,
+                facilitiesParsed: parsedFacilities,
+                managersInput: buildingManagers,
+                managersType: typeof buildingManagers,
+                managersParsed: parsedManagers
+            });
 
             let buildingPhotoUrl = existingBuilding.buildingPhoto;
 
@@ -703,8 +723,13 @@ const BuildingService = {
                 data: updateData
             });
 
-            // Update facilities
-            if (parsedFacilities && Array.isArray(parsedFacilities)) {
+            // Update facilities (run when facilities field is present in request)
+            if (facilities !== undefined) {
+                logger.info(`Starting facilities update for building ${buildingId}`, {
+                    parsedFacilities,
+                    isArray: Array.isArray(parsedFacilities),
+                    length: parsedFacilities?.length
+                });
                 // Delete existing facility relationships
                 await prisma.facilityBuilding.deleteMany({
                     where: { buildingId }

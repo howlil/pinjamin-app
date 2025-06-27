@@ -1,44 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Box,
     Container,
     VStack,
     HStack,
-    useDisclosure
+    useDisclosure,
+    IconButton,
+    Tooltip
 } from '@chakra-ui/react';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import { PrimaryButton } from '@shared/components/Button';
 import { H2, Text as CustomText } from '@shared/components/Typography';
 import { ConfirmModal } from '@shared/components/Modal';
-import { buildingManagementAPI } from './api/buildingManagementAPI';
-import { facilityManagementAPI } from '../manageFacility/api/facilityManagementAPI';
-import { buildingManagerAPI } from '../manageBuildingManager/api/buildingManagerAPI';
+import { COLORS, CORNER_RADIUS } from '@utils/designTokens';
+import { useBuildingManagement, useDeleteBuilding } from './api/useBuildingManagement';
 import BuildingTable from './components/BuildingTable';
 import BuildingFilters from './components/BuildingFilters';
+import ErrorState from '@shared/components/ErrorState';
 
 const ManageBuildingPage = () => {
     const navigate = useNavigate();
 
-    const [buildings, setBuildings] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [deleteLoading, setDeleteLoading] = useState(false);
-    const [pagination, setPagination] = useState({
-        page: 1,
-        currentPage: 1,
-        limit: 10,
-        itemsPerPage: 10,
-        total: 0,
-        totalItems: 0,
-        totalPages: 0
-    });
-
+    // Filter state
     const [filters, setFilters] = useState({
         page: 1,
-        limit: 10
+        limit: 10,
+        search: '',
+        buildingType: ''
     });
+
     const [selectedBuilding, setSelectedBuilding] = useState(null);
+
+    // Hooks
+    const {
+        buildings,
+        loading,
+        error,
+        pagination,
+        refetch
+    } = useBuildingManagement(filters);
+
+    const { deleteBuilding, loading: deleteLoading } = useDeleteBuilding();
 
     const {
         isOpen: isDeleteOpen,
@@ -46,197 +49,89 @@ const ManageBuildingPage = () => {
         onClose: onDeleteClose
     } = useDisclosure();
 
-    useEffect(() => {
-        fetchBuildings();
-    }, [filters]);
-
-    const fetchBuildings = async () => {
-        setLoading(true);
-        try {
-            // Filter out empty parameters to avoid API validation errors
-            const queryParams = {};
-            Object.keys(filters).forEach(key => {
-                const value = filters[key];
-                if (value !== '' && value !== null && value !== undefined) {
-                    queryParams[key] = value;
-                }
-            });
-
-            const response = await buildingManagementAPI.getAdminBuildings(queryParams);
-
-            if (response.data) {
-                const buildingsData = response.data || [];
-                const paginationData = response.pagination || pagination;
-
-                setBuildings(buildingsData);
-                setPagination(paginationData);
-            }
-        } catch (error) {
-            // Error handled in apiClient
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCreateBuilding = async (buildingData) => {
-        try {
-            const response = await buildingManagementAPI.createBuilding(buildingData);
-
-            if (response.data && response.data.status === 'success') {
-                toast.success('Gedung berhasil dibuat');
-                return response.data.data;
-            }
-        } catch (error) {
-            // Error handled in apiClient
-            throw error;
-        }
-    };
-
-    const handleUpdateBuilding = async (id, buildingData) => {
-        try {
-            const response = await buildingManagementAPI.updateBuilding(id, buildingData);
-
-            if (response.data && response.data.status === 'success') {
-                toast.success('Gedung berhasil diperbarui');
-                return response.data.data;
-            }
-        } catch (error) {
-            // Error handled in apiClient
-            throw error;
-        }
-    };
-
-    const handleDeleteBuilding = async (id) => {
-        setDeleteLoading(true);
-        try {
-            const response = await buildingManagementAPI.deleteBuilding(id);
-
-            if (response.data && response.data.status === 'success') {
-                toast.success('Gedung berhasil dihapus');
-                fetchBuildings(); // Refresh data
-                return response.data.data;
-            }
-        } catch (error) {
-            // Error handled in apiClient
-            throw error;
-        } finally {
-            setDeleteLoading(false);
-        }
-    };
-
-    const handleLoadFacilities = async () => {
-        try {
-            const response = await facilityManagementAPI.getFacilities();
-            if (response.status === 'success') {
-                return response.data || [];
-            }
-            return [];
-        } catch (error) {
-            // Error handled in apiClient
-            return [];
-        }
-    };
-
-    const handleLoadManagers = async () => {
-        try {
-            const response = await buildingManagerAPI.getAvailableBuildingManagers();
-            if (response.status === 'success') {
-                return response.data || [];
-            }
-            return [];
-        } catch (error) {
-            // Error handled in apiClient
-            return [];
-        }
-    };
-
-    const handleLoadBuilding = async (id) => {
-        try {
-            const response = await buildingManagementAPI.getAdminBuildings();
-            if (response.data) {
-                const building = response.data.find(b => b.id === id);
-                return building || null;
-            }
-            return null;
-        } catch (error) {
-            // Error handled in apiClient
-            return null;
-        }
-    };
-
-    const handleSearch = (e) => {
+    // Filter handlers
+    const handleSearch = useCallback((e) => {
         const value = e.target.value;
-        setFilters(prev => {
-            const newFilters = { ...prev, page: 1 };
-            if (value && value.trim() !== '') {
-                newFilters.search = value;
-            } else {
-                delete newFilters.search;
-            }
-            return newFilters;
-        });
-    };
+        setFilters(prev => ({
+            ...prev,
+            page: 1, // Reset to first page when searching
+            search: value
+        }));
+    }, []);
 
-    const handleTypeFilter = (e) => {
+    const handleTypeFilter = useCallback((e) => {
         const value = e.target.value;
-        setFilters(prev => {
-            const newFilters = { ...prev, page: 1 };
-            if (value && value !== '') {
-                newFilters.buildingType = value;
-            } else {
-                delete newFilters.buildingType;
-            }
-            return newFilters;
-        });
-    };
+        setFilters(prev => ({
+            ...prev,
+            page: 1, // Reset to first page when filtering
+            buildingType: value
+        }));
+    }, []);
 
-    const handlePageChange = (page) => {
+    const handlePageChange = useCallback((page) => {
         setFilters(prev => ({ ...prev, page }));
-    };
+    }, []);
 
-    const handleAddBuilding = () => {
+    const handleRefresh = useCallback(() => {
+        refetch();
+    }, [refetch]);
+
+    // Building actions
+    const handleAddBuilding = useCallback(() => {
         navigate('/admin/manage-building/create');
-    };
+    }, [navigate]);
 
-    const handleViewBuilding = (building) => {
+    const handleViewBuilding = useCallback((building) => {
         navigate(`/admin/manage-building/detail/${building.id}`);
-    };
+    }, [navigate]);
 
-    const handleEditBuilding = (building) => {
+    const handleEditBuilding = useCallback((building) => {
         navigate(`/admin/manage-building/edit/${building.id}`);
-    };
+    }, [navigate]);
 
-    const handleDeleteClick = (building) => {
+    const handleDeleteClick = useCallback((building) => {
         setSelectedBuilding(building);
         onDeleteOpen();
-    };
+    }, [onDeleteOpen]);
 
     const handleDeleteConfirm = async () => {
         try {
-            await handleDeleteBuilding(selectedBuilding.id);
+            await deleteBuilding(selectedBuilding.id);
             onDeleteClose();
+            refetch(); // Refresh data after deletion
         } catch (error) {
-            // Error handling is done in handleDeleteBuilding
+            // Error handling is done in useDeleteBuilding hook
         }
     };
 
+    if (error) {
+        return (
+            <Container maxW="7xl" py={8}>
+                <ErrorState
+                    title="Error Loading Buildings"
+                    description={error}
+                    onRetry={handleRefresh}
+                />
+            </Container>
+        );
+    }
+
     return (
-        <Container maxW="full" py={8}>
-            <VStack spacing={6} align="stretch">
+        <Container maxW="7xl" py={8}>
+            <VStack spacing={8} align="stretch">
                 {/* Header */}
-                <HStack justify="space-between" align="center">
-                    <Box>
-                        <H2>Manajemen Gedung</H2>
-                        <CustomText color="gray.600">
-                            Kelola data gedung dan fasilitas
-                        </CustomText>
-                    </Box>
-                    <PrimaryButton
-                        leftIcon={<Plus size={20} />}
-                        onClick={handleAddBuilding}
-                    >
-                        Tambah Gedung
-                    </PrimaryButton>
+                <HStack justify="space-end" align="end" w="100%" >
+
+                        <PrimaryButton
+                            leftIcon={<Plus size={20} />}
+                            onClick={handleAddBuilding}
+                            fontFamily="Inter, sans-serif"
+                            _hover={{
+                                transform: "translateY(-2px)"
+                            }}
+                        >
+                            Tambah Gedung
+                        </PrimaryButton>
                 </HStack>
 
                 {/* Filters */}
@@ -247,7 +142,14 @@ const ManageBuildingPage = () => {
                 />
 
                 {/* Table */}
-                <Box bg="white" borderRadius="24px" overflow="hidden" boxShadow="sm">
+                <Box
+                    bg="rgba(255, 255, 255, 0.9)"
+                    backdropFilter="blur(15px)"
+                    borderRadius={`${CORNER_RADIUS.components.table}px`}
+                    border="1px solid rgba(215, 215, 215, 0.5)"
+                    overflow="hidden"
+                    boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+                >
                     <BuildingTable
                         buildings={buildings}
                         loading={loading}
@@ -271,6 +173,7 @@ const ManageBuildingPage = () => {
                 isLoading={deleteLoading}
                 confirmText="Hapus"
                 cancelText="Batal"
+                isDelete
             />
         </Container>
     );

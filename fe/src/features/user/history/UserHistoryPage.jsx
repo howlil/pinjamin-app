@@ -11,7 +11,7 @@ import {
     Grid
 } from '@chakra-ui/react';
 import { Grid as GridIcon, Table } from 'lucide-react';
-import { useBookingHistory } from './api/useHistory';
+import { useHistory } from './api/useHistory';
 import HistoryTable from './components/HistoryTable';
 import HistoryEmptyState from './components/HistoryEmptyState';
 import StatusTabs from './components/StatusTabs';
@@ -27,11 +27,11 @@ const UserHistoryPage = () => {
         loading,
         error,
         pagination,
-        fetchBookingHistory
-    } = useBookingHistory();
+        fetchHistory
+    } = useHistory();
 
     useEffect(() => {
-        fetchBookingHistory({
+        fetchHistory({
             status: statusFilter,
             page: currentPage,
             limit: 10

@@ -46,7 +46,6 @@ const FacilityValidation = {
                 'any.required': 'Nama fasilitas wajib diisi'
             }),
         iconUrl: Joi.string()
-            .uri()
             .optional()
             .allow(null, '')
             .messages({
@@ -65,7 +64,6 @@ const FacilityValidation = {
                 'string.max': 'Nama fasilitas maksimal 50 karakter'
             }),
         iconUrl: Joi.string()
-            .uri()
             .optional()
             .allow(null, '')
             .messages({

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { buildingManagementAPI } from './buildingManagementAPI';
 
@@ -16,16 +16,19 @@ export const useBuildingManagement = (filters = {}) => {
         totalPages: 0
     });
 
-    const fetchBuildings = async (params = {}) => {
+    const fetchBuildings = useCallback(async (customParams = {}) => {
         setLoading(true);
         setError(null);
 
         try {
-            const queryParams = {};
-            const allParams = { ...filters, ...params };
+            // Combine filters with custom params
+            const allParams = { ...filters, ...customParams };
 
+            // Filter out empty parameters to avoid API validation errors
+            const queryParams = {};
             Object.keys(allParams).forEach(key => {
                 const value = allParams[key];
+                // Only include non-empty values
                 if (value !== '' && value !== null && value !== undefined) {
                     queryParams[key] = value;
                 }
@@ -33,26 +36,50 @@ export const useBuildingManagement = (filters = {}) => {
 
             const response = await buildingManagementAPI.getAdminBuildings(queryParams);
 
-            if (response.data) {
+            if (response.data || response.status === 'success') {
                 const buildingsData = response.data || [];
-                const paginationData = response.pagination || pagination;
+                const paginationData = response.pagination || {
+                    page: 1,
+                    currentPage: 1,
+                    limit: 10,
+                    itemsPerPage: 10,
+                    total: buildingsData.length,
+                    totalItems: buildingsData.length,
+                    totalPages: Math.ceil(buildingsData.length / 10)
+                };
 
                 setBuildings(buildingsData);
                 setPagination(paginationData);
+            } else {
+                setBuildings([]);
+                setPagination({
+                    page: 1,
+                    currentPage: 1,
+                    limit: 10,
+                    itemsPerPage: 10,
+                    total: 0,
+                    totalItems: 0,
+                    totalPages: 0
+                });
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data gedung');
-            throw err;
+            const errorMessage = err.response?.data?.message || 'Gagal memuat data gedung';
+            setError(errorMessage);
+            console.error('Error fetching buildings:', err);
+            setBuildings([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters]);
 
+    // Fetch buildings when filters change
     useEffect(() => {
         fetchBuildings();
-    }, [JSON.stringify(filters)]); // Re-fetch when filters change
+    }, [fetchBuildings]);
 
-    const refetch = () => fetchBuildings();
+    const refetch = useCallback(() => {
+        fetchBuildings();
+    }, [fetchBuildings]);
 
     return {
         buildings,
@@ -78,9 +105,14 @@ export const useCreateBuilding = () => {
             if (response.data && response.data.status === 'success') {
                 toast.success('Gedung berhasil dibuat');
                 return response.data.data;
+            } else if (response.status === 'success') {
+                toast.success('Gedung berhasil dibuat');
+                return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal membuat gedung');
+            const errorMessage = err.response?.data?.message || 'Gagal membuat gedung';
+            setError(errorMessage);
+            console.error('Error creating building:', err);
             throw err;
         } finally {
             setLoading(false);
@@ -108,9 +140,14 @@ export const useUpdateBuilding = () => {
             if (response.data && response.data.status === 'success') {
                 toast.success('Gedung berhasil diperbarui');
                 return response.data.data;
+            } else if (response.status === 'success') {
+                toast.success('Gedung berhasil diperbarui');
+                return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memperbarui gedung');
+            const errorMessage = err.response?.data?.message || 'Gagal memperbarui gedung';
+            setError(errorMessage);
+            console.error('Error updating building:', err);
             throw err;
         } finally {
             setLoading(false);
@@ -138,9 +175,14 @@ export const useDeleteBuilding = () => {
             if (response.data && response.data.status === 'success') {
                 toast.success('Gedung berhasil dihapus');
                 return response.data.data;
+            } else if (response.status === 'success') {
+                toast.success('Gedung berhasil dihapus');
+                return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal menghapus gedung');
+            const errorMessage = err.response?.data?.message || 'Gagal menghapus gedung';
+            setError(errorMessage);
+            console.error('Error deleting building:', err);
             throw err;
         } finally {
             setLoading(false);

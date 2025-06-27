@@ -86,15 +86,23 @@ export const ConfirmModal = ({
     cancelText = "Batal",
     isLoading = false,
     ...props
-}) => (
+}) => {
+    const isDelete = props.isDelete || false;
+    return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm" {...props}>
         <Text mb={6}>{message}</Text>
-        <Box display="flex" gap={3} justifyContent="flex-end">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+        <Box display="flex" gap={3} justifyContent="space-between">
+            <Button
+                variant={`${isDelete ? 'primary' : 'outline'}`}
+                w="100%"
+                onClick={onClose}
+                disabled={isLoading}
+            >
                 {cancelText}
             </Button>
             <Button
-                variant="primary"
+                variant={`${isDelete ? 'outline' : 'primary'}`}
+                w="100%"
                 onClick={onConfirm}
                 isLoading={isLoading}
             >
@@ -102,7 +110,9 @@ export const ConfirmModal = ({
             </Button>
         </Box>
     </Modal>
-);
+    );
+};
+
 
 export const AlertModal = ({
     isOpen,

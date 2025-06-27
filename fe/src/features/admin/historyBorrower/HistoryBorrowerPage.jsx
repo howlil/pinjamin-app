@@ -167,22 +167,7 @@ const HistoryBorrowerPage = () => {
     return (
         <Container maxW="7xl" py={8}>
             <VStack spacing={6} align="stretch">
-                {/* Header */}
-                <Box
-                    bg="rgba(255, 255, 255, 0.8)"
-                    backdropFilter="blur(15px)"
-                    borderRadius="24px"
-                    border="1px solid rgba(215, 215, 215, 0.5)"
-                    p={6}
-                >
-                    <Heading size="lg" color="#2A2A2A" mb={2}>
-                        Riwayat Peminjaman
-                    </Heading>
-                    <Text color="#2A2A2A" opacity={0.7}>
-                        Kelola dan pantau riwayat peminjaman gedung (kecuali status pending)
-                    </Text>
-                </Box>
-
+              
                 {/* Controls */}
                 <Box
                     bg="rgba(255, 255, 255, 0.8)"

@@ -447,7 +447,7 @@ const BookingService = {
     // Get bookings with filters (admin)
     async adminGetBookings(filters) {
         try {
-            const { status = 'PROCESSING', page = 1, limit = 10 } = filters;
+            const { status, page = 1, limit = 10 } = filters;
             const skip = (page - 1) * limit;
 
             const whereClause = {};

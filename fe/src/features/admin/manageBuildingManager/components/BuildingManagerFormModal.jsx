@@ -57,11 +57,18 @@ const BuildingManagerFormModal = ({
                             </FormControl>
                         </VStack>
                     </ModalBody>
-                    <ModalFooter>
-                        <SecondaryButton mr={3} onClick={onClose}>
+                    <ModalFooter
+                        justifyContent="space-between"
+                        gap={3}
+                    >
+                        <SecondaryButton
+                            w="100%"
+                            onClick={onClose}
+                        >
                             Batal
                         </SecondaryButton>
                         <PrimaryButton
+                            w="100%"
                             type="submit"
                             isLoading={isLoading}
                             loadingText={isEdit ? "Memperbarui..." : "Menyimpan..."}

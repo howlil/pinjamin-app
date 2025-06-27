@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box } from '@chakra-ui/react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth/api/useAuth';
@@ -7,16 +6,9 @@ const PrivateAdminLayout = ({ children, allowedRoles = ['ADMIN'] }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    // Debug logging
-    console.log('PrivateAdminLayout Debug:', {
-        user,
-        loading,
-        allowedRoles,
-        userRole: user?.role,
-        pathname: location.pathname
-    });
 
-    // Tampilkan loading state tanpa navbar
+
+    // Tampilkan loading state
     if (loading) {
         return (
             <Box
@@ -26,7 +18,7 @@ const PrivateAdminLayout = ({ children, allowedRoles = ['ADMIN'] }) => {
                 h="100vh"
                 bg="rgba(248, 250, 252, 0.8)"
             >
-                <Box fontSize="lg" fontWeight="600">
+                <Box fontSize="lg" fontWeight="600" fontFamily="Inter, sans-serif">
                     Loading...
                 </Box>
             </Box>
@@ -59,7 +51,7 @@ const PrivateAdminLayout = ({ children, allowedRoles = ['ADMIN'] }) => {
         );
     }
 
-    // Return children tanpa Layout wrapper (no navbar)
+    // Return children only (authentication wrapper)
     return children;
 };
 

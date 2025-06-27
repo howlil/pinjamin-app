@@ -6,41 +6,32 @@ import {
     Tbody,
     Tr,
     Th,
-    TableContainer,
- 
+    TableContainer
 } from '@chakra-ui/react';
-import { Plus, Users } from 'lucide-react';
-import { PrimaryButton } from '@shared/components/Button';
+import { Users } from 'lucide-react';
 import EmptyState from '@shared/components/EmptyState';
 import PaginationControls from '@shared/components/PaginationControls';
 import BuildingManagerTableRow from './BuildingManagerTableRow';
 
 const BuildingManagerTable = ({
-    managers,
-    pagination,
-    currentPage,
-    onAddManager,
+    managers = [],
+    pagination = { currentPage: 1, totalPages: 1 },
+    loading = false,
     onEditManager,
     onDeleteManager,
-    onAssignManager,
+    onAssignBuilding,
     onPageChange
 }) => {
 
     if (managers.length === 0) {
         return (
-            <EmptyState
-                icon={Users}
-                title="Belum ada building manager"
-                description="Tambahkan building manager pertama untuk memulai"
-                action={
-                    <PrimaryButton
-                        leftIcon={<Plus size={20} />}
-                        onClick={onAddManager}
-                    >
-                        Tambah Building Manager
-                    </PrimaryButton>
-                }
-            />
+            <Box p={8}>
+                <EmptyState
+                    icon={Users}
+                    title="Belum ada building manager"
+                    description="Tambahkan building manager pertama untuk memulai"
+                />
+            </Box>
         );
     }
 
@@ -63,20 +54,22 @@ const BuildingManagerTable = ({
                                 manager={manager}
                                 onEdit={onEditManager}
                                 onDelete={onDeleteManager}
-                                onAssign={onAssignManager}
+                                onAssign={onAssignBuilding}
                             />
                         ))}
                     </Tbody>
                 </Table>
             </TableContainer>
 
-            <Box p={6} borderTop="1px" borderColor="gray.200">
-                <PaginationControls
-                    currentPage={pagination.currentPage || currentPage || 1}
-                    totalPages={pagination.totalPages || 1}
-                    onPageChange={onPageChange}
-                />
-            </Box>
+            {onPageChange && pagination.totalPages > 1 && (
+                <Box p={6} borderTop="1px" borderColor="gray.200">
+                    <PaginationControls
+                        currentPage={pagination.currentPage || 1}
+                        totalPages={pagination.totalPages || 1}
+                        onPageChange={onPageChange}
+                    />
+                </Box>
+            )}
         </>
     );
 };
