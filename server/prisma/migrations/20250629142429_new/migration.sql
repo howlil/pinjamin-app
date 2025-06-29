@@ -46,7 +46,7 @@ CREATE TABLE `Token` (
 CREATE TABLE `Facility` (
     `id` VARCHAR(191) NOT NULL,
     `facilityName` VARCHAR(191) NOT NULL,
-    `iconUrl` VARCHAR(191) NOT NULL,
+    `iconUrl` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -67,7 +67,7 @@ CREATE TABLE `Building` (
     `buildingName` VARCHAR(191) NOT NULL,
     `description` TEXT NOT NULL,
     `rentalPrice` INTEGER NOT NULL,
-    `buildingPhoto` VARCHAR(191) NOT NULL,
+    `buildingPhoto` VARCHAR(191) NULL,
     `capacity` INTEGER NOT NULL,
     `location` VARCHAR(191) NOT NULL,
     `buildingType` ENUM('CLASSROOM', 'PKM', 'LABORATORY', 'MULTIFUNCTION', 'SEMINAR') NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE `BuildingManager` (
     `id` VARCHAR(191) NOT NULL,
     `managerName` VARCHAR(191) NOT NULL,
     `phoneNumber` VARCHAR(191) NOT NULL,
-    `buildingId` VARCHAR(191) NOT NULL,
+    `buildingId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -157,7 +157,7 @@ ALTER TABLE `FacilityBuilding` ADD CONSTRAINT `FacilityBuilding_facilityId_fkey`
 ALTER TABLE `FacilityBuilding` ADD CONSTRAINT `FacilityBuilding_buildingId_fkey` FOREIGN KEY (`buildingId`) REFERENCES `Building`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `BuildingManager` ADD CONSTRAINT `BuildingManager_buildingId_fkey` FOREIGN KEY (`buildingId`) REFERENCES `Building`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `BuildingManager` ADD CONSTRAINT `BuildingManager_buildingId_fkey` FOREIGN KEY (`buildingId`) REFERENCES `Building`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Booking` ADD CONSTRAINT `Booking_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

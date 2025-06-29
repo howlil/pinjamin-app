@@ -7,6 +7,7 @@ export const useSchedule = (filters = {}) => {
     const [schedule, setSchedule] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [lastFetchParams, setLastFetchParams] = useState(null);
 
     // Transform API data to component format
     const transformScheduleData = (apiData) => {
@@ -34,20 +35,30 @@ export const useSchedule = (filters = {}) => {
         }));
     };
 
-    const fetchSchedule = async (params = {}) => {
+    const fetchSchedule = useCallback(async (params = {}) => {
+        // Get current month and year if not provided
+        const now = new Date();
+        const defaultParams = {
+            month: now.getMonth() + 1, // JavaScript months are 0-indexed
+            year: now.getFullYear(),
+            ...filters,
+            ...params
+        };
+
+        // Create unique key for params to prevent duplicate calls
+        const paramsKey = JSON.stringify(defaultParams);
+
+        // Prevent duplicate calls with same parameters
+        if (loading || paramsKey === lastFetchParams) {
+            console.log('Skipping duplicate API call with same params:', defaultParams);
+            return;
+        }
+
         setLoading(true);
         setError(null);
+        setLastFetchParams(paramsKey);
 
         try {
-            // Get current month and year if not provided
-            const now = new Date();
-            const defaultParams = {
-                month: now.getMonth() + 1, // JavaScript months are 0-indexed
-                year: now.getFullYear(),
-                ...filters,
-                ...params
-            };
-
             console.log('Fetching schedule with params:', defaultParams);
 
             const response = await scheduleAPI.getBuildingsSchedule(defaultParams);
@@ -73,21 +84,24 @@ export const useSchedule = (filters = {}) => {
             console.error('Schedule fetch error:', err);
             setError(extractErrorMessage(err));
             setSchedule([]);
+            setLastFetchParams(null); // Reset on error to allow retry
         } finally {
             setLoading(false);
         }
-    };
+    }, []); // Remove filters dependency to prevent infinite loops
 
     // Function to fetch schedule for specific month/year
-    const fetchScheduleForMonth = (month, year) => {
+    const fetchScheduleForMonth = useCallback((month, year) => {
+        console.log('Fetching schedule for month/year:', month, year);
         fetchSchedule({ month, year });
-    };
+    }, [fetchSchedule]);
 
-    useEffect(() => {
-        fetchSchedule();
-    }, []);
+    // Tidak auto-fetch saat initialization, biarkan SchedulePage yang control
+    // useEffect(() => {
+    //     fetchSchedule();
+    // }, [fetchSchedule]);
 
-    const refetch = () => fetchSchedule();
+    const refetch = useCallback(() => fetchSchedule(), [fetchSchedule]);
 
     return {
         schedule,

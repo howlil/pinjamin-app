@@ -106,12 +106,16 @@ class MainSeeder {
         const premiumBuildings = buildings.filter(b =>
             ['Auditorium', 'Convention Hall', 'Ruang Seminar PKM', 'Ruang Seminar FE', 'Ruang Seminar Perpustakaan'].includes(b.buildingName)
         );
+
+        console.log('\n🏛️  Premium buildings with UNAND tariff (source: Genta Andalas):');
         if (premiumBuildings.length > 0) {
-            console.log(`🏛️  Premium buildings with UNAND tariff (source: Genta Andalas):`);
             premiumBuildings.forEach(building => {
-                console.log(`   - ${building.buildingName}: Rp${building.rentalPrice.toLocaleString('id-ID')}`);
+                console.log(`   📍 ${building.buildingName}: Rp${building.rentalPrice.toLocaleString('id-ID')}/day`);
             });
+        } else {
+            console.log('   ⚠️  No premium buildings found (check building name matching)');
         }
+        console.log(''); // Add empty line for better readability
 
         return buildings;
     }

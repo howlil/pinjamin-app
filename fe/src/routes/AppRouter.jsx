@@ -14,6 +14,13 @@ import UserTransactionPage from '../features/user/transaction/UserTransactionPag
 import UserHistoryPage from '../features/user/history/UserHistoryPage';
 import BuildingDetailPage from '../features/buildingDetail/BuildingDetailPage';
 
+// Payment Pages
+import PaymentSuccessPage from '../features/payment/PaymentSuccessPage';
+import PaymentFailedPage from '../features/payment/PaymentFailedPage';
+
+// Error Pages
+import NotFoundPage from '../shared/components/NotFoundPage';
+
 // Admin Router
 import AdminRouter from './AdminRouter';
 
@@ -63,6 +70,10 @@ const AppRouter = () => {
                 </PrivateLayout>
             } />
 
+            {/* Payment Routes */}
+            <Route path="/payment/success" element={<PaymentSuccessPage />} />
+            <Route path="/payment/failed" element={<PaymentFailedPage />} />
+
             {/* Admin Routes */}
             <Route path="/admin/*" element={
                 <PrivateAdminLayout allowedRoles={['ADMIN']}>
@@ -70,12 +81,8 @@ const AppRouter = () => {
                 </PrivateAdminLayout>
             } />
 
-            {/* 404 - Redirect to home */}
-            <Route path="*" element={
-                <Layout>
-                    <HomePage />
-                </Layout>
-            } />
+            {/* 404 - Not Found Page */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

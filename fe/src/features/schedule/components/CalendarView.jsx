@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Box,
     Grid,
@@ -15,8 +15,17 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-reac
 import { H2, H3, Label, Caption } from '@shared/components/Typography';
 import { COLORS } from '@utils/designTokens';
 
-const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClick, onMonthChange }) => {
-    const [currentDate, setCurrentDate] = useState(new Date());
+const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClick, onMonthChange, currentDate: propCurrentDate }) => {
+    const [currentDate, setCurrentDate] = useState(propCurrentDate || new Date());
+    const lastNavigatedMonth = useRef(null);
+
+    // Sync dengan propCurrentDate jika berubah (prevent infinite loop)
+    useEffect(() => {
+        if (propCurrentDate && propCurrentDate.getTime() !== currentDate.getTime()) {
+            console.log('CalendarView: Syncing currentDate with prop:', propCurrentDate);
+            setCurrentDate(propCurrentDate);
+        }
+    }, [propCurrentDate]); // Remove currentDate from dependency
 
     const statusConfig = {
         APPROVED: {
@@ -124,19 +133,32 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
 
     // Navigate months
     const navigateMonth = (direction) => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setMonth(prev.getMonth() + direction);
+        console.log('Navigating month with direction:', direction);
 
-            // Call onMonthChange if provided to fetch data for new month
-            if (onMonthChange) {
-                const month = newDate.getMonth() + 1; // JavaScript months are 0-indexed
-                const year = newDate.getFullYear();
-                onMonthChange(month, year);
-            }
+        const newDate = new Date(currentDate);
+        newDate.setMonth(currentDate.getMonth() + direction);
 
-            return newDate;
-        });
+        const month = newDate.getMonth() + 1; // JavaScript months are 0-indexed
+        const year = newDate.getFullYear();
+        const monthKey = `${year}-${month}`;
+
+        // Prevent duplicate navigation to same month
+        if (lastNavigatedMonth.current === monthKey) {
+            console.log('Skipping duplicate navigation to:', monthKey);
+            return;
+        }
+
+        console.log('New calendar date:', newDate);
+        console.log('Current date before change:', currentDate);
+
+        lastNavigatedMonth.current = monthKey;
+        setCurrentDate(newDate);
+
+        // Call onMonthChange if provided to fetch data for new month
+        if (onMonthChange) {
+            console.log('Calling onMonthChange with:', month, year);
+            onMonthChange(month, year);
+        }
     };
 
     // Format month year
@@ -144,6 +166,13 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
         month: 'long',
         year: 'numeric'
     });
+
+    // Debug effect untuk melacak perubahan
+    useEffect(() => {
+        console.log('CalendarView - Bookings changed:', bookings);
+        console.log('CalendarView - Current date:', currentDate);
+        console.log('CalendarView - Month year display:', monthYear);
+    }, [bookings, currentDate, monthYear]);
 
     const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 

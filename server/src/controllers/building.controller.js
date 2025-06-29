@@ -5,16 +5,42 @@ const logger = require('../libs/logger.lib');
 const BuildingController = {
     // Check building availability
     async checkAvailability(req, res) {
+        const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
         try {
             const { date, time } = req.body;
+            logger.info(`[${requestId}] Check availability controller called:`, { date, time });
+
             const result = await BuildingService.checkAvailability(date, time);
+
+            logger.info(`[${requestId}] Check availability success, returning response:`, {
+                availableCount: result.availableBuildings.length
+            });
+
+            // Set headers to prevent caching
+            res.set({
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'Surrogate-Control': 'no-store'
+            });
 
             return ResponseHelper.success(res,
                 `Ditemukan ${result.availableBuildings.length} gedung yang tersedia pada ${date} pukul ${time}`,
                 result
             );
         } catch (error) {
-            logger.error('Check availability controller error:', error);
+            logger.error(`[${requestId}] Check availability controller error:`, error);
+
+            // Handle validation errors with specific messages
+            if (error.message.includes('jam operasional') ||
+                error.message.includes('Format waktu') ||
+                error.message.includes('Format tanggal') ||
+                error.message.includes('masa lalu')) {
+                logger.warn(`[${requestId}] Validation error in check availability:`, error.message);
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
             return ResponseHelper.error(res, 'Terjadi kesalahan saat mengecek ketersediaan', 500);
         }
     },

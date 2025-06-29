@@ -2,3 +2,13 @@ node_modules
 .env
 logs
 api-spek.md
+
+# PM2 logs
+logs/
+*.log
+
+# Environment files
+.env.*
+
+# PM2
+.pm2/

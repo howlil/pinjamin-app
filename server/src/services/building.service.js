@@ -7,6 +7,43 @@ const { getFileUrl, deleteFile } = require('../libs/multer.lib');
 const BuildingService = {
     async checkAvailability(date, time) {
         try {
+            // Debug logging untuk tracking request
+            logger.info('Check availability request received:', {
+                date,
+                time,
+                timestamp: new Date().toISOString()
+            });
+
+            // Validasi jam operasional di service level sebagai safety net
+            const timeCheck = moment(time, 'HH:mm');
+            if (!timeCheck.isValid()) {
+                logger.warn('Invalid time format:', { time });
+                throw new Error('Format waktu tidak valid');
+            }
+
+            const hour = timeCheck.hour();
+            // Jam operasional: 07:00 - 21:00
+            if (hour < 7 || hour >= 21) {
+                logger.warn('Time outside business hours:', { time, hour });
+                throw new Error('Waktu harus dalam jam operasional (07:00 - 21:00)');
+            }
+
+            // Validasi tanggal tidak boleh di masa lalu
+            const dateCheck = moment(date, 'DD-MM-YYYY');
+            const today = moment().startOf('day');
+
+            if (!dateCheck.isValid()) {
+                logger.warn('Invalid date format:', { date });
+                throw new Error('Format tanggal tidak valid');
+            }
+
+            if (dateCheck.isBefore(today)) {
+                logger.warn('Date in the past:', { date, today: today.format('DD-MM-YYYY') });
+                throw new Error('Tanggal tidak boleh di masa lalu');
+            }
+
+            logger.info('Time and date validation passed, proceeding to check buildings');
+
             // Get all buildings with more complete data
             const allBuildings = await prisma.building.findMany({
                 select: {
@@ -42,6 +79,14 @@ const BuildingService = {
                     });
                 }
             }
+
+            // Debug logging untuk hasil
+            logger.info('Check availability completed:', {
+                availableCount: availableBuildings.length,
+                date,
+                time,
+                buildingNames: availableBuildings.map(b => b.buildingName)
+            });
 
             return {
                 availableBuildings,
