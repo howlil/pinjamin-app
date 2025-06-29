@@ -19,9 +19,24 @@ jobs:
     - name: Setup SSH Key
       run: |
         mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Debug: Check if private key exists
+        echo "Setting up SSH key..."
         echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
+        
+        # Debug: Check key format
+        echo "Checking SSH key format:"
+        head -1 ~/.ssh/id_rsa
+        tail -1 ~/.ssh/id_rsa
+        
+        # Add host to known_hosts
         ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+        
+        # Debug: Test SSH connection
+        echo "Testing SSH connection..."
+        ssh -v -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} 'echo "SSH test successful"' || echo "SSH connection failed"
 
     - name: Deploy to GCP VM
       run: |
