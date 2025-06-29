@@ -10,6 +10,7 @@ const fs = require('fs');
 const logger = require('./src/libs/logger.lib');
 const prisma = require('./src/libs/database.lib');
 const routes = require('./src/routes');
+const cronJobManager = require('./src/cronjob');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -17,6 +18,17 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Middleware to handle empty/null body for specific endpoints
+app.use((req, res, next) => {
+    if (req.method === 'PATCH' && req.url.includes('/notifications/mark-all-read')) {
+        // Ensure body is an object for this endpoint
+        if (!req.body || typeof req.body !== 'object') {
+            req.body = {};
+        }
+    }
+    next();
+});
 
 // Morgan logging configuration
 app.use(morgan('combined', {
@@ -84,6 +96,24 @@ app.get('/api-docs.json', (req, res) => {
     }
 });
 
+// JSON parsing error handler
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        // Special handling for mark-all-read endpoint - it doesn't need a body
+        if (req.method === 'PATCH' && req.url.includes('/notifications/mark-all-read')) {
+            req.body = {};
+            return next(); // Continue to the route handler
+        }
+
+        logger.error('JSON parsing error:', err.message);
+        return res.status(400).json({
+            status: 'error',
+            message: 'Invalid JSON format in request body'
+        });
+    }
+    next(err);
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
     logger.error(err.stack);
@@ -104,13 +134,23 @@ app.use('*', (req, res) => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
     logger.info('Shutting down gracefully...');
+
+    // Stop cronjobs
+    cronJobManager.stop();
+
+    // Disconnect from database
     await prisma.$disconnect();
+
     process.exit(0);
 });
 
 app.listen(PORT, () => {
     logger.info(`Server is running on port ${PORT}`);
     console.log(`Server is running on port ${PORT}`);
+
+    // Start cronjobs after server is running
+    cronJobManager.start();
+    logger.info('CronJob manager started');
 });
 
 module.exports = app;

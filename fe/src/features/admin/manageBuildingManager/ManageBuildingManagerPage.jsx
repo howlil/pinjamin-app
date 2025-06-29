@@ -12,18 +12,27 @@ import { PrimaryButton } from '@shared/components/Button';
 import { H2, Text as CustomText } from '@shared/components/Typography';
 import { ConfirmModal } from '@shared/components/Modal';
 import LoadingSkeleton from '@shared/components/LoadingSkeleton';
-import { useBuildingManagerManagement } from './api/useBuildingManagerManagement';
+import {
+    useBuildingManagerManagement,
+    useAssignBuildingManager,
+    useCreateBuildingManager,
+    useUpdateBuildingManager,
+    useDeleteBuildingManager
+} from './api/useBuildingManagerManagement';
 import BuildingManagerTable from './components/BuildingManagerTable';
 import BuildingManagerFormModal from './components/BuildingManagerFormModal';
 import AssignBuildingModal from './components/AssignBuildingModal';
 
 const ManageBuildingManagerPage = () => {
     const [filters, setFilters] = useState({});
-    const { managers, loading, pagination, fetchManagers, createManager, updateManager, deleteManager } = useBuildingManagerManagement(filters);
+    const { managers, loading, pagination, fetchManagers, refetch } = useBuildingManagerManagement(filters);
+    const { assignBuildingManager, loading: assignLoading } = useAssignBuildingManager();
+    const { createBuildingManager, loading: createLoading } = useCreateBuildingManager();
+    const { updateBuildingManager, loading: updateLoading } = useUpdateBuildingManager();
+    const { deleteBuildingManager, loading: deletingLoading } = useDeleteBuildingManager();
 
     const [selectedManager, setSelectedManager] = useState(null);
     const [selectedManagerForAssign, setSelectedManagerForAssign] = useState(null);
-    const [submitLoading, setSubmitLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '',
@@ -52,7 +61,7 @@ const ManageBuildingManagerPage = () => {
     const isEdit = !!selectedManager;
 
     useEffect(() => {
-        fetchManagers({});
+        refetch();
     }, []);
 
     const handleAddManager = () => {
@@ -87,38 +96,26 @@ const ManageBuildingManagerPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitLoading(true);
 
         try {
             if (isEdit) {
-                const response = await updateManager(selectedManager.id, formData);
-                if (response?.status === 'success') {
-                    toast.success('Building manager berhasil diperbarui');
-                }
+                await updateBuildingManager(selectedManager.id, formData);
             } else {
-                const response = await createManager(formData);
-                if (response?.status === 'success') {
-                    toast.success('Building manager berhasil ditambahkan');
-                }
+                await createBuildingManager(formData);
             }
             onFormClose();
-            fetchManagers();
+            refetch();
         } catch (error) {
             // Error handled in apiClient
-        } finally {
-            setSubmitLoading(false);
         }
     };
 
     const handleDeleteConfirm = async () => {
         setDeleteLoading(true);
         try {
-            const response = await deleteManager(selectedManager.id);
-            if (response?.status === 'success') {
-                toast.success('Building manager berhasil dihapus');
-                onDeleteClose();
-                fetchManagers();
-            }
+            await deleteBuildingManager(selectedManager.id);
+            onDeleteClose();
+            refetch();
         } catch (error) {
             // Error handled in apiClient
         } finally {
@@ -135,10 +132,17 @@ const ManageBuildingManagerPage = () => {
         setFilters(prev => ({ ...prev, page }));
     };
 
-    const handleAssignSuccess = () => {
-        toast.success('Gedung berhasil ditugaskan');
-        onAssignClose();
-        fetchManagers();
+    const handleAssign = async (managerId, buildingId) => {
+        try {
+            await assignBuildingManager({
+                managerId: managerId,
+                buildingId: buildingId
+            });
+            onAssignClose();
+            refetch(); // Refresh the table
+        } catch (error) {
+            // Error handled in apiClient
+        }
     };
 
     if (loading && managers.length === 0) {
@@ -200,7 +204,7 @@ const ManageBuildingManagerPage = () => {
                 formData={formData}
                 onInputChange={handleInputChange}
                 onSubmit={handleSubmit}
-                isLoading={submitLoading}
+                isLoading={isEdit ? updateLoading : createLoading}
             />
 
             {/* Assign Building Modal */}
@@ -208,7 +212,8 @@ const ManageBuildingManagerPage = () => {
                 isOpen={isAssignOpen}
                 onClose={onAssignClose}
                 manager={selectedManagerForAssign}
-                onSuccess={handleAssignSuccess}
+                onAssign={handleAssign}
+                isLoading={assignLoading}
             />
 
             {/* Delete Confirmation Modal */}

@@ -126,21 +126,197 @@ body {
   color: #2A2A2AFF;
 }
 
-/* Scrollbar customization */
+/* Hide scrollbars for all browsers */
+/* Webkit browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(215, 215, 215, 0.3);
-  border-radius: 10px;
+  width: 0px;
+  height: 0px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1AD97AFF;
-  border-radius: 10px;
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #16B866;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Additional support for older browsers */
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbars for specific containers */
+.overflow-auto,
+.overflow-scroll,
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-y-scroll,
+.overflow-x-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.overflow-auto::-webkit-scrollbar,
+.overflow-scroll::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-scroll::-webkit-scrollbar,
+.overflow-x-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Chakra UI specific scrollbar hiding */
+[data-overlayscrollbars-viewport] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-overlayscrollbars-viewport]::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Hide scrollbars for any element with overflow styling */
+[style*="overflow"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+[style*="overflow"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* Chakra UI Box, Flex, and other components */
+.css-0,
+.css-1,
+.css-2,
+.css-3,
+.css-4,
+.css-5,
+.css-6,
+.css-7,
+.css-8,
+.css-9 {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.css-0::-webkit-scrollbar,
+.css-1::-webkit-scrollbar,
+.css-2::-webkit-scrollbar,
+.css-3::-webkit-scrollbar,
+.css-4::-webkit-scrollbar,
+.css-5::-webkit-scrollbar,
+.css-6::-webkit-scrollbar,
+.css-7::-webkit-scrollbar,
+.css-8::-webkit-scrollbar,
+.css-9::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbars on modal, drawer and popover content */
+.chakra-modal__content-container,
+.chakra-modal__content,
+.chakra-drawer__content,
+.chakra-popover__content,
+.chakra-popover__body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chakra-modal__content-container::-webkit-scrollbar,
+.chakra-modal__content::-webkit-scrollbar,
+.chakra-drawer__content::-webkit-scrollbar,
+.chakra-popover__content::-webkit-scrollbar,
+.chakra-popover__body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Universal scrollbar hiding - apply to all elements */
+div,
+section,
+main,
+article,
+aside,
+nav,
+header,
+footer,
+ul,
+ol,
+li,
+p,
+span,
+table,
+tbody,
+thead,
+tr,
+td,
+th {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+div::-webkit-scrollbar,
+section::-webkit-scrollbar,
+main::-webkit-scrollbar,
+article::-webkit-scrollbar,
+aside::-webkit-scrollbar,
+nav::-webkit-scrollbar,
+header::-webkit-scrollbar,
+footer::-webkit-scrollbar,
+ul::-webkit-scrollbar,
+ol::-webkit-scrollbar,
+li::-webkit-scrollbar,
+p::-webkit-scrollbar,
+span::-webkit-scrollbar,
+table::-webkit-scrollbar,
+tbody::-webkit-scrollbar,
+thead::-webkit-scrollbar,
+tr::-webkit-scrollbar,
+td::-webkit-scrollbar,
+th::-webkit-scrollbar {
+  display: none;
+}
+
+/* Final catch-all rule - hide all scrollbars */
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+*::-webkit-scrollbar-track {
+  display: none !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  display: none !important;
+}
+
+*::-webkit-scrollbar-corner {
+  display: none !important;
+}
+
+/* Force hide scrollbars for all elements */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* Additional fallback for stubborn scrollbars */
+html {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar {
+  display: none !important;
 }

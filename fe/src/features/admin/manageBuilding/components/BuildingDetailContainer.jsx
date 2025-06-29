@@ -9,7 +9,15 @@ const BuildingDetailContainer = () => {
             const response = await buildingManagementAPI.getAdminBuildings();
             if (response.data) {
                 const building = response.data.find(b => b.id === id);
-                return building || null;
+                if (building) {
+                    // Normalize the data structure to match the expected format
+                    return {
+                        ...building,
+                        facilities: building.detail?.facilities || [],
+                        buildingManagers: building.detail?.buildingManagers || []
+                    };
+                }
+                return null;
             }
             return null;
         } catch (error) {

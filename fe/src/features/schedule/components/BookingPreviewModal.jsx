@@ -10,7 +10,6 @@ import {
     HStack,
     Text,
     Badge,
-    Divider,
     Icon,
     Box
 } from '@chakra-ui/react';
@@ -48,8 +47,6 @@ const BookingPreviewModal = ({ isOpen, onClose, booking }) => {
         }
     };
 
-    console.log(booking);
-
     const currentStatus = statusConfig[booking.status] || statusConfig.PENDING;
 
     return (
@@ -59,15 +56,15 @@ const BookingPreviewModal = ({ isOpen, onClose, booking }) => {
                 backdropFilter="blur(10px)"
             />
             <ModalContent
-                bg="rgba(255, 255, 255, 0.8)"
+                bg="rgba(255, 255, 255, 0.95)"
                 backdropFilter="blur(15px)"
                 borderRadius="24px"
                 border="1px solid rgba(215, 215, 215, 0.5)"
-                boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+                boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
                 fontFamily="Inter, sans-serif"
             >
                 <ModalHeader pb={2} pt={6}>
-                    <VStack align="start" spacing={2} w="full">
+                    <VStack align="start" spacing={3} w="full">
                         <HStack justify="space-between" w="full">
                             <H3 color="#2A2A2A" fontSize="xl" fontWeight="700">
                                 Detail Peminjaman
@@ -75,10 +72,10 @@ const BookingPreviewModal = ({ isOpen, onClose, booking }) => {
                             <Badge
                                 bg={currentStatus.bgColor}
                                 color={currentStatus.textColor}
-                                borderRadius="20px"
-                                px={3}
-                                py={1}
-                                fontSize="xs"
+                                borderRadius="full"
+                                px={4}
+                                py={2}
+                                fontSize="sm"
                                 fontWeight="600"
                             >
                                 {currentStatus.label}
@@ -89,89 +86,148 @@ const BookingPreviewModal = ({ isOpen, onClose, booking }) => {
                 <ModalCloseButton />
 
                 <ModalBody pb={6}>
-                    <VStack spacing={4} align="stretch">
+                    <VStack spacing={6} align="stretch">
                         {/* Activity Name */}
                         <Box
-                            bg="rgba(33, 209, 121, 0.05)"
+                            bg="rgba(33, 209, 121, 0.08)"
                             borderRadius="16px"
-                            p={4}
-                            border="1px solid rgba(33, 209, 121, 0.1)"
+                            p={5}
+                            border="1px solid rgba(33, 209, 121, 0.2)"
                         >
                             <VStack align="start" spacing={2}>
-                                <Caption
+                                <Text
                                     color="#2A2A2A"
-                                    opacity={0.6}
+                                    opacity={0.7}
                                     fontSize="xs"
                                     textTransform="uppercase"
-                                    letterSpacing="0.5px"
+                                    letterSpacing="1px"
                                     fontWeight="600"
+                                    fontFamily="Inter, sans-serif"
                                 >
                                     Nama Kegiatan
-                                </Caption>
+                                </Text>
                                 <H4
                                     color="#2A2A2A"
                                     fontSize="lg"
                                     fontWeight="700"
+                                    fontFamily="Inter, sans-serif"
                                 >
                                     {booking.activityName || 'Rapat Peminjaman'}
                                 </H4>
                             </VStack>
                         </Box>
 
-                        {/* Building Details */}
-                        <VStack spacing={3} align="stretch">
-                            <HStack spacing={3}>
-                                <Icon as={Building} size={20} color="#21D179" />
-                                <VStack align="start" spacing={0} flex={1}>
-                                    <CustomText fontSize="sm" fontWeight="600" color="#2A2A2A">
-                                        Gedung
-                                    </CustomText>
-                                    <CustomText fontSize="sm" color="#2A2A2A" opacity={0.8}>
-                                        {booking.buildingName}
-                                    </CustomText>
-                                </VStack>
-                            </HStack>
-
-                            <HStack spacing={3}>
-                                <Icon as={Calendar} size={20} color="#21D179" />
-                                <VStack align="start" spacing={0} flex={1}>
-                                    <CustomText fontSize="sm" fontWeight="600" color="#2A2A2A">
-                                        Tanggal
-                                    </CustomText>
-                                    <CustomText fontSize="sm" color="#2A2A2A" opacity={0.8}>
-                                        {booking.date}
-                                    </CustomText>
-                                </VStack>
-                            </HStack>
-
-                            <HStack spacing={3}>
-                                <Icon as={Clock} size={20} color="#21D179" />
-                                <VStack align="start" spacing={0} flex={1}>
-                                    <CustomText fontSize="sm" fontWeight="600" color="#2A2A2A">
-                                        Waktu
-                                    </CustomText>
-                                    <CustomText fontSize="sm" color="#2A2A2A" opacity={0.8}>
-                                        {booking.startTime} - {booking.endTime}
-                                    </CustomText>
-                                </VStack>
-                            </HStack>
-
-                            {booking.borrowerName && (
-                                <HStack spacing={3}>
-                                    <Icon as={User} size={20} color="#21D179" />
+                        {/* Details Grid */}
+                        <VStack spacing={4} align="stretch">
+                            {/* Building */}
+                            <Box
+                                bg="rgba(255, 255, 255, 0.8)"
+                                borderRadius="12px"
+                                p={4}
+                                border="1px solid rgba(215, 215, 215, 0.3)"
+                            >
+                                <HStack spacing={3} align="center">
+                                    <Box
+                                        p={2}
+                                        borderRadius="8px"
+                                        bg="rgba(33, 209, 121, 0.1)"
+                                    >
+                                        <Icon as={Building} size={20} color="#21D179" />
+                                    </Box>
                                     <VStack align="start" spacing={0} flex={1}>
-                                        <CustomText fontSize="sm" fontWeight="600" color="#2A2A2A">
-                                            Peminjam
-                                        </CustomText>
-                                        <CustomText fontSize="sm" color="#2A2A2A" opacity={0.8}>
-                                            {booking.borrowerName}
-                                        </CustomText>       
+                                        <Text fontSize="sm" fontWeight="600" color="#2A2A2A" fontFamily="Inter, sans-serif">
+                                            Gedung
+                                        </Text>
+                                        <Text fontSize="sm" color="#2A2A2A" opacity={0.8} fontFamily="Inter, sans-serif">
+                                            {booking.buildingName}
+                                        </Text>
                                     </VStack>
                                 </HStack>
+                            </Box>
+
+                            {/* Date */}
+                            <Box
+                                bg="rgba(255, 255, 255, 0.8)"
+                                borderRadius="12px"
+                                p={4}
+                                border="1px solid rgba(215, 215, 215, 0.3)"
+                            >
+                                <HStack spacing={3} align="center">
+                                    <Box
+                                        p={2}
+                                        borderRadius="8px"
+                                        bg="rgba(33, 209, 121, 0.1)"
+                                    >
+                                        <Icon as={Calendar} size={20} color="#21D179" />
+                                    </Box>
+                                    <VStack align="start" spacing={0} flex={1}>
+                                        <Text fontSize="sm" fontWeight="600" color="#2A2A2A" fontFamily="Inter, sans-serif">
+                                            Tanggal
+                                        </Text>
+                                        <Text fontSize="sm" color="#2A2A2A" opacity={0.8} fontFamily="Inter, sans-serif">
+                                            {booking.date || booking.startDate}
+                                            {booking.endDate && booking.endDate !== (booking.date || booking.startDate) &&
+                                                ` - ${booking.endDate}`
+                                            }
+                                        </Text>
+                                    </VStack>
+                                </HStack>
+                            </Box>
+
+                            {/* Time */}
+                            <Box
+                                bg="rgba(255, 255, 255, 0.8)"
+                                borderRadius="12px"
+                                p={4}
+                                border="1px solid rgba(215, 215, 215, 0.3)"
+                            >
+                                <HStack spacing={3} align="center">
+                                    <Box
+                                        p={2}
+                                        borderRadius="8px"
+                                        bg="rgba(33, 209, 121, 0.1)"
+                                    >
+                                        <Icon as={Clock} size={20} color="#21D179" />
+                                    </Box>
+                                    <VStack align="start" spacing={0} flex={1}>
+                                        <Text fontSize="sm" fontWeight="600" color="#2A2A2A" fontFamily="Inter, sans-serif">
+                                            Waktu
+                                        </Text>
+                                        <Text fontSize="sm" color="#2A2A2A" opacity={0.8} fontFamily="Inter, sans-serif">
+                                            {booking.startTime} - {booking.endTime}
+                                        </Text>
+                                    </VStack>
+                                </HStack>
+                            </Box>
+
+                            {/* Borrower */}
+                            {booking.borrowerName && (
+                                <Box
+                                    bg="rgba(255, 255, 255, 0.8)"
+                                    borderRadius="12px"
+                                    p={4}
+                                    border="1px solid rgba(215, 215, 215, 0.3)"
+                                >
+                                    <HStack spacing={3} align="center">
+                                        <Box
+                                            p={2}
+                                            borderRadius="8px"
+                                            bg="rgba(33, 209, 121, 0.1)"
+                                        >
+                                            <Icon as={User} size={20} color="#21D179" />
+                                        </Box>
+                                        <VStack align="start" spacing={0} flex={1}>
+                                            <Text fontSize="sm" fontWeight="600" color="#2A2A2A" fontFamily="Inter, sans-serif">
+                                                Peminjam
+                                            </Text>
+                                            <Text fontSize="sm" color="#2A2A2A" opacity={0.8} fontFamily="Inter, sans-serif">
+                                                {booking.borrowerName}
+                                            </Text>
+                                        </VStack>
+                                    </HStack>
+                                </Box>
                             )}
                         </VStack>
-
-                     
                     </VStack>
                 </ModalBody>
             </ModalContent>

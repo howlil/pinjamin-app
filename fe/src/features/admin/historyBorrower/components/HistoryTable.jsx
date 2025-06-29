@@ -27,11 +27,17 @@ import {
 } from '@chakra-ui/react';
 import { RefreshCw, Eye } from 'lucide-react';
 import { useBookingRefund } from '../api/useAdminBookings';
+import BookingDetailModal from '@shared/components/BookingDetailModal';
 
 const HistoryTable = ({ bookings, loading, onRefresh }) => {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [refundReason, setRefundReason] = useState('');
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const {
+        isOpen: isDetailModalOpen,
+        onOpen: onDetailModalOpen,
+        onClose: onDetailModalClose
+    } = useDisclosure();
     const { processRefund, loading: refundLoading } = useBookingRefund();
     const toast = useToast();
 
@@ -69,6 +75,11 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
         setSelectedBooking(booking);
         setRefundReason('');
         onOpen();
+    };
+
+    const handleDetailClick = (booking) => {
+        setSelectedBooking(booking);
+        onDetailModalOpen();
     };
 
     const handleRefund = async () => {
@@ -141,13 +152,13 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                 <Td borderColor="rgba(215, 215, 215, 0.3)">
                                     <VStack align="start" spacing={1}>
                                         <Text fontWeight="medium" fontSize="sm" color="#2A2A2A">
-                                            {booking.borrowerName || 'N/A'}
+                                            {booking.detail.borrower.fullName || 'N/A'}
                                         </Text>
                                     </VStack>
                                 </Td>
                                 <Td borderColor="rgba(215, 215, 215, 0.3)">
                                     <Text fontWeight="medium" fontSize="sm" color="#2A2A2A">
-                                        {booking.buildingName}
+                                        {booking.detail.building.buildingName}
                                     </Text>
                                 </Td>
                                 <Td borderColor="rgba(215, 215, 215, 0.3)">
@@ -190,10 +201,7 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                                 size="sm"
                                                 variant="ghost"
                                                 colorScheme="blue"
-                                                onClick={() => {
-                                                    // TODO: Implement view detail modal
-                                                    console.log('View detail:', booking);
-                                                }}
+                                                onClick={() => handleDetailClick(booking)}
                                             />
                                         </Tooltip>
 
@@ -283,6 +291,13 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
+
+            {/* Detail Modal */}
+            <BookingDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={onDetailModalClose}
+                booking={selectedBooking}
+            />
         </>
     );
 };

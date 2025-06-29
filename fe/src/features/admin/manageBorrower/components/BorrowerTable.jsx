@@ -24,7 +24,8 @@ const BorrowerTable = ({
     onPageChange,
     onApprove,
     onReject,
-    onRefund
+    onRefund,
+    onViewDetail
 }) => {
     if (loading) {
         return (
@@ -146,6 +147,7 @@ const BorrowerTable = ({
                                     onApprove={onApprove}
                                     onReject={onReject}
                                     onRefund={onRefund}
+                                    onViewDetail={onViewDetail}
                                 />
                             ))}
                         </Tbody>

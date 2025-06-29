@@ -5,12 +5,7 @@ import {
     HStack,
     Text,
     Spinner,
-    ButtonGroup,
-    IconButton,
-    Tooltip,
-    Grid
 } from '@chakra-ui/react';
-import { Grid as GridIcon, Table } from 'lucide-react';
 import { useHistory } from './api/useHistory';
 import HistoryTable from './components/HistoryTable';
 import HistoryEmptyState from './components/HistoryEmptyState';
@@ -20,7 +15,6 @@ import PaginationControls from '../../../shared/components/PaginationControls';
 const UserHistoryPage = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [viewMode, setViewMode] = useState('table'); // 'card' or 'table'
 
     const {
         bookings,

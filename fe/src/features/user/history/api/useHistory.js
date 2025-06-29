@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
 import { historyAPI } from './historyAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useHistory = (filters = {}) => {
     const [bookings, setBookings] = useState([]);
@@ -18,7 +18,7 @@ export const useHistory = (filters = {}) => {
         setError(null);
 
         try {
-            const response = await historyAPI.getUserBookingHistory({
+            const response = await historyAPI.getBookingHistory({
                 ...filters,
                 ...params
             });
@@ -28,7 +28,7 @@ export const useHistory = (filters = {}) => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat riwayat peminjaman');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

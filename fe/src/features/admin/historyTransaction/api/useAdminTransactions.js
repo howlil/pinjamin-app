@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { adminTransactionAPI } from './adminTransactionAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useAdminTransactions = () => {
     const [transactions, setTransactions] = useState([]);
@@ -36,7 +37,7 @@ export const useAdminTransactions = () => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data transaksi');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -71,7 +72,7 @@ export const useExportTransactions = () => {
                 return response.data || response;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal mengexport transaksi');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

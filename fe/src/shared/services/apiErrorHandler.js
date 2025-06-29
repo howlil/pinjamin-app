@@ -4,6 +4,65 @@ const IS_DEVELOPMENT = import.meta.env.DEV;
 const errorCache = new Map();
 const CACHE_DURATION = 3000;
 
+// Utility function untuk extract error messages dari response
+export const extractErrorMessage = (error, fallbackMessage = 'Terjadi kesalahan') => {
+    if (!error?.response?.data) {
+        return error?.message || fallbackMessage;
+    }
+
+    const { data } = error.response;
+
+    // Jika ada array errors, gabungkan semua error messages
+    if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        return data.errors
+            .map(err => {
+                // Jika error berupa object dengan property message
+                if (typeof err === 'object' && err.message) {
+                    return err.message;
+                }
+                // Jika error berupa object dengan property msg
+                if (typeof err === 'object' && err.msg) {
+                    return err.msg;
+                }
+                // Jika error berupa string
+                if (typeof err === 'string') {
+                    return err;
+                }
+                // Jika error berupa object dengan property field dan message (validation format)
+                if (typeof err === 'object' && err.field && err.message) {
+                    return `${err.field}: ${err.message}`;
+                }
+                return String(err);
+            })
+            .filter(Boolean) // Remove empty strings
+            .join('; '); // Use semicolon to separate multiple errors
+    }
+
+    // Jika ada single message
+    if (data.message) {
+        return data.message;
+    }
+
+    // Jika ada msg property
+    if (data.msg) {
+        return data.msg;
+    }
+
+    // Jika ada error property yang berupa string
+    if (typeof data.error === 'string') {
+        return data.error;
+    }
+
+    // Fallback ke error message dari axios
+    return error.message || fallbackMessage;
+};
+
+// Utility function untuk show error toast dengan better error extraction
+export const showErrorToast = (error, fallbackMessage = 'Terjadi kesalahan') => {
+    const errorMessage = extractErrorMessage(error, fallbackMessage);
+    showToast('error', errorMessage);
+};
+
 export const showToast = (type, message) => {
     const now = Date.now();
     const toastKey = `${type}-${message}`;
@@ -66,7 +125,7 @@ export const handleResponseError = (error) => {
 
     if (error.response) {
         const status = error.response.status;
-        const serverMessage = error.response.data?.message || error.message;
+        const serverMessage = extractErrorMessage(error, error.message);
         const showUserError = !error.config?.hideErrorToast;
 
         switch (status) {
@@ -96,10 +155,8 @@ export const handleResponseError = (error) => {
 
             case 422:
                 if (showUserError) {
-                    const errorMsg = Array.isArray(error.response.data?.errors)
-                        ? error.response.data.errors.map(err => err.message || err).join(', ')
-                        : serverMessage || 'Data yang dikirim tidak valid';
-                    showToast('error', errorMsg);
+                    // Gunakan extractErrorMessage yang sudah menangani array errors
+                    showToast('error', serverMessage || 'Data yang dikirim tidak valid');
                 }
                 break;
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { buildingsAPI } from './buildingsAPI';
 import { homeAPI } from './homeAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useBuildings = (filters = {}) => {
     const [buildings, setBuildings] = useState([]);
@@ -29,7 +30,8 @@ export const useBuildings = (filters = {}) => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data gedung');
+            const errorMessage = extractErrorMessage(err, 'Gagal memuat data gedung');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -72,7 +74,7 @@ export const useBuildingDetail = (buildingId) => {
                 throw new Error(response.message || 'Gagal memuat detail gedung');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || err.message || 'Gagal memuat detail gedung';
+            const errorMessage = extractErrorMessage(err, 'Gagal memuat detail gedung');
             setError(errorMessage);
             toast.error(errorMessage);
         } finally {
@@ -143,7 +145,7 @@ export const useAvailabilityCheck = () => {
             return normalizedResponse;
 
         } catch (err) {
-            const errorMessage = err.response?.data?.message || err.message || 'Gagal mengecek ketersediaan';
+            const errorMessage = extractErrorMessage(err, 'Gagal mengecek ketersediaan');
             setError(errorMessage);
             toast.error(errorMessage);
             return null;
@@ -178,7 +180,7 @@ export const useTodayBookings = () => {
                 throw new Error(response.message || 'Gagal memuat peminjaman hari ini');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || err.message || 'Gagal memuat peminjaman hari ini';
+            const errorMessage = extractErrorMessage(err, 'Gagal memuat peminjaman hari ini');
             setError(errorMessage);
             console.error('Error fetching today bookings:', err);
         } finally {
@@ -215,7 +217,8 @@ export const useAvailabilityChecker = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal mengecek ketersediaan gedung');
+            const errorMessage = extractErrorMessage(err, 'Gagal mengecek ketersediaan gedung');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);

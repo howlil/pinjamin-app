@@ -19,7 +19,6 @@ import TransactionEmptyState from './components/TransactionEmptyState';
 
 const UserTransactionPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
-    const [viewMode, setViewMode] = useState('table'); // 'card' or 'table'
 
     const {
         transactions,

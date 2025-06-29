@@ -12,7 +12,7 @@ import {
 } from '@chakra-ui/react';
 import { Check, X, Eye, DollarSign } from 'lucide-react';
 
-const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund }) => {
+const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund, onViewDetail }) => {
     const getStatusColor = (status) => {
         switch (status?.toUpperCase()) {
             case 'PROCESSING':
@@ -81,7 +81,7 @@ const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund }) => {
                     fontWeight="600"
                     noOfLines={1}
                 >
-                    {booking.borrowerName || 'N/A'}
+                    {booking.detail?.borrower?.fullName || booking.borrowerName || 'N/A'}
                 </Text>
             </Td>
 
@@ -93,7 +93,7 @@ const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund }) => {
                     fontWeight="600"
                     noOfLines={1}
                 >
-                    {booking.buildingName || 'N/A'}
+                    {booking.detail?.building?.buildingName || booking.buildingName || 'N/A'}
                 </Text>
             </Td>
 
@@ -146,10 +146,7 @@ const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund }) => {
                             size="sm"
                             variant="ghost"
                             colorScheme="blue"
-                            onClick={() => {
-                                // TODO: Implement view detail
-                                console.log('View detail:', booking);
-                            }}
+                            onClick={() => onViewDetail && onViewDetail(booking)}
                         />
                     </Tooltip>
 

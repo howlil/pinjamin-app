@@ -44,27 +44,19 @@ const NotificationController = {
         }
     },
 
-    // Mark notification as read
-    async markAsRead(req, res) {
+    // Mark all notifications as read
+    async markAsAllRead(req, res) {
         try {
-            const { id } = req.params;
             const userId = req.user.id;
 
-            await NotificationService.markAsRead(id, userId);
+            const result = await NotificationService.markAsAllRead(userId);
 
-            return ResponseHelper.success(res, 'Notifikasi berhasil ditandai sebagai dibaca');
+            return ResponseHelper.success(res, 'Semua notifikasi berhasil ditandai sebagai dibaca', {
+                updatedCount: result.updatedCount
+            });
         } catch (error) {
-            logger.error('Mark notification as read controller error:', error);
-
-            if (error.message === 'Notifikasi tidak ditemukan') {
-                return ResponseHelper.notFound(res, error.message);
-            }
-
-            if (error.message === 'Tidak memiliki akses ke notifikasi ini') {
-                return ResponseHelper.forbidden(res, error.message);
-            }
-
-            return ResponseHelper.error(res, 'Terjadi kesalahan saat menandai notifikasi', 500);
+            logger.error('Mark all notifications as read controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat menandai semua notifikasi', 500);
         }
     }
 };

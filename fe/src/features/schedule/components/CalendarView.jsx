@@ -8,13 +8,14 @@ import {
     Text,
     IconButton,
     Badge,
+    Center,
+    Flex
 } from '@chakra-ui/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Card from '@shared/components/Card';
-import { H2, Label, Caption } from '@shared/components/Typography';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { H2, H3, Label, Caption } from '@shared/components/Typography';
 import { COLORS } from '@utils/designTokens';
 
-const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClick }) => {
+const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClick, onMonthChange }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const statusConfig = {
@@ -106,15 +107,19 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
         const year = date.getFullYear();
         const dateStr = `${day}-${month}-${year}`;
 
-        console.log('Looking for bookings on:', dateStr, 'in', bookings);
+        // Debug logging
+        console.log('Filtering bookings for date:', dateStr);
+        console.log('Available bookings:', bookings);
 
-        return bookings.filter(booking => {
-            const match = booking.date === dateStr;
-            if (match) {
-                console.log('Found booking:', booking);
-            }
-            return match;
+        const filteredBookings = bookings.filter(booking => {
+            // Check both date and startDate properties for compatibility
+            const bookingDate = booking.date || booking.startDate;
+            console.log('Comparing:', bookingDate, 'with', dateStr);
+            return bookingDate === dateStr;
         });
+
+        console.log('Filtered bookings:', filteredBookings);
+        return filteredBookings;
     };
 
     // Navigate months
@@ -122,6 +127,14 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
         setCurrentDate(prev => {
             const newDate = new Date(prev);
             newDate.setMonth(prev.getMonth() + direction);
+
+            // Call onMonthChange if provided to fetch data for new month
+            if (onMonthChange) {
+                const month = newDate.getMonth() + 1; // JavaScript months are 0-indexed
+                const year = newDate.getFullYear();
+                onMonthChange(month, year);
+            }
+
             return newDate;
         });
     };
@@ -132,36 +145,71 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
         year: 'numeric'
     });
 
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
     return (
         <VStack spacing={6} align="stretch">
-            {/* Calendar Header */}
-            <Card variant="transparent">
-                <VStack paddingBottom={8} spacing={4}>
-                    {/* Month Navigation */}
-                    <HStack justify="space-between" w="100%">
-                        <IconButton
-                            aria-label="Previous month"
-                            icon={<ChevronLeft size={20} />}
-                            variant="ghost"
-                            onClick={() => navigateMonth(-1)}
-                            borderRadius="full"
-                            _hover={{ bg: `${COLORS.primary}20` }}
-                        />
+            {/* Header */}
+            <Box
+                bg="rgba(255, 255, 255, 0.9)"
+                backdropFilter="blur(15px)"
+                borderRadius="24px"
+                border="1px solid rgba(215, 215, 215, 0.5)"
+                p={6}
+                boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+            >
+                <VStack spacing={4}>
+                    {/* Title & Navigation */}
+                    <HStack justify="space-between" w="100%" align="center">
+                        <HStack spacing={3}>
+                            <CalendarIcon size={24} color={COLORS.primary} />
+                            <VStack align="start" spacing={0}>
+                                <H2 color={COLORS.text} fontFamily="Inter, sans-serif">
+                                    Jadwal Peminjaman
+                                </H2>
+                                <Text fontSize="sm" color="gray.600" fontFamily="Inter, sans-serif">
+                                    Kelola dan pantau jadwal ruangan
+                                </Text>
+                            </VStack>
+                        </HStack>
 
-                        <H2 textAlign="center" color={COLORS.text}>
-                            {monthYear}
-                        </H2>
+                        <HStack spacing={2}>
+                            <IconButton
+                                aria-label="Previous month"
+                                icon={<ChevronLeft size={20} />}
+                                variant="ghost"
+                                onClick={() => navigateMonth(-1)}
+                                borderRadius="full"
+                                bg="rgba(255, 255, 255, 0.6)"
+                                border="1px solid rgba(215, 215, 215, 0.5)"
+                                _hover={{
+                                    bg: "rgba(255, 255, 255, 0.8)",
+                                    transform: "translateY(-1px)"
+                                }}
+                                transition="all 0.2s"
+                            />
 
-                        <IconButton
-                            aria-label="Next month"
-                            icon={<ChevronRight size={20} />}
-                            variant="ghost"
-                            onClick={() => navigateMonth(1)}
-                            borderRadius="full"
-                            _hover={{ bg: `${COLORS.primary}20` }}
-                        />
+                            <Center minW="200px">
+                                <H3 textAlign="center" color={COLORS.text} fontFamily="Inter, sans-serif">
+                                    {monthYear}
+                                </H3>
+                            </Center>
+
+                            <IconButton
+                                aria-label="Next month"
+                                icon={<ChevronRight size={20} />}
+                                variant="ghost"
+                                onClick={() => navigateMonth(1)}
+                                borderRadius="full"
+                                bg="rgba(255, 255, 255, 0.6)"
+                                border="1px solid rgba(215, 215, 215, 0.5)"
+                                _hover={{
+                                    bg: "rgba(255, 255, 255, 0.8)",
+                                    transform: "translateY(-1px)"
+                                }}
+                                transition="all 0.2s"
+                            />
+                        </HStack>
                     </HStack>
 
                     {/* Status Legend */}
@@ -172,31 +220,46 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
                                     w="12px"
                                     h="12px"
                                     bg={config.bgColor}
-                                    borderRadius="sm"
+                                    borderRadius="4px"
                                 />
-                                <Caption color={COLORS.text}>
+                                <Text fontSize="sm" color={COLORS.text} fontFamily="Inter, sans-serif">
                                     {config.label}
-                                </Caption>
+                                </Text>
                             </HStack>
                         ))}
                     </HStack>
                 </VStack>
+            </Box>
 
+            {/* Calendar */}
+            <Box
+                bg="rgba(255, 255, 255, 0.9)"
+                backdropFilter="blur(15px)"
+                borderRadius="24px"
+                border="1px solid rgba(215, 215, 215, 0.5)"
+                overflow="hidden"
+                boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+            >
                 <VStack spacing={0}>
                     {/* Day Headers */}
                     <Grid templateColumns="repeat(7, 1fr)" gap={0} w="100%">
                         {dayNames.map(day => (
                             <GridItem key={day}>
                                 <Box
-                                    p={3}
+                                    p={4}
                                     textAlign="center"
-                                    borderBottom="1px solid"
-                                    borderColor="gray.200"
-                                    bg="gray.50"
+                                    bg="rgba(33, 209, 121, 0.05)"
+                                    borderRight="1px solid rgba(215, 215, 215, 0.3)"
+                                    _last={{ borderRight: "none" }}
                                 >
-                                    <Label fontSize="sm" color="gray.600">
+                                    <Text
+                                        fontSize="sm"
+                                        fontWeight="700"
+                                        color={COLORS.primary}
+                                        fontFamily="Inter, sans-serif"
+                                    >
                                         {day}
-                                    </Label>
+                                    </Text>
                                 </Box>
                             </GridItem>
                         ))}
@@ -208,103 +271,122 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
                             const dayBookings = getBookingsForDate(dayData.date);
                             const isToday = dayData.date.toDateString() === new Date().toDateString();
                             const isSelected = selectedDate && dayData.date.toDateString() === selectedDate.toDateString();
+                            const hasBookings = dayBookings.length > 0;
 
                             return (
                                 <GridItem key={index}>
                                     <Box
-                                        minH="100px"
-                                        p={2}
-                                        borderRight="1px solid"
-                                        borderBottom="1px solid"
-                                        borderColor="gray.200"
-                                        bg={isSelected ? `${COLORS.primary}10` : 'transparent'}
+                                        minH="120px"
+                                        p={3}
+                                        borderRight="1px solid rgba(215, 215, 215, 0.3)"
+                                        borderBottom="1px solid rgba(215, 215, 215, 0.3)"
+                                        bg={isSelected ? "rgba(33, 209, 121, 0.08)" : "transparent"}
                                         cursor="pointer"
                                         onClick={() => onDateSelect && onDateSelect(dayData.date)}
                                         _hover={{
-                                            bg: isSelected ? `${COLORS.primary}20` : `${COLORS.primary}05`
+                                            bg: isSelected ? "rgba(33, 209, 121, 0.12)" : "rgba(33, 209, 121, 0.04)"
                                         }}
                                         transition="all 0.2s"
+                                        _last={{ borderRight: "none" }}
                                     >
-                                        <VStack spacing={1} align="stretch" h="100%">
+                                        <VStack spacing={2} align="stretch" h="100%">
                                             {/* Day Number */}
-                                            <HStack justify="space-between" flexShrink={0}>
-                                                <Text
-                                                    fontSize="sm"
-                                                    fontWeight={isToday ? "bold" : "normal"}
-                                                    color={
-                                                        !dayData.isCurrentMonth ? "gray.400" :
-                                                            isToday ? COLORS.primary :
-                                                                COLORS.text
-                                                    }
-                                                    bg={isToday ? `${COLORS.primary}20` : 'transparent'}
+                                            <Flex justify="space-between" align="center">
+                                                <Box
+                                                    w="32px"
+                                                    h="32px"
                                                     borderRadius="full"
-                                                    w={isToday ? "24px" : "auto"}
-                                                    h={isToday ? "24px" : "auto"}
+                                                    bg={isToday ? COLORS.primary : "transparent"}
                                                     display="flex"
                                                     alignItems="center"
                                                     justifyContent="center"
+                                                    border={hasBookings && !isToday ? `2px solid ${COLORS.primary}` : "none"}
                                                 >
-                                                    {dayData.day}
-                                                </Text>
-                                            </HStack>
+                                                    <Text
+                                                        fontSize="sm"
+                                                        fontWeight={isToday ? "700" : dayData.isCurrentMonth ? "600" : "400"}
+                                                        color={
+                                                            isToday ? "white" :
+                                                                !dayData.isCurrentMonth ? "gray.400" :
+                                                                    hasBookings ? COLORS.primary :
+                                                                        COLORS.text
+                                                        }
+                                                        fontFamily="Inter, sans-serif"
+                                                    >
+                                                        {dayData.day}
+                                                    </Text>
+                                                </Box>
+                                                {hasBookings && (
+                                                    <Badge
+                                                        bg={COLORS.primary}
+                                                        color="white"
+                                                        borderRadius="full"
+                                                        fontSize="xs"
+                                                        minW="20px"
+                                                        h="20px"
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        justifyContent="center"
+                                                    >
+                                                        {dayBookings.length}
+                                                    </Badge>
+                                                )}
+                                            </Flex>
 
-                                            {/* Booking Slots - Scrollable */}
-                                            <Box
-                                                flex={1}
-                                                overflowY="auto"
-                                                overflowX="hidden"
-                                                maxH="70px"
-                                                css={{
-                                                    '&::-webkit-scrollbar': {
-                                                        width: '2px',
-                                                    },
-                                                    '&::-webkit-scrollbar-track': {
-                                                        background: 'transparent',
-                                                    },
-                                                    '&::-webkit-scrollbar-thumb': {
-                                                        background: COLORS.primary,
-                                                        borderRadius: '2px',
-                                                    },
-                                                }}
-                                            >
+                                            {/* Booking List */}
+                                            <Box flex={1} overflowY="auto" maxH="80px">
                                                 <VStack spacing={1} align="stretch">
-                                                    {dayBookings.map((booking, idx) => (
-                                                       
-                                                            <Badge
-                                                                size="sm"
-                                                                bg={statusConfig[booking.status]?.bgColor || '#9CA3AF'}
-                                                                color="white"
-                                                                fontSize="8px"
-                                                                p={1}
-                                                                borderRadius="4px"
-                                                                textAlign="left"
-                                                                cursor="pointer"
-                                                                w="100%"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (onBookingClick) {
-                                                                        onBookingClick(booking);
-                                                                    }
-                                                                }}
-                                                                _hover={{
-                                                                    transform: 'scale(1.02)',
-                                                                    boxShadow: 'sm'
-                                                                }}
-                                                                transition="all 0.2s"
-                                                            >
-                                                                <VStack spacing={0} align="start" w="100%">
-                                                                    <Text fontSize="7px" noOfLines={1} fontWeight="bold">
-                                                                        {booking.activityName}
-                                                                    </Text>
-                                                                    <Text fontSize="6px" noOfLines={1} opacity={0.8}>
-                                                                        {booking.startTime}-{booking.endTime}
-                                                                    </Text>
-                                                                    <Text fontSize="6px" noOfLines={1} opacity={0.8}>
-                                                                        {booking.buildingName}
-                                                                    </Text>
-                                                                </VStack>
-                                                            </Badge>
+                                                    {dayBookings.slice(0, 2).map((booking, idx) => (
+                                                        <Box
+                                                            key={idx}
+                                                            bg={statusConfig[booking.status]?.bgColor || '#9CA3AF'}
+                                                            borderRadius="8px"
+                                                            p={2}
+                                                            cursor="pointer"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (onBookingClick) {
+                                                                    onBookingClick(booking);
+                                                                }
+                                                            }}
+                                                            _hover={{
+                                                                transform: 'scale(1.02)',
+                                                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                                                            }}
+                                                            transition="all 0.2s"
+                                                        >
+                                                            <VStack spacing={0} align="start">
+                                                                <Text
+                                                                    fontSize="xs"
+                                                                    fontWeight="600"
+                                                                    color="white"
+                                                                    noOfLines={1}
+                                                                    fontFamily="Inter, sans-serif"
+                                                                >
+                                                                    {booking.activityName}
+                                                                </Text>
+                                                                <Text
+                                                                    fontSize="xs"
+                                                                    color="white"
+                                                                    opacity={0.9}
+                                                                    noOfLines={1}
+                                                                    fontFamily="Inter, sans-serif"
+                                                                >
+                                                                    {booking.startTime}-{booking.endTime}
+                                                                </Text>
+                                                            </VStack>
+                                                        </Box>
                                                     ))}
+                                                    {dayBookings.length > 2 && (
+                                                        <Text
+                                                            fontSize="xs"
+                                                            color="gray.500"
+                                                            textAlign="center"
+                                                            fontFamily="Inter, sans-serif"
+                                                        >
+                                                            +{dayBookings.length - 2} lainnya
+                                                        </Text>
+                                                    )}
                                                 </VStack>
                                             </Box>
                                         </VStack>
@@ -314,7 +396,7 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
                         })}
                     </Grid>
                 </VStack>
-            </Card>
+            </Box>
         </VStack>
     );
 };

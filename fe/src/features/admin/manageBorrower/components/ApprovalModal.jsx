@@ -127,13 +127,13 @@ const ApprovalModal = ({
                                 <HStack>
                                     <Text fontSize="sm" color="#666" minW="100px">Peminjam:</Text>
                                     <Text fontSize="sm" fontWeight="500" color="#2A2A2A">
-                                        {booking.borrowerName}
+                                        {booking.detail?.borrower?.fullName || booking.borrowerName || 'N/A'}
                                     </Text>
                                 </HStack>
                                 <HStack>
                                     <Text fontSize="sm" color="#666" minW="100px">Gedung:</Text>
                                     <Text fontSize="sm" fontWeight="500" color="#2A2A2A">
-                                        {booking.buildingName}
+                                        {booking.detail?.building?.buildingName || booking.buildingName || 'N/A'}
                                     </Text>
                                 </HStack>
                                 <HStack>
@@ -202,24 +202,24 @@ const ApprovalModal = ({
                     justifyContent="space-between"
                     gap={3}
                 >
-                        <Button
-                            variant="outline"
-                            onClick={handleClose}
-                            w="100%"
-                            disabled={loading}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={handleConfirm}
-                            isLoading={loading}
-                            loadingText="Memproses..."
-                            w="100%"
-                            disabled={config.showReason && !reason.trim()}
-                        >
-                            {config.confirmText}
-                        </Button>
+                    <Button
+                        variant="outline"
+                        onClick={handleClose}
+                        w="100%"
+                        disabled={loading}
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleConfirm}
+                        isLoading={loading}
+                        loadingText="Memproses..."
+                        w="100%"
+                        disabled={config.showReason && !reason.trim()}
+                    >
+                        {config.confirmText}
+                    </Button>
                 </ModalFooter>
             </ModalContent>
         </Modal>

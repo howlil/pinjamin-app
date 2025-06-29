@@ -76,7 +76,26 @@ const BuildingFormContainer = () => {
             const response = await buildingManagementAPI.getAdminBuildings();
             if (response.data) {
                 const building = response.data.find(b => b.id === id);
-                return building || null;
+                if (building) {
+                    // Normalize the data structure to match the expected format
+                    console.log('=== LOADING BUILDING DATA ===');
+                    console.log('Raw building data from API:', building);
+                    console.log('Building detail:', building.detail);
+                    console.log('Building detail facilities:', building.detail?.facilities);
+                    console.log('Building detail managers:', building.detail?.buildingManagers);
+
+                    const normalizedBuilding = {
+                        ...building,
+                        facilities: building.detail?.facilities || [],
+                        buildingManagers: building.detail?.buildingManagers || []
+                    };
+
+                    console.log('Normalized building data:', normalizedBuilding);
+                    console.log('Normalized facilities:', normalizedBuilding.facilities);
+                    console.log('Normalized managers:', normalizedBuilding.buildingManagers);
+                    return normalizedBuilding;
+                }
+                return null;
             }
             return null;
         } catch (error) {

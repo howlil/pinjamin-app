@@ -25,7 +25,9 @@ import {
     PopoverTrigger,
     PopoverContent,
     PopoverHeader,
-    PopoverBody
+    PopoverBody,
+    Spinner,
+    Center
 } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
@@ -47,6 +49,7 @@ import {
 } from 'lucide-react';
 import { COLORS, GLASSMORPHISM, CORNER_RADIUS } from '../utils/designTokens';
 import { useAuth } from '@/features/auth/api/useAuth';
+import { useNotifications } from '../hooks/useNotifications';
 import logo from '@/assets/logo.png';
 
 const SidebarItem = ({ to, children, icon: Icon, isActive, isCollapsed, badge }) => {
@@ -105,35 +108,19 @@ const AdminLayout = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
 
-    // Mock notifications data
-    const [notifications] = useState([
-        {
-            id: 1,
-            title: 'Booking Baru',
-            message: 'Ada booking baru dari John Doe untuk Ruang A301',
-            time: '5 menit yang lalu',
-            isRead: false,
-            type: 'booking'
-        },
-        {
-            id: 2,
-            title: 'Pembayaran Diterima',
-            message: 'Pembayaran untuk booking #12345 telah dikonfirmasi',
-            time: '1 jam yang lalu',
-            isRead: false,
-            type: 'payment'
-        },
-        {
-            id: 3,
-            title: 'Building Manager Baru',
-            message: 'Sarah Wilson telah ditambahkan sebagai building manager',
-            time: '2 jam yang lalu',
-            isRead: true,
-            type: 'system'
-        }
-    ]);
-
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    // Use real notification API
+    const {
+        notifications,
+        unreadCount,
+        loading: notificationLoading,
+        fetchNotifications,
+        fetchUnreadCount,
+        markAsRead,
+        markAllAsRead,
+        getNotificationIcon,
+        isMarkingAsRead,
+        refreshNotifications
+    } = useNotifications();
 
     const sidebarItems = [
         {
@@ -186,13 +173,27 @@ const AdminLayout = () => {
         navigate('/');
     };
 
-    const getNotificationIcon = (type) => {
-        switch (type) {
-            case 'booking': return '📅';
-            case 'payment': return '💳';
-            case 'system': return '⚙️';
-            default: return '📢';
+    // Handle notification click
+    const handleNotificationClick = async (notification) => {
+        if (notification.readStatus === 0) {
+            await markAsRead(notification.id);
+            // Force refresh unread count after marking as read
+            setTimeout(() => {
+                fetchUnreadCount();
+            }, 500);
         }
+    };
+
+    // Load notifications when popup opens
+    const handleNotificationToggle = async () => {
+        if (!isNotifOpen) {
+            // Always refresh both notifications and unread count when opening
+            await Promise.all([
+                fetchNotifications({ page: 1, limit: 10 }),
+                fetchUnreadCount()
+            ]);
+        }
+        onNotifToggle();
     };
 
     const currentPath = location.pathname;
@@ -340,7 +341,7 @@ const AdminLayout = () => {
                                         icon={<Bell size={20} />}
                                         variant="ghost"
                                         size="md"
-                                        onClick={onNotifToggle}
+                                        onClick={handleNotificationToggle}
                                         bg="rgba(255, 255, 255, 0.6)"
                                         backdropFilter="blur(10px)"
                                         border="1px solid rgba(215, 215, 215, 0.5)"
@@ -366,7 +367,7 @@ const AdminLayout = () => {
                                             alignItems="center"
                                             justifyContent="center"
                                         >
-                                            {unreadCount}
+                                            {unreadCount > 99 ? '99+' : unreadCount}
                                         </Badge>
                                     )}
                                 </Box>
@@ -390,15 +391,41 @@ const AdminLayout = () => {
                                 >
                                     <HStack justify="space-between">
                                         <Text>Notifikasi</Text>
-                                        {unreadCount > 0 && (
-                                            <Badge colorScheme="red" borderRadius="full">
-                                                {unreadCount} baru
-                                            </Badge>
-                                        )}
+                                        <HStack spacing={2}>
+                                            {unreadCount > 0 && (
+                                                <Badge colorScheme="red" borderRadius="full">
+                                                    {unreadCount} baru
+                                                </Badge>
+                                            )}
+                                            {unreadCount > 0 && (
+                                                <Button
+                                                    size="xs"
+                                                    variant="ghost"
+                                                    colorScheme="green"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        markAllAsRead();
+                                                    }}
+                                                    isLoading={notificationLoading}
+                                                    loadingText="..."
+                                                    fontFamily="Inter, sans-serif"
+                                                    fontSize="xs"
+                                                    _hover={{
+                                                        bg: "rgba(33, 209, 121, 0.1)"
+                                                    }}
+                                                >
+                                                    Tandai Semua
+                                                </Button>
+                                            )}
+                                        </HStack>
                                     </HStack>
                                 </PopoverHeader>
                                 <PopoverBody p={0} maxH="400px" overflowY="auto">
-                                    {notifications.length > 0 ? (
+                                    {notificationLoading ? (
+                                        <Center p={6}>
+                                            <Spinner size="md" color={COLORS.primary} />
+                                        </Center>
+                                    ) : notifications.length > 0 ? (
                                         <VStack spacing={0} align="stretch">
                                             {notifications.map((notif, index) => (
                                                 <Box
@@ -406,19 +433,34 @@ const AdminLayout = () => {
                                                     p={4}
                                                     borderBottom={index < notifications.length - 1 ? "1px solid rgba(215, 215, 215, 0.3)" : "none"}
                                                     cursor="pointer"
-                                                    bg={notif.isRead ? "transparent" : "rgba(33, 209, 121, 0.05)"}
+                                                    bg={notif.readStatus === 0 ? "rgba(33, 209, 121, 0.05)" : "transparent"}
                                                     _hover={{
                                                         bg: "rgba(33, 209, 121, 0.08)"
                                                     }}
                                                     transition="background 0.2s"
+                                                    onClick={() => handleNotificationClick(notif)}
+                                                    position="relative"
+                                                    opacity={isMarkingAsRead(notif.id) ? 0.6 : 1}
+                                                    pointerEvents={isMarkingAsRead(notif.id) ? "none" : "auto"}
                                                 >
+                                                    {isMarkingAsRead(notif.id) && (
+                                                        <Box
+                                                            position="absolute"
+                                                            top="50%"
+                                                            right={4}
+                                                            transform="translateY(-50%)"
+                                                            zIndex={1}
+                                                        >
+                                                            <Spinner size="xs" color={COLORS.primary} />
+                                                        </Box>
+                                                    )}
                                                     <HStack align="start" spacing={3}>
                                                         <Text fontSize="lg">
-                                                            {getNotificationIcon(notif.type)}
+                                                            {getNotificationIcon(notif.notificationType)}
                                                         </Text>
                                                         <VStack align="start" spacing={1} flex="1">
                                                             <Text
-                                                                fontWeight={notif.isRead ? "500" : "700"}
+                                                                fontWeight={notif.readStatus === 0 ? "700" : "500"}
                                                                 fontSize="sm"
                                                                 fontFamily="Inter, sans-serif"
                                                                 color={COLORS.text}
@@ -438,10 +480,10 @@ const AdminLayout = () => {
                                                                 color="gray.500"
                                                                 fontFamily="Inter, sans-serif"
                                                             >
-                                                                {notif.time}
+                                                                {notif.date}
                                                             </Text>
                                                         </VStack>
-                                                        {!notif.isRead && (
+                                                        {notif.readStatus === 0 && (
                                                             <Box
                                                                 w="8px"
                                                                 h="8px"
@@ -543,18 +585,7 @@ const AdminLayout = () => {
                                 >
                                     Profile
                                 </MenuItem>
-                                <MenuItem
-                                    icon={<Settings size={16} />}
-                                    bg="transparent"
-                                    _hover={{
-                                        bg: "rgba(33, 209, 121, 0.08)"
-                                    }}
-                                    borderRadius="12px"
-                                    mx={2}
-                                    fontFamily="Inter, sans-serif"
-                                >
-                                    Pengaturan
-                                </MenuItem>
+
                                 <MenuDivider borderColor="rgba(215, 215, 215, 0.5)" />
                                 <MenuItem
                                     icon={<Home size={16} />}

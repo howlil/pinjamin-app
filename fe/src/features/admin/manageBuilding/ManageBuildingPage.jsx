@@ -106,7 +106,7 @@ const ManageBuildingPage = () => {
 
     if (error) {
         return (
-            <Container maxW="7xl" py={8}>
+            <Container maxW="7xl" px={6} py={8}>
                 <ErrorState
                     title="Error Loading Buildings"
                     description={error}
@@ -117,21 +117,21 @@ const ManageBuildingPage = () => {
     }
 
     return (
-        <Container maxW="7xl" py={8}>
+        <Container maxW="7xl" px={6} py={8}>
             <VStack spacing={8} align="stretch">
                 {/* Header */}
                 <HStack justify="space-end" align="end" w="100%" >
 
-                        <PrimaryButton
-                            leftIcon={<Plus size={20} />}
-                            onClick={handleAddBuilding}
-                            fontFamily="Inter, sans-serif"
-                            _hover={{
-                                transform: "translateY(-2px)"
-                            }}
-                        >
-                            Tambah Gedung
-                        </PrimaryButton>
+                    <PrimaryButton
+                        leftIcon={<Plus size={20} />}
+                        onClick={handleAddBuilding}
+                        fontFamily="Inter, sans-serif"
+                        _hover={{
+                            transform: "translateY(-2px)"
+                        }}
+                    >
+                        Tambah Gedung
+                    </PrimaryButton>
                 </HStack>
 
                 {/* Filters */}

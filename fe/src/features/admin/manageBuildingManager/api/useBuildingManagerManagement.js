@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { buildingManagerAPI } from './buildingManagerAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useBuildingManagerManagement = (filters = {}) => {
     const [managers, setManagers] = useState([]);
@@ -28,7 +29,7 @@ export const useBuildingManagerManagement = (filters = {}) => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data building manager');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -67,7 +68,7 @@ export const useAvailableBuildingManagers = () => {
                 setAvailableManagers(response.data || []);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data building manager tersedia');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -104,7 +105,7 @@ export const useCreateBuildingManager = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal membuat building manager');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -134,7 +135,7 @@ export const useAssignBuildingManager = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal menugaskan building manager');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -164,7 +165,7 @@ export const useUpdateBuildingManager = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memperbarui building manager');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -194,7 +195,7 @@ export const useDeleteBuildingManager = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal menghapus building manager');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

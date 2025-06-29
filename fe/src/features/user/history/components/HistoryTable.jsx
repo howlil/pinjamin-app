@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Table,
@@ -9,10 +9,28 @@ import {
     Td,
     Badge,
     Text,
-    VStack
+    VStack,
+    HStack,
+    IconButton,
+    Tooltip,
+    useDisclosure
 } from '@chakra-ui/react';
+import { Eye } from 'lucide-react';
+import BookingDetailModal from '@shared/components/BookingDetailModal';
 
 const HistoryTable = ({ bookings }) => {
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const {
+        isOpen: isDetailModalOpen,
+        onOpen: onDetailModalOpen,
+        onClose: onDetailModalClose
+    } = useDisclosure();
+
+    const handleDetailClick = (booking) => {
+        setSelectedBooking(booking);
+        onDetailModalOpen();
+    };
+
     const getStatusConfig = (status) => {
         switch (status?.toUpperCase()) {
             case 'APPROVED':
@@ -154,6 +172,17 @@ const HistoryTable = ({ bookings }) => {
                             >
                                 Status
                             </Th>
+                            <Th
+                                color="#2A2A2A"
+                                fontWeight="700"
+                                fontSize="sm"
+                                textTransform="none"
+                                py={4}
+                                borderColor="rgba(215, 215, 215, 0.3)"
+                                textAlign="center"
+                            >
+                                Aksi
+                            </Th>
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -240,12 +269,34 @@ const HistoryTable = ({ bookings }) => {
                                             {statusConfig.label}
                                         </Badge>
                                     </Td>
+                                    <Td
+                                        py={4}
+                                        borderColor="rgba(215, 215, 215, 0.2)"
+                                        textAlign="center"
+                                    >
+                                        <Tooltip label="Lihat Detail">
+                                            <IconButton
+                                                icon={<Eye size={16} />}
+                                                size="sm"
+                                                variant="ghost"
+                                                colorScheme="blue"
+                                                onClick={() => handleDetailClick(booking)}
+                                            />
+                                        </Tooltip>
+                                    </Td>
                                 </Tr>
                             );
                         })}
                     </Tbody>
                 </Table>
             </Box>
+
+            {/* Detail Modal */}
+            <BookingDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={onDetailModalClose}
+                booking={selectedBooking}
+            />
         </Box>
     );
 };

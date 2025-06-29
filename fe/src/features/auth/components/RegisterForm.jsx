@@ -34,14 +34,28 @@ const RegisterForm = ({ onToggle }) => {
         setErrors({});
     }, []);
 
-    const handleValidatedSubmit = (e) => {
+    // Reset errors ketika formData kosong (setelah reset form)
+    useEffect(() => {
+        if (Object.values(formData).every(value => !value)) {
+            setErrors({});
+        }
+    }, [formData]);
+
+    const handleValidatedSubmit = async (e) => {
         e.preventDefault();
 
         const validation = validateRegisterForm(formData);
         setErrors(validation.errors);
 
         if (validation.isValid) {
-            handleSubmit(e);
+            try {
+                await handleSubmit(e);
+                // Reset errors setelah registrasi berhasil
+                setErrors({});
+            } catch (error) {
+                // Error akan ditangani oleh handleSubmit
+                console.error('Form submission error:', error);
+            }
         }
     };
 

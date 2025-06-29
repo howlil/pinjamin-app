@@ -69,16 +69,28 @@ export const buildingManagementAPI = {
     // PATCH /api/v1/buildings/admin/{id}
     updateBuilding: async (id, buildingData) => {
         try {
+            console.log('=== API UPDATE BUILDING ===');
+            console.log('Building ID:', id);
+            console.log('Building data received:', buildingData);
+            console.log('Facilities data:', buildingData.facilities);
+            console.log('Building managers data:', buildingData.buildingManagers);
+
             // Use FormData for multipart/form-data
             const formData = new FormData();
             Object.keys(buildingData).forEach(key => {
                 if (buildingData[key] !== undefined && buildingData[key] !== null) {
                     if (key === 'facilities' || key === 'buildingManagers') {
-                        // Handle array fields
+                        // Handle array fields - selalu kirim data array (baik kosong maupun berisi)
                         if (Array.isArray(buildingData[key])) {
+                            console.log(`Adding ${key} to FormData:`, buildingData[key]);
                             formData.append(key, JSON.stringify(buildingData[key]));
-                        } else {
+                        } else if (buildingData[key]) {
+                            console.log(`Adding ${key} to FormData (non-array):`, buildingData[key]);
                             formData.append(key, buildingData[key]);
+                        } else {
+                            // Kirim array kosong jika memang ingin mengosongkan
+                            console.log(`Adding empty ${key} to FormData`);
+                            formData.append(key, JSON.stringify([]));
                         }
                     } else {
                         formData.append(key, buildingData[key]);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { borrowerManagementAPI } from './borrowerManagementAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const usePendingBookings = () => {
     const [bookings, setBookings] = useState([]);
@@ -21,6 +22,7 @@ export const usePendingBookings = () => {
             const queryParams = {
                 page: pagination.currentPage,
                 limit: pagination.itemsPerPage,
+                includeDetails: true, // Request detail lengkap untuk modal
                 ...params
             };
 
@@ -31,7 +33,7 @@ export const usePendingBookings = () => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data peminjaman pending');
+            setError(extractErrorMessage(err));
             console.error('Error fetching pending bookings:', err);
         } finally {
             setLoading(false);
@@ -77,6 +79,8 @@ export const useBookingApproval = () => {
                 return response;
             }
         } catch (err) {
+            const errorMessage = extractErrorMessage(err, 'Gagal memproses approval');
+            toast.error(errorMessage);
             throw err;
         } finally {
             setLoading(false);

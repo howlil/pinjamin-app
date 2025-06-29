@@ -19,11 +19,10 @@ router.get('/notifications/unread-count',
     NotificationController.getUnreadCount
 );
 
-// Mark notification as read
-router.patch('/notifications/:id/read',
+// Mark all notifications as read
+router.patch('/notifications/mark-all-read',
     AuthMiddleware.authenticate,
-    ValidationMiddleware.validateParams(NotificationValidation.notificationParamsSchema),
-    NotificationController.markAsRead
+    NotificationController.markAsAllRead
 );
 
 module.exports = router; 

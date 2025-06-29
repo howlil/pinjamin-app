@@ -13,12 +13,13 @@ import {
     Badge,
     Icon,
     Container,
-    useDisclosure
+    useDisclosure,
+    Text
 } from '@chakra-ui/react';
 import { MapPin, Users, Calendar, Clock, Search } from 'lucide-react';
-import { H3, H4, Text, Caption } from '@shared/components/Typography';
-import Card from '@shared/components/Card';
+import { H3, H4 } from '@shared/components/Typography';
 import BookingFormModal from '../../buildingDetail/components/BookingFormModal';
+import { COLORS } from '@utils/designTokens';
 
 let motion;
 try {
@@ -83,7 +84,8 @@ const AvailabilityResultModal = ({ isOpen, onClose, resultData }) => {
             SEMINAR: 'Ruang Seminar',
             LABORATORY: 'Laboratorium',
             CLASSROOM: 'Ruang Kelas',
-            PKM: 'Gedung PKM'
+            PKM: 'Gedung PKM',
+            MULTIFUNCTION: 'Multifungsi'
         };
         return labels[type] || type;
     };
@@ -96,55 +98,72 @@ const AvailabilityResultModal = ({ isOpen, onClose, resultData }) => {
                     backdropFilter="blur(10px)"
                 />
                 <ModalContent
-                    bg="rgba(255, 255, 255, 0.8)"
-                    backdropFilter="blur(10px)"
+                    bg="rgba(255, 255, 255, 0.95)"
+                    backdropFilter="blur(15px)"
                     borderRadius="24px"
                     border="1px solid rgba(215, 215, 215, 0.5)"
-                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
+                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
                     maxH="90vh"
                     fontFamily="Inter, sans-serif"
                 >
                     <ModalHeader pb={4} pt={6}>
-                        <VStack align="start" spacing={3} w="full">
-                            <H3 color="#2A2A2A" fontSize="xl" fontWeight="700">
-                                Hasil Pencarian Ruang Rapat
-                            </H3>
-
-                            <HStack
-                                w="full"
-                                justify="space-between"
-                                align="center"
-                                bg="rgba(33, 209, 121, 0.08)"
-                                p={3}
-                                borderRadius="16px"
-                            >
-                                <HStack spacing={6}>
-                                    <HStack spacing={2}>
-                                        <Icon as={Calendar} size={16} color="#21D179" />
-                                        <Text color="#2A2A2A" fontSize="sm" fontWeight="500">
-                                            {requestedDateTime.date}
+                        <VStack align="stretch" spacing={4} w="full">
+                            <HStack justify="space-between" align="center">
+                                <HStack spacing={3}>
+                                    <Box
+                                        p={2}
+                                        borderRadius="12px"
+                                        bg="rgba(33, 209, 121, 0.1)"
+                                    >
+                                        <Search size={24} color={COLORS.primary} />
+                                    </Box>
+                                    <VStack align="start" spacing={0}>
+                                        <H3 color="#2A2A2A" fontSize="xl" fontWeight="700">
+                                            Hasil Pencarian Ruang
+                                        </H3>
+                                        <Text fontSize="sm" color="gray.600" fontFamily="Inter, sans-serif">
+                                            Ditemukan {buildingsCount} gedung yang tersedia
                                         </Text>
-                                    </HStack>
-                                    <HStack spacing={2}>
-                                        <Icon as={Clock} size={16} color="#21D179" />
-                                        <Text color="#2A2A2A" fontSize="sm" fontWeight="500">
-                                            {requestedDateTime.time}
-                                        </Text>
-                                    </HStack>
+                                    </VStack>
                                 </HStack>
 
                                 <Badge
-                                    bg="#21D179"
+                                    bg={COLORS.primary}
                                     color="white"
-                                    borderRadius="20px"
-                                    px={3}
-                                    py={1}
-                                    fontSize="xs"
+                                    borderRadius="full"
+                                    px={4}
+                                    py={2}
+                                    fontSize="sm"
                                     fontWeight="600"
                                 >
                                     {buildingsCount} Gedung
                                 </Badge>
                             </HStack>
+
+                            {/* Search Info */}
+                            <Box
+                                bg="rgba(33, 209, 121, 0.08)"
+                                borderRadius="16px"
+                                p={4}
+                                border="1px solid rgba(33, 209, 121, 0.2)"
+                            >
+                                <HStack justify="space-between" align="center">
+                                    <HStack spacing={6}>
+                                        <HStack spacing={2}>
+                                            <Icon as={Calendar} size={16} color={COLORS.primary} />
+                                            <Text color="#2A2A2A" fontSize="sm" fontWeight="600" fontFamily="Inter, sans-serif">
+                                                {requestedDateTime.date}
+                                            </Text>
+                                        </HStack>
+                                        <HStack spacing={2}>
+                                            <Icon as={Clock} size={16} color={COLORS.primary} />
+                                            <Text color="#2A2A2A" fontSize="sm" fontWeight="600" fontFamily="Inter, sans-serif">
+                                                {requestedDateTime.time}
+                                            </Text>
+                                        </HStack>
+                                    </HStack>
+                                </HStack>
+                            </Box>
                         </VStack>
                     </ModalHeader>
                     <ModalCloseButton />
@@ -152,39 +171,50 @@ const AvailabilityResultModal = ({ isOpen, onClose, resultData }) => {
                     <ModalBody pb={6}>
                         <Container maxW="full" p={0}>
                             {buildingsCount === 0 ? (
-                                <VStack spacing={4} py={8} align="center">
-                                    <Box
-                                        bg="rgba(33, 209, 121, 0.1)"
-                                        borderRadius="50%"
-                                        p={4}
-                                    >
-                                        <Icon as={Search} size={24} color="#21D179" />
-                                    </Box>
-                                    <VStack spacing={1} align="center">
-                                        <Text color="#2A2A2A" fontSize="md" fontWeight="600">
-                                            Tidak ada gedung tersedia
-                                        </Text>
-                                        <Text color="#2A2A2A" fontSize="sm" opacity={0.7} maxW="300px" textAlign="center">
-                                            Tidak ada gedung yang tersedia pada waktu ini. Silakan coba waktu lain.
-                                        </Text>
+                                <Box
+                                    bg="rgba(255, 255, 255, 0.9)"
+                                    backdropFilter="blur(15px)"
+                                    borderRadius="24px"
+                                    border="1px solid rgba(215, 215, 215, 0.5)"
+                                    p={8}
+                                    textAlign="center"
+                                >
+                                    <VStack spacing={4} py={4}>
+                                        <Box
+                                            bg="rgba(33, 209, 121, 0.1)"
+                                            borderRadius="full"
+                                            p={4}
+                                        >
+                                            <Icon as={Search} size={32} color={COLORS.primary} />
+                                        </Box>
+                                        <VStack spacing={2}>
+                                            <Text color="#2A2A2A" fontSize="lg" fontWeight="600" fontFamily="Inter, sans-serif">
+                                                Tidak ada gedung tersedia
+                                            </Text>
+                                            <Text color="gray.600" fontSize="sm" maxW="400px" textAlign="center" fontFamily="Inter, sans-serif">
+                                                Tidak ada gedung yang tersedia pada waktu ini. Silakan coba waktu lain atau ubah kriteria pencarian.
+                                            </Text>
+                                        </VStack>
                                     </VStack>
-                                </VStack>
+                                </Box>
                             ) : (
-                                <VStack spacing={6} w="full">
+                                <VStack spacing={4} w="full" align="stretch">
                                     {availableBuildings.map((building, index) => (
                                         <MotionBox
                                             key={building.id}
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3, delay: index * 0.1 }}
                                             w="100%"
                                         >
                                             <Box
                                                 bg="rgba(255, 255, 255, 0.9)"
                                                 backdropFilter="blur(15px)"
-                                                border="1px solid rgba(33, 209, 121, 0.2)"
+                                                border="1px solid rgba(215, 215, 215, 0.5)"
                                                 borderRadius="24px"
                                                 overflow="hidden"
+                                                cursor="pointer"
+                                                onClick={() => handleBuildingClick(building)}
                                                 _hover={{
                                                     transform: 'translateY(-2px)',
                                                     bg: "rgba(255, 255, 255, 0.95)",
@@ -192,120 +222,133 @@ const AvailabilityResultModal = ({ isOpen, onClose, resultData }) => {
                                                     borderColor: "rgba(33, 209, 121, 0.3)"
                                                 }}
                                                 transition="all 0.3s ease"
-                                                boxShadow="0 6px 24px rgba(33, 209, 121, 0.08)"
+                                                boxShadow="0 6px 24px rgba(0, 0, 0, 0.08)"
+                                                position="relative"
                                                 w="100%"
-                                                cursor="pointer"
-                                                p={0}
-                                                height="160px"
-                                                onClick={() => handleBuildingClick(building)}
+                                                h="160px"
                                             >
                                                 <HStack spacing={0} align="stretch" h="100%">
-                                                    {/* Image Section */}
-                                                    <Box position="relative" flexShrink={0}>
+                                                    {/* Image Section - Fixed Width */}
+                                                    <Box
+                                                        position="relative"
+                                                        w="240px"
+                                                        h="100%"
+                                                        flexShrink={0}
+                                                    >
                                                         <Image
                                                             src={building.buildingPhoto}
                                                             alt={building.buildingName}
-                                                            w="200px"
-                                                            h="160px"
+                                                            w="100%"
+                                                            h="100%"
                                                             objectFit="cover"
-                                                            fallbackSrc="https://via.placeholder.com/200x160?text=No+Image"
+                                                            fallbackSrc="https://via.placeholder.com/240x160?text=No+Image"
                                                         />
+
+                                                        {/* Type Badge */}
                                                         <Box
                                                             position="absolute"
                                                             top={3}
                                                             left={3}
-                                                            bg="#21D179"
-                                                            borderRadius="16px"
+                                                            bg={COLORS.primary}
+                                                            borderRadius="10px"
                                                             px={2}
                                                             py={1}
                                                         >
-                                                            <Text color="white" fontSize="xs" fontWeight="600">
+                                                            <Text color="white" fontSize="xs" fontWeight="600" fontFamily="Inter, sans-serif">
                                                                 {getBuildingTypeLabel(building.buildingType)}
                                                             </Text>
                                                         </Box>
                                                     </Box>
 
-                                                    {/* Content Section */}
-                                                    <VStack
-                                                        align="stretch"
-                                                        p={4}
-                                                        spacing={3}
+                                                    {/* Content Section - Flex Fill */}
+                                                    <Box
                                                         flex={1}
+                                                        p={4}
+                                                        display="flex"
+                                                        flexDirection="column"
                                                         justify="space-between"
-                                                        h="100%"
+                                                        minW={0}
                                                     >
-                                                        {/* Header - Fixed Height */}
-                                                        <Box minH="60px" w="full">
-                                                            <VStack align="start" spacing={1} w="full">
-                                                                <H4
-                                                                    fontSize="md"
-                                                                    fontWeight="700"
-                                                                    color="#2A2A2A"
-                                                                    noOfLines={1}
-                                                                    lineHeight="1.2"
-                                                                >
-                                                                    {building.buildingName}
-                                                                </H4>
+                                                        {/* Title & Description - Fixed Height */}
+                                                        <Box h="60px" overflow="hidden">
+                                                            <H4
+                                                                fontSize="md"
+                                                                fontWeight="700"
+                                                                color="#2A2A2A"
+                                                                noOfLines={1}
+                                                                fontFamily="Inter, sans-serif"
+                                                                mb={1}
+                                                            >
+                                                                {building.buildingName}
+                                                            </H4>
+                                                            <Text
+                                                                color="gray.600"
+                                                                fontSize="sm"
+                                                                noOfLines={2}
+                                                                lineHeight="1.3"
+                                                                fontFamily="Inter, sans-serif"
+                                                                overflow="hidden"
+                                                                textOverflow="ellipsis"
+                                                            >
+                                                                {building.description}
+                                                            </Text>
+                                                        </Box>
+
+                                                        {/* Bottom Section - Info & Price */}
+                                                        <HStack justify="space-between" align="end" w="100%" mt={2}>
+                                                            {/* Left: Location & Capacity */}
+                                                            <VStack align="start" spacing={1} flex={1} minW={0}>
+                                                                {/* Location */}
+                                                                <HStack spacing={2} w="100%">
+                                                                    <Icon as={MapPin} size={12} color={COLORS.primary} flexShrink={0} />
+                                                                    <Text
+                                                                        fontSize="xs"
+                                                                        color="#2A2A2A"
+                                                                        noOfLines={1}
+                                                                        fontFamily="Inter, sans-serif"
+                                                                        overflow="hidden"
+                                                                        textOverflow="ellipsis"
+                                                                    >
+                                                                        {building.location}
+                                                                    </Text>
+                                                                </HStack>
+
+                                                                {/* Capacity */}
+                                                                <HStack spacing={2}>
+                                                                    <Icon as={Users} size={12} color={COLORS.primary} flexShrink={0} />
+                                                                    <Text
+                                                                        fontSize="xs"
+                                                                        color="#2A2A2A"
+                                                                        fontFamily="Inter, sans-serif"
+                                                                    >
+                                                                        {building.capacity} orang
+                                                                    </Text>
+                                                                </HStack>
+                                                            </VStack>
+
+                                                            {/* Right: Price */}
+                                                            <VStack align="end" spacing={0} minW="120px" flexShrink={0}>
                                                                 <Text
-                                                                    color="#2A2A2A"
                                                                     fontSize="xs"
-                                                                    opacity={0.7}
-                                                                    noOfLines={2}
-                                                                    lineHeight="1.3"
+                                                                    fontWeight="600"
+                                                                    color="gray.500"
+                                                                    textTransform="uppercase"
+                                                                    fontFamily="Inter, sans-serif"
                                                                 >
-                                                                    {building.description}
+                                                                    Harga Sewa
+                                                                </Text>
+                                                                <Text
+                                                                    fontWeight="700"
+                                                                    color={COLORS.primary}
+                                                                    fontSize="md"
+                                                                    fontFamily="Inter, sans-serif"
+                                                                    lineHeight="1"
+                                                                >
+                                                                    {formatPrice(building.rentalPrice)}
                                                                 </Text>
                                                             </VStack>
-                                                        </Box>
-
-                                                        {/* Info and Price - Fixed Height */}
-                                                        <Box w="full">
-                                                            <HStack justify="space-between" align="end" w="full">
-                                                                {/* Left: Location & Capacity */}
-                                                                <VStack align="start" spacing={1} flex={1}>
-                                                                    <HStack spacing={2}>
-                                                                        <Icon as={MapPin} size={12} color="#21D179" />
-                                                                        <Text
-                                                                            color="#2A2A2A"
-                                                                            fontSize="xs"
-                                                                            noOfLines={1}
-                                                                        >
-                                                                            {building.location}
-                                                                        </Text>
-                                                                    </HStack>
-                                                                    <HStack spacing={2}>
-                                                                        <Icon as={Users} size={12} color="#21D179" />
-                                                                        <Text
-                                                                            color="#2A2A2A"
-                                                                            fontSize="xs"
-                                                                        >
-                                                                            {building.capacity} orang
-                                                                        </Text>
-                                                                    </HStack>
-                                                                </VStack>
-
-                                                                {/* Right: Price */}
-                                                                <VStack align="end" spacing={0} minW="120px">
-                                                                    <Text
-                                                                        color="#2A2A2A"
-                                                                        fontSize="xs"
-                                                                        opacity={0.6}
-                                                                        fontWeight="500"
-                                                                    >
-                                                                        HARGA SEWA
-                                                                    </Text>
-                                                                    <Text
-                                                                        fontWeight="700"
-                                                                        color="#21D179"
-                                                                        fontSize="md"
-                                                                        lineHeight="1"
-                                                                    >
-                                                                        {formatPrice(building.rentalPrice)}
-                                                                    </Text>
-                                                                </VStack>
-                                                            </HStack>
-                                                        </Box>
-                                                    </VStack>
+                                                        </HStack>
+                                                    </Box>
                                                 </HStack>
                                             </Box>
                                         </MotionBox>

@@ -1946,44 +1946,78 @@ paths:
 
   /api/v1/transactions/callback/xendit:
     post:
-      summary: Xendit payment callback webhook
+      summary: Unified Xendit webhook callback
       tags: [Transactions]
-      description: Endpoint for Xendit to send payment notifications. This endpoint is called by Xendit when a payment status changes.
+      description: Unified endpoint for Xendit to send payment and refund notifications. This endpoint automatically detects the webhook type (invoice or refund) based on the payload structure and routes to the appropriate handler.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Xendit transaction ID
-                  example: "5f9a3d5701f09e00173a4519"
-                external_id:
-                  type: string
-                  description: Booking ID (passed to Xendit during payment creation)
-                  example: "123e4567-e89b-12d3-a456-426614174000"
-                status:
-                  type: string
-                  description: Payment status
-                  example: "PAID"
-                payment_method:
-                  type: string
-                  description: Payment method used
-                  example: "CREDIT_CARD"
-                paid_amount:
-                  type: number
-                  description: Amount paid
-                  example: 500000
-                paid_at:
-                  type: string
-                  format: date-time
-                  description: Payment timestamp
-                  example: "2023-06-25T10:00:00Z"
+              oneOf:
+                - type: object
+                  title: Invoice Webhook Payload
+                  description: Payment status callback from Xendit
+                  properties:
+                    id:
+                      type: string
+                      description: Xendit transaction ID
+                      example: "5f9a3d5701f09e00173a4519"
+                    external_id:
+                      type: string
+                      description: Booking ID (passed to Xendit during payment creation)
+                      example: "123e4567-e89b-12d3-a456-426614174000"
+                    status:
+                      type: string
+                      description: Payment status
+                      example: "PAID"
+                    payment_method:
+                      type: string
+                      description: Payment method used
+                      example: "CREDIT_CARD"
+                    paid_amount:
+                      type: number
+                      description: Amount paid
+                      example: 500000
+                    paid_at:
+                      type: string
+                      format: date-time
+                      description: Payment timestamp
+                      example: "2023-06-25T10:00:00Z"
+                - type: object
+                  title: Refund Webhook Payload
+                  description: Refund status callback from Xendit
+                  properties:
+                    id:
+                      type: string
+                      description: Xendit refund transaction ID
+                      example: "xrd_f9a0fb4a-db69-4f8b-88f8-a921dbcc1138"
+                    status:
+                      type: string
+                      description: Refund status
+                      enum: ['SUCCEEDED', 'FAILED', 'PENDING']
+                      example: "SUCCEEDED"
+                    reference_id:
+                      type: string
+                      format: uuid
+                      description: Refund ID in our system
+                      example: "123e4567-e89b-12d3-a456-426614174000"
+                    amount:
+                      type: number
+                      description: Refund amount
+                      example: 500000
+                    created:
+                      type: string
+                      format: date-time
+                      description: Refund creation timestamp
+                      example: "2023-06-26T10:00:00Z"
+                    payment_id:
+                      type: string
+                      description: Xendit payment ID that was refunded
+                      example: "5f9a3d5701f09e00173a4519"
       responses:
         '200':
-          description: Callback processed successfully
+          description: Webhook processed successfully
           content:
             application/json:
               schema:
@@ -1998,75 +2032,19 @@ paths:
                             type: boolean
                             example: true
         '400':
-          description: Invalid callback data
+          description: Invalid webhook data or unknown webhook type
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/transactions/callback/refund:
-    post:
-      summary: Xendit refund callback webhook
-      tags: [Transactions]
-      description: Endpoint for Xendit to send refund status notifications. This endpoint is called by Xendit when a refund status changes.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Xendit refund transaction ID
-                  example: "xrd_f9a0fb4a-db69-4f8b-88f8-a921dbcc1138"
-                status:
-                  type: string
-                  description: Refund status
-                  enum: ['SUCCEEDED', 'FAILED', 'PENDING']
-                  example: "SUCCEEDED"
-                reference_id:
-                  type: string
-                  format: uuid
-                  description: Refund ID in our system
-                  example: "123e4567-e89b-12d3-a456-426614174000"
-                amount:
-                  type: number
-                  description: Refund amount
-                  example: 500000
-                created:
-                  type: string
-                  format: date-time
-                  description: Refund creation timestamp
-                  example: "2023-06-26T10:00:00Z"
-                payment_id:
-                  type: string
-                  description: Xendit payment ID that was refunded
-                  example: "5f9a3d5701f09e00173a4519"
-      responses:
-        '200':
-          description: Refund callback processed successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          received:
-                            type: boolean
-                            example: true
-        '400':
-          description: Invalid callback data
+        '401':
+          description: Invalid webhook signature
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Refund record not found
+          description: Record not found for webhook processing
           content:
             application/json:
               schema:

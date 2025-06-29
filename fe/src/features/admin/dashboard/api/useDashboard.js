@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dashboardAPI } from './dashboardAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useDashboardStatistics = (month = null, year = null) => {
     const [bookingStats, setBookingStats] = useState([]);
@@ -29,7 +30,7 @@ export const useDashboardStatistics = (month = null, year = null) => {
                 setTransactionStats(transactionResponse.data || []);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat statistik dashboard');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -71,7 +72,7 @@ export const useBookingStatistics = (month = null, year = null) => {
                 setBookingStats(response.data || []);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat statistik peminjaman');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -112,7 +113,7 @@ export const useTransactionStatistics = (month = null, year = null) => {
                 setTransactionStats(response.data || []);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat statistik transaksi');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

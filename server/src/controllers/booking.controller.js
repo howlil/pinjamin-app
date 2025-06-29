@@ -134,9 +134,12 @@ const BookingController = {
     // Get bookings with filters (admin)
     async adminGetBookings(req, res) {
         try {
-            const { status, page, limit } = req.query;
+            const { page, limit } = req.query;
 
-            const result = await BookingService.adminGetBookings({ status, page, limit });
+            const result = await BookingService.adminGetBookings({
+                page,
+                limit
+            });
 
             return ResponseHelper.successWithPagination(
                 res,
@@ -224,6 +227,25 @@ const BookingController = {
             }
 
             return ResponseHelper.error(res, 'Terjadi kesalahan saat memproses refund', 500);
+        }
+    },
+
+    // ===== CRONJOB FUNCTIONS =====
+
+    // Get cronjob status (admin)
+    async getCronjobStatus(req, res) {
+        try {
+            const cronJobManager = require('../cronjob');
+            const status = cronJobManager.getStatus();
+
+            return ResponseHelper.success(res, 'Status cronjob berhasil diambil', {
+                cronjobs: status,
+                serverTime: new Date().toISOString(),
+                timezone: 'Asia/Jakarta'
+            });
+        } catch (error) {
+            logger.error('Get cronjob status controller error:', error);
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil status cronjob', 500);
         }
     }
 };

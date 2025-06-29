@@ -20,15 +20,26 @@ import {
     ModalBody,
     ModalCloseButton,
     Icon,
+    IconButton,
+    Badge,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverHeader,
+    PopoverBody,
+    Spinner,
+    Center
 } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     User,
     LogOut,
-    MenuIcon
+    MenuIcon,
+    Bell
 } from 'lucide-react';
 import { COLORS, GLASSMORPHISM, CORNER_RADIUS } from '../utils/designTokens';
 import { useAuth } from '@/features/auth/api/useAuth';
+import { useNotifications } from '../hooks/useNotifications';
 import logo from '@/assets/logo.png';
 
 const NavItem = ({ to, children, icon: Icon, isActive, isExternal, onClick }) => {
@@ -89,10 +100,23 @@ const NavItem = ({ to, children, icon: Icon, isActive, isExternal, onClick }) =>
 
 const Navbar = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const { isOpen: isNotifOpen, onToggle: onNotifToggle, onClose: onNotifClose } = useDisclosure();
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout, isAuthenticated } = useAuth();
     const [scrollY, setScrollY] = useState(0);
+
+    // Use notification API for authenticated users
+    const {
+        notifications,
+        unreadCount,
+        loading: notificationLoading,
+        fetchNotifications,
+        markAsRead,
+        markAllAsRead,
+        getNotificationIcon,
+        isMarkingAsRead
+    } = useNotifications();
 
     // Track scroll position for navbar transparency effect
     useEffect(() => {
@@ -125,7 +149,20 @@ const Navbar = () => {
         onClose();
     };
 
+    // Handle notification click
+    const handleNotificationClick = async (notification) => {
+        if (notification.readStatus === 0) {
+            await markAsRead(notification.id);
+        }
+    };
 
+    // Load notifications when popup opens
+    const handleNotificationToggle = () => {
+        if (!isNotifOpen && isAuthenticated) {
+            fetchNotifications({ page: 1, limit: 10 });
+        }
+        onNotifToggle();
+    };
 
     // Dynamic navbar styles based on scroll position
     const navbarBg = scrollY > 0 ? 'rgba(255, 255, 255, 0.9)' : 'transparent';
@@ -163,11 +200,9 @@ const Navbar = () => {
                         style={{
                             width: '80px',
                             height: '80px',
-
                             objectFit: 'contain'
                         }}
                     />
-
 
                     <HStack spacing={1} display={{ base: 'none', md: 'flex' }}>
                         {menuItems.map((item) => (
@@ -184,6 +219,190 @@ const Navbar = () => {
                     <HStack spacing={3}>
                         {isAuthenticated && user ? (
                             <>
+                                {/* Desktop Notification Bell */}
+                                {user.role !== 'ADMIN' && (
+                                    <Popover
+                                        isOpen={isNotifOpen}
+                                        onClose={onNotifClose}
+                                        placement="bottom-end"
+                                        closeOnBlur={true}
+                                    >
+                                        <PopoverTrigger>
+                                            <Box position="relative" display={{ base: 'none', md: 'block' }}>
+                                                <IconButton
+                                                    icon={<Bell size={18} />}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleNotificationToggle}
+                                                    bg="rgba(255, 255, 255, 0.6)"
+                                                    backdropFilter="blur(10px)"
+                                                    border="1px solid rgba(215, 215, 215, 0.5)"
+                                                    borderRadius="full"
+                                                    _hover={{
+                                                        bg: "rgba(255, 255, 255, 0.8)",
+                                                        transform: "translateY(-1px)"
+                                                    }}
+                                                    transition="all 0.2s"
+                                                />
+                                                {unreadCount > 0 && (
+                                                    <Badge
+                                                        colorScheme="red"
+                                                        borderRadius="full"
+                                                        position="absolute"
+                                                        top="-1px"
+                                                        right="-1px"
+                                                        fontSize="xs"
+                                                        minW="16px"
+                                                        h="16px"
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        justifyContent="center"
+                                                    >
+                                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                                    </Badge>
+                                                )}
+                                            </Box>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            w="320px"
+                                            bg="rgba(255, 255, 255, 0.95)"
+                                            backdropFilter="blur(15px)"
+                                            border="1px solid rgba(215, 215, 215, 0.5)"
+                                            borderRadius="20px"
+                                            boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
+                                            _focus={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)" }}
+                                        >
+                                            <PopoverHeader
+                                                fontWeight="600"
+                                                fontSize="md"
+                                                fontFamily="Inter, sans-serif"
+                                                borderBottom="1px solid rgba(215, 215, 215, 0.3)"
+                                                py={3}
+                                            >
+                                                <HStack justify="space-between">
+                                                    <Text>Notifikasi</Text>
+                                                    <HStack spacing={2}>
+                                                        {unreadCount > 0 && (
+                                                            <Badge colorScheme="red" borderRadius="full" fontSize="xs">
+                                                                {unreadCount}
+                                                            </Badge>
+                                                        )}
+                                                        {unreadCount > 0 && (
+                                                            <Button
+                                                                size="xs"
+                                                                variant="ghost"
+                                                                colorScheme="green"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    markAllAsRead();
+                                                                }}
+                                                                isLoading={notificationLoading}
+                                                                loadingText="..."
+                                                                fontFamily="Inter, sans-serif"
+                                                                fontSize="xs"
+                                                                _hover={{
+                                                                    bg: "rgba(33, 209, 121, 0.1)"
+                                                                }}
+                                                            >
+                                                                Tandai Semua
+                                                            </Button>
+                                                        )}
+                                                    </HStack>
+                                                </HStack>
+                                            </PopoverHeader>
+                                            <PopoverBody p={0} maxH="350px" overflowY="auto">
+                                                {notificationLoading ? (
+                                                    <Center p={4}>
+                                                        <Spinner size="sm" color={COLORS.primary} />
+                                                    </Center>
+                                                ) : notifications.length > 0 ? (
+                                                    <VStack spacing={0} align="stretch">
+                                                        {notifications.map((notif, index) => (
+                                                            <Box
+                                                                key={notif.id}
+                                                                p={3}
+                                                                borderBottom={index < notifications.length - 1 ? "1px solid rgba(215, 215, 215, 0.3)" : "none"}
+                                                                cursor="pointer"
+                                                                bg={notif.readStatus === 0 ? "rgba(33, 209, 121, 0.05)" : "transparent"}
+                                                                _hover={{
+                                                                    bg: "rgba(33, 209, 121, 0.08)"
+                                                                }}
+                                                                transition="background 0.2s"
+                                                                onClick={() => handleNotificationClick(notif)}
+                                                                position="relative"
+                                                                opacity={isMarkingAsRead(notif.id) ? 0.6 : 1}
+                                                                pointerEvents={isMarkingAsRead(notif.id) ? "none" : "auto"}
+                                                            >
+                                                                {isMarkingAsRead(notif.id) && (
+                                                                    <Box
+                                                                        position="absolute"
+                                                                        top="50%"
+                                                                        right={3}
+                                                                        transform="translateY(-50%)"
+                                                                        zIndex={1}
+                                                                    >
+                                                                        <Spinner size="xs" color={COLORS.primary} />
+                                                                    </Box>
+                                                                )}
+                                                                <HStack align="start" spacing={3}>
+                                                                    <Text fontSize="md">
+                                                                        {getNotificationIcon(notif.notificationType)}
+                                                                    </Text>
+                                                                    <VStack align="start" spacing={0.5} flex="1">
+                                                                        <Text
+                                                                            fontWeight={notif.readStatus === 0 ? "600" : "500"}
+                                                                            fontSize="sm"
+                                                                            fontFamily="Inter, sans-serif"
+                                                                            color={COLORS.text}
+                                                                            lineHeight="short"
+                                                                        >
+                                                                            {notif.title}
+                                                                        </Text>
+                                                                        <Text
+                                                                            fontSize="xs"
+                                                                            color="gray.600"
+                                                                            fontFamily="Inter, sans-serif"
+                                                                            lineHeight="short"
+                                                                        >
+                                                                            {notif.message}
+                                                                        </Text>
+                                                                        <Text
+                                                                            fontSize="xs"
+                                                                            color="gray.500"
+                                                                            fontFamily="Inter, sans-serif"
+                                                                        >
+                                                                            {notif.date}
+                                                                        </Text>
+                                                                    </VStack>
+                                                                    {notif.readStatus === 0 && (
+                                                                        <Box
+                                                                            w="6px"
+                                                                            h="6px"
+                                                                            bg={COLORS.primary}
+                                                                            borderRadius="full"
+                                                                            mt={1}
+                                                                        />
+                                                                    )}
+                                                                </HStack>
+                                                            </Box>
+                                                        ))}
+                                                    </VStack>
+                                                ) : (
+                                                    <Box p={4} textAlign="center">
+                                                        <Text
+                                                            fontSize="sm"
+                                                            color="gray.500"
+                                                            fontFamily="Inter, sans-serif"
+                                                        >
+                                                            Tidak ada notifikasi
+                                                        </Text>
+                                                    </Box>
+                                                )}
+                                            </PopoverBody>
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
+
                                 {/* Desktop Profile Menu */}
                                 <Menu>
                                     <MenuButton display={{ base: 'none', md: 'flex' }}>
@@ -207,6 +426,20 @@ const Navbar = () => {
                                         border="1px solid rgba(215, 215, 215, 0.3)"
                                         borderRadius={`${CORNER_RADIUS.components.modal}px`}
                                     >
+                                        {user.role === 'ADMIN' && (
+                                            <>
+                                                <MenuItem
+                                                    icon={<Icon as={() => <span>📊</span>} />}
+                                                    onClick={() => {
+                                                        navigate('/admin');
+                                                        onClose();
+                                                    }}
+                                                >
+                                                    Dashboard Admin
+                                                </MenuItem>
+                                                <MenuDivider />
+                                            </>
+                                        )}
                                         <MenuItem icon={<User size={16} />} onClick={handleProfileClick}>
                                             Profil Saya
                                         </MenuItem>
@@ -387,7 +620,140 @@ const Navbar = () => {
                                                 {user.role === 'BORROWER' ? 'Peminjam' : 'Admin'}
                                             </Text>
                                         </VStack>
+                                        {/* Mobile Notification Bell */}
+                                        {user.role !== 'ADMIN' && (
+                                            <Box position="relative">
+                                                <IconButton
+                                                    icon={<Bell size={18} />}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleNotificationToggle}
+                                                    bg="rgba(255, 255, 255, 0.6)"
+                                                    backdropFilter="blur(10px)"
+                                                    border="1px solid rgba(215, 215, 215, 0.5)"
+                                                    borderRadius="full"
+                                                />
+                                                {unreadCount > 0 && (
+                                                    <Badge
+                                                        colorScheme="red"
+                                                        borderRadius="full"
+                                                        position="absolute"
+                                                        top="-1px"
+                                                        right="-1px"
+                                                        fontSize="xs"
+                                                        minW="16px"
+                                                        h="16px"
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        justifyContent="center"
+                                                    >
+                                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                                    </Badge>
+                                                )}
+                                            </Box>
+                                        )}
                                     </HStack>
+
+                                    {/* Mobile Notifications Section */}
+                                    {user.role !== 'ADMIN' && isNotifOpen && (
+                                        <Box mt={4} p={3} bg="rgba(248, 250, 252, 0.8)" borderRadius="12px">
+                                            <HStack justify="space-between" mb={2}>
+                                                <Text fontSize="sm" fontWeight="600" color={COLORS.text}>
+                                                    Notifikasi {unreadCount > 0 && `(${unreadCount} baru)`}
+                                                </Text>
+                                                {unreadCount > 0 && (
+                                                    <Button
+                                                        size="xs"
+                                                        variant="ghost"
+                                                        colorScheme="green"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            markAllAsRead();
+                                                        }}
+                                                        isLoading={notificationLoading}
+                                                        loadingText="..."
+                                                        fontFamily="Inter, sans-serif"
+                                                        fontSize="xs"
+                                                        _hover={{
+                                                            bg: "rgba(33, 209, 121, 0.1)"
+                                                        }}
+                                                    >
+                                                        Tandai Semua
+                                                    </Button>
+                                                )}
+                                            </HStack>
+                                            {notificationLoading ? (
+                                                <Center py={4}>
+                                                    <Spinner size="sm" color={COLORS.primary} />
+                                                </Center>
+                                            ) : notifications.length > 0 ? (
+                                                <VStack spacing={2} align="stretch" maxH="200px" overflowY="auto">
+                                                    {notifications.slice(0, 3).map((notif) => (
+                                                        <Box
+                                                            key={notif.id}
+                                                            p={2}
+                                                            bg={notif.readStatus === 0 ? "rgba(33, 209, 121, 0.05)" : "transparent"}
+                                                            borderRadius="8px"
+                                                            cursor="pointer"
+                                                            onClick={() => handleNotificationClick(notif)}
+                                                            position="relative"
+                                                            opacity={isMarkingAsRead(notif.id) ? 0.6 : 1}
+                                                            pointerEvents={isMarkingAsRead(notif.id) ? "none" : "auto"}
+                                                        >
+                                                            {isMarkingAsRead(notif.id) && (
+                                                                <Box
+                                                                    position="absolute"
+                                                                    top="50%"
+                                                                    right={3}
+                                                                    transform="translateY(-50%)"
+                                                                    zIndex={1}
+                                                                >
+                                                                    <Spinner size="xs" color={COLORS.primary} />
+                                                                </Box>
+                                                            )}
+                                                            <HStack align="start" spacing={2}>
+                                                                <Text fontSize="sm">
+                                                                    {getNotificationIcon(notif.notificationType)}
+                                                                </Text>
+                                                                <VStack align="start" spacing={0.5} flex="1">
+                                                                    <Text
+                                                                        fontSize="xs"
+                                                                        fontWeight={notif.readStatus === 0 ? "600" : "500"}
+                                                                        color={COLORS.text}
+                                                                        lineHeight="short"
+                                                                    >
+                                                                        {notif.title}
+                                                                    </Text>
+                                                                    <Text
+                                                                        fontSize="xs"
+                                                                        color="gray.600"
+                                                                        lineHeight="short"
+                                                                    >
+                                                                        {notif.message.length > 50
+                                                                            ? `${notif.message.substring(0, 50)}...`
+                                                                            : notif.message}
+                                                                    </Text>
+                                                                </VStack>
+                                                                {notif.readStatus === 0 && (
+                                                                    <Box
+                                                                        w="4px"
+                                                                        h="4px"
+                                                                        bg={COLORS.primary}
+                                                                        borderRadius="full"
+                                                                        mt={1}
+                                                                    />
+                                                                )}
+                                                            </HStack>
+                                                        </Box>
+                                                    ))}
+                                                </VStack>
+                                            ) : (
+                                                <Text fontSize="xs" color="gray.500" textAlign="center" py={2}>
+                                                    Tidak ada notifikasi
+                                                </Text>
+                                            )}
+                                        </Box>
+                                    )}
                                 </Box>
                             )}
 
@@ -426,6 +792,31 @@ const Navbar = () => {
                             <VStack spacing={4} pt={4}>
                                 {isAuthenticated ? (
                                     <>
+                                        {user.role === 'ADMIN' && (
+                                            <Button
+                                                onClick={() => {
+                                                    navigate('/admin');
+                                                    onClose();
+                                                }}
+                                                variant="solid"
+                                                w="full"
+                                                h="50px"
+                                                borderRadius="16px"
+                                                bg={COLORS.primary}
+                                                color="white"
+                                                leftIcon={<Icon as={() => <span>📊</span>} />}
+                                                _hover={{
+                                                    bg: COLORS.primary,
+                                                    opacity: 0.9,
+                                                    transform: 'translateY(-2px)'
+                                                }}
+                                                transition="all 0.2s ease"
+                                                fontFamily="Inter, sans-serif"
+                                                fontWeight="600"
+                                            >
+                                                Dashboard Admin
+                                            </Button>
+                                        )}
                                         <Button
                                             onClick={handleProfileClick}
                                             variant="outline"

@@ -187,14 +187,6 @@ const BookingValidation = {
 
     // Get bookings query validation (admin)
     adminGetBookingsQuerySchema: Joi.object({
-        status: Joi.string()
-            .valid('PROCESSING', 'APPROVED', 'REJECTED', 'COMPLETED')
-            .optional()
-            .allow('', null)
-            .default('')
-            .messages({
-                'any.only': 'Status harus salah satu dari: PROCESSING, APPROVED, REJECTED, COMPLETED'
-            }),
         page: Joi.number()
             .integer()
             .min(1)

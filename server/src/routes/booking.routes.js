@@ -82,4 +82,13 @@ router.post('/bookings/admin/:id/refund',
     BookingController.processRefund
 );
 
+// ===== CRONJOB ROUTES =====
+
+// Get cronjob status (admin)
+router.get('/bookings/admin/cronjobs/status',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.requireAdmin,
+    BookingController.getCronjobStatus
+);
+
 module.exports = router; 

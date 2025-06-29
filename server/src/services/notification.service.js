@@ -63,30 +63,26 @@ const NotificationService = {
         }
     },
 
-    // Mark notification as read
-    async markAsRead(notificationId, userId) {
+    // Mark all notifications as read
+    async markAsAllRead(userId) {
         try {
-            const notification = await prisma.notification.findUnique({
-                where: { id: notificationId }
+            const result = await prisma.notification.updateMany({
+                where: {
+                    userId: userId,
+                    readStatus: 0 // Only update unread notifications
+                },
+                data: {
+                    readStatus: 1
+                }
             });
 
-            if (!notification) {
-                throw new Error('Notifikasi tidak ditemukan');
-            }
+            logger.info(`All notifications marked as read for user: ${userId}, updated count: ${result.count}`);
 
-            if (notification.userId !== userId) {
-                throw new Error('Tidak memiliki akses ke notifikasi ini');
-            }
-
-            await prisma.notification.update({
-                where: { id: notificationId },
-                data: { readStatus: 1 }
-            });
-
-            logger.info(`Notification marked as read: ${notificationId}`);
-            return true;
+            return {
+                updatedCount: result.count
+            };
         } catch (error) {
-            logger.error('Mark notification as read service error:', error);
+            logger.error('Mark all notifications as read service error:', error);
             throw error;
         }
     },

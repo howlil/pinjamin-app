@@ -56,13 +56,20 @@ const BuildingManagerController = {
         }
     },
 
-    // Assign building manager to building
+    // Assign building manager to building (supports re-assignment)
     async assignBuildingManager(req, res) {
         try {
             const { managerId, buildingId } = req.body;
 
             const result = await BuildingManagerService.assignBuildingManager(managerId, buildingId);
-            return ResponseHelper.success(res, 'Building manager berhasil ditugaskan', result);
+
+            // Check if this was a re-assignment
+            const isReassignment = result.previousBuildingId !== null;
+            const message = isReassignment
+                ? `Building manager berhasil dipindahkan dari ${result.previousBuildingName} ke ${result.buildingName}`
+                : 'Building manager berhasil ditugaskan';
+
+            return ResponseHelper.success(res, message, result);
         } catch (error) {
             logger.error('Assign building manager controller error:', error);
 
@@ -70,7 +77,7 @@ const BuildingManagerController = {
                 return ResponseHelper.notFound(res, error.message);
             }
 
-            if (error.message.includes('sudah ditugaskan')) {
+            if (error.message.includes('sudah ditugaskan ke building ini')) {
                 return ResponseHelper.conflict(res, error.message);
             }
 

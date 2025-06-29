@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { buildingManagementAPI } from './buildingManagementAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useBuildingManagement = (filters = {}) => {
     const [buildings, setBuildings] = useState([]);
@@ -63,7 +64,7 @@ export const useBuildingManagement = (filters = {}) => {
                 });
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Gagal memuat data gedung';
+            const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
             console.error('Error fetching buildings:', err);
             setBuildings([]);
@@ -110,7 +111,7 @@ export const useCreateBuilding = () => {
                 return response.data;
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Gagal membuat gedung';
+            const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
             console.error('Error creating building:', err);
             throw err;
@@ -145,7 +146,7 @@ export const useUpdateBuilding = () => {
                 return response.data;
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Gagal memperbarui gedung';
+            const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
             console.error('Error updating building:', err);
             throw err;
@@ -180,7 +181,7 @@ export const useDeleteBuilding = () => {
                 return response.data;
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Gagal menghapus gedung';
+            const errorMessage = extractErrorMessage(err);
             setError(errorMessage);
             console.error('Error deleting building:', err);
             throw err;

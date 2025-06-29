@@ -85,6 +85,14 @@ const BuildingFormPage = ({
         }
     }, [isEdit, id]);
 
+    // Debug current form state whenever it changes
+    useEffect(() => {
+        console.log('=== FORM STATE CHANGED ===');
+        console.log('Current formData:', formData);
+        console.log('Facilities:', formData.facilities);
+        console.log('Building managers:', formData.buildingManagers);
+    }, [formData]);
+
     const loadFormData = async () => {
         setLoadingData(true);
         try {
@@ -121,6 +129,14 @@ const BuildingFormPage = ({
                     setPhotoPreview(building.buildingPhoto);
                 }
 
+                const facilitiesIds = building.facilities?.map(f => f.id.toString()) || [];
+                const managersIds = building.buildingManagers?.map(m => m.id.toString()) || [];
+
+                console.log('Raw building data facilities:', building.facilities);
+                console.log('Raw building data managers:', building.buildingManagers);
+                console.log('Mapped facilities IDs:', facilitiesIds);
+                console.log('Mapped managers IDs:', managersIds);
+
                 setFormData({
                     buildingName: building.buildingName || '',
                     description: building.description || '',
@@ -129,13 +145,13 @@ const BuildingFormPage = ({
                     location: building.location || '',
                     buildingType: building.buildingType || '',
                     buildingPhoto: null, // Reset photo, keep preview
-                    facilities: building.facilities?.map(f => f.id.toString()) || [],
-                    buildingManagers: building.buildingManagers?.map(m => m.id.toString()) || []
+                    facilities: facilitiesIds,
+                    buildingManagers: managersIds
                 });
 
                 console.log('Form data after loading:', {
-                    facilities: building.facilities?.map(f => f.id.toString()) || [],
-                    buildingManagers: building.buildingManagers?.map(m => m.id.toString()) || []
+                    facilities: facilitiesIds,
+                    buildingManagers: managersIds
                 });
             } else {
                 toast.error('Gedung tidak ditemukan');
@@ -170,11 +186,25 @@ const BuildingFormPage = ({
     };
 
     const handleFacilitiesChange = (values) => {
-        setFormData(prev => ({ ...prev, facilities: values }));
+        console.log('=== FACILITIES CHANGE ===');
+        console.log('New facilities:', values);
+        console.log('Current form data before change:', formData);
+        setFormData(prev => {
+            const newData = { ...prev, facilities: values };
+            console.log('Form data after facilities change:', newData);
+            return newData;
+        });
     };
 
     const handleManagersChange = (values) => {
-        setFormData(prev => ({ ...prev, buildingManagers: values }));
+        console.log('=== MANAGERS CHANGE ===');
+        console.log('New managers:', values);
+        console.log('Current form data before change:', formData);
+        setFormData(prev => {
+            const newData = { ...prev, buildingManagers: values };
+            console.log('Form data after managers change:', newData);
+            return newData;
+        });
     };
 
     const handlePhotoClick = () => {
@@ -191,7 +221,27 @@ const BuildingFormPage = ({
 
         try {
             if (isEdit) {
-                await onUpdateBuilding(id, formData);
+                // Untuk edit, pastikan semua data array selalu terisi dengan data yang benar
+                const submitData = { ...formData };
+
+                // Pastikan facilities selalu berisi data yang valid
+                if (!submitData.facilities || !Array.isArray(submitData.facilities)) {
+                    submitData.facilities = buildingData?.facilities?.map(f => f.id.toString()) || [];
+                }
+
+                // Pastikan buildingManagers selalu berisi data yang valid
+                if (!submitData.buildingManagers || !Array.isArray(submitData.buildingManagers)) {
+                    submitData.buildingManagers = buildingData?.buildingManagers?.map(m => m.id.toString()) || [];
+                }
+
+                console.log('Original building data:', {
+                    facilities: buildingData?.facilities,
+                    buildingManagers: buildingData?.buildingManagers
+                });
+                console.log('Form data before submit:', formData);
+                console.log('Final submit data:', submitData);
+
+                await onUpdateBuilding(id, submitData);
             } else {
                 await onCreateBuilding(formData);
             }
@@ -209,16 +259,21 @@ const BuildingFormPage = ({
 
     if (loadingBuilding) {
         return (
-            <Container maxW="6xl" py={8}>
+            <Container maxW="7xl" px={6} py={8}>
                 <Center h="400px">
-                    <Spinner size="xl" color={COLORS.primary} />
+                    <VStack spacing={4}>
+                        <Spinner size="xl" color={COLORS.primary} thickness="4px" />
+                        <Text color="gray.600" fontFamily="Inter, sans-serif">
+                            Memuat data gedung...
+                        </Text>
+                    </VStack>
                 </Center>
             </Container>
         );
     }
 
     return (
-        <Container maxW="6xl" py={8}>
+        <Container maxW="7xl" px={6} py={8}>
             <VStack spacing={6} align="stretch">
                 <Breadcrumb>
                     <BreadcrumbItem>

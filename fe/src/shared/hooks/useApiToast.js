@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { extractErrorMessage } from '../services/apiErrorHandler';
 
 export const useApiToast = () => {
     const [loading, setLoading] = useState(false);
@@ -43,15 +44,24 @@ export const useApiToast = () => {
         toast.dismiss();
     };
 
+    const handleError = (error, fallbackMessage = 'Terjadi kesalahan') => {
+        const errorMessage = extractErrorMessage(error, fallbackMessage);
+        toast.error(errorMessage);
+        console.error('API Error:', error);
+    };
+
     return {
         showToast,
+        showSuccess: showSuccessToast,  // Add alias for showSuccess
+        showError: showErrorToast,      // Add alias for showError
         showSuccessToast,
         showErrorToast,
         showLoadingToast,
         dismissToast,
         dismissAllToasts,
         loading,
-        setLoading
+        setLoading,
+        handleError
     };
 };
 

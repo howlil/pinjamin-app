@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { adminBookingAPI } from './adminBookingAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const usePendingBookings = (filters = {}) => {
     const [bookings, setBookings] = useState([]);
@@ -28,7 +29,7 @@ export const usePendingBookings = (filters = {}) => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data peminjaman pending');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -103,7 +104,7 @@ export const useAdminBookingHistory = () => {
             }
         } catch (err) {
             console.error('Error fetching booking history:', err);
-            setError(err.response?.data?.message || 'Gagal memuat riwayat peminjaman');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -139,7 +140,7 @@ export const useBookingApproval = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memproses approval peminjaman');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -169,7 +170,7 @@ export const useBookingRefund = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memproses refund');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

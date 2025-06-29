@@ -11,6 +11,7 @@ import {
 import { Users, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ErrorState from '@shared/components/ErrorState';
+import BookingDetailModal from '@shared/components/BookingDetailModal';
 import BorrowerTable from './components/BorrowerTable';
 import ApprovalModal from './components/ApprovalModal';
 import {
@@ -21,7 +22,9 @@ import {
 const ManageBorrowerPage = () => {
     // Modal state
     const { isOpen: isApprovalOpen, onOpen: onApprovalOpen, onClose: onApprovalClose } = useDisclosure();
+    const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
     const [modalConfig, setModalConfig] = useState({ type: '', booking: null });
+    const [selectedBooking, setSelectedBooking] = useState(null);
 
     // Hooks
     const {
@@ -50,6 +53,11 @@ const ManageBorrowerPage = () => {
         setModalConfig({ type: 'refund', booking });
         onApprovalOpen();
     }, [onApprovalOpen]);
+
+    const handleViewDetail = useCallback((booking) => {
+        setSelectedBooking(booking);
+        onDetailOpen();
+    }, [onDetailOpen]);
 
     const handleModalConfirm = async (bookingId, data) => {
         try {
@@ -87,7 +95,7 @@ const ManageBorrowerPage = () => {
     return (
         <Container maxW="7xl" py={8}>
             <VStack spacing={6} align="stretch">
-             
+
 
                 {/* Table */}
                 <BorrowerTable
@@ -98,6 +106,7 @@ const ManageBorrowerPage = () => {
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onRefund={handleRefund}
+                    onViewDetail={handleViewDetail}
                 />
             </VStack>
 
@@ -109,6 +118,13 @@ const ManageBorrowerPage = () => {
                 type={modalConfig.type}
                 loading={approvalLoading}
                 onConfirm={handleModalConfirm}
+            />
+
+            {/* Detail Modal */}
+            <BookingDetailModal
+                isOpen={isDetailOpen}
+                onClose={onDetailClose}
+                booking={selectedBooking}
             />
         </Container>
     );

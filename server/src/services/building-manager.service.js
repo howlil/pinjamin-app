@@ -137,12 +137,20 @@ const BuildingManagerService = {
         }
     },
 
-    // Assign building manager to building
+    // Assign building manager to building (supports re-assignment)
     async assignBuildingManager(managerId, buildingId) {
         try {
             // Check if building manager exists
             const buildingManager = await prisma.buildingManager.findUnique({
-                where: { id: managerId }
+                where: { id: managerId },
+                include: {
+                    building: {
+                        select: {
+                            id: true,
+                            buildingName: true
+                        }
+                    }
+                }
             });
 
             if (!buildingManager) {
@@ -158,9 +166,16 @@ const BuildingManagerService = {
                 throw new Error('Building tidak ditemukan');
             }
 
-            // Check if manager is already assigned to a building
+            // Check if trying to assign to the same building
+            if (buildingManager.buildingId === buildingId) {
+                throw new Error('Building manager sudah ditugaskan ke building ini');
+            }
+
+            // Log re-assignment if manager was previously assigned
             if (buildingManager.buildingId) {
-                throw new Error('Building manager sudah ditugaskan ke building lain');
+                logger.info(`Re-assigning building manager ${managerId} from building ${buildingManager.building.buildingName} (${buildingManager.buildingId}) to ${building.buildingName} (${buildingId})`);
+            } else {
+                logger.info(`Assigning building manager ${managerId} to building ${building.buildingName} (${buildingId})`);
             }
 
             const updatedManager = await prisma.buildingManager.update({
@@ -176,7 +191,7 @@ const BuildingManagerService = {
                 }
             });
 
-            logger.info(`Building manager assigned: ${managerId} to building: ${buildingId}`);
+            logger.info(`Building manager assignment completed: ${managerId} -> ${buildingId}`);
 
             return {
                 id: updatedManager.id,
@@ -184,6 +199,8 @@ const BuildingManagerService = {
                 phoneNumber: updatedManager.phoneNumber,
                 buildingId: updatedManager.buildingId,
                 buildingName: updatedManager.building.buildingName,
+                previousBuildingId: buildingManager.buildingId, // for detecting re-assignment
+                previousBuildingName: buildingManager.building?.buildingName || null,
                 createdAt: updatedManager.createdAt,
                 updatedAt: updatedManager.updatedAt
             };

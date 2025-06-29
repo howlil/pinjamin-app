@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { buildingsAPI } from '../../home/api/buildingsAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useBuildingDetail = (buildingId) => {
     const [building, setBuilding] = useState(null);
@@ -22,7 +23,7 @@ export const useBuildingDetail = (buildingId) => {
                 setFacilities(response.data?.facilities || []);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat detail gedung');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -61,7 +62,7 @@ export const useAvailabilityCheck = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal mengecek ketersediaan');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -95,7 +96,7 @@ export const useBuildingSchedule = (buildingId, month, year) => {
                 setTotalBookings(response.data.totalBookings || 0);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat jadwal gedung');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

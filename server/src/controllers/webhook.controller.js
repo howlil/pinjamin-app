@@ -4,8 +4,8 @@ const ResponseHelper = require('../libs/response.lib');
 const logger = require('../libs/logger.lib');
 
 const WebhookController = {
-    // Handle Xendit invoice webhook
-    async handleXenditInvoice(req, res) {
+    // Handle Xendit unified webhook callback
+    async handleXenditCallback(req, res) {
         try {
             const rawBody = JSON.stringify(req.body);
             const signature = req.headers['x-callback-token'];
@@ -18,15 +18,28 @@ const WebhookController = {
                 return ResponseHelper.unauthorized(res, 'Invalid signature');
             }
 
-            // Process webhook
-            const result = await BookingService.processWebhook(req.body);
+            // Determine webhook type based on payload structure
+            const webhookType = this.determineWebhookType(req.body);
+
+            let result;
+
+            if (webhookType === 'INVOICE') {
+                logger.info('Processing invoice webhook');
+                result = await BookingService.processWebhook(req.body);
+            } else if (webhookType === 'REFUND') {
+                logger.info('Processing refund webhook');
+                result = await BookingService.processRefundWebhook(req.body);
+            } else {
+                logger.warn('Unknown webhook type:', req.body);
+                return ResponseHelper.error(res, 'Unknown webhook type', 400);
+            }
 
             if (result) {
-                logger.info('Webhook processed successfully');
-                return ResponseHelper.success(res, 'Webhook processed successfully');
+                logger.info(`${webhookType.toLowerCase()} webhook processed successfully`);
+                return ResponseHelper.success(res, `${webhookType.toLowerCase()} webhook processed successfully`);
             } else {
-                logger.warn('Webhook processing failed');
-                return ResponseHelper.error(res, 'Webhook processing failed', 400);
+                logger.warn(`${webhookType.toLowerCase()} webhook processing failed`);
+                return ResponseHelper.error(res, `${webhookType.toLowerCase()} webhook processing failed`, 400);
             }
         } catch (error) {
             logger.error('Webhook processing error:', error);
@@ -34,34 +47,25 @@ const WebhookController = {
         }
     },
 
-    // Handle Xendit refund webhook
-    async handleXenditRefund(req, res) {
-        try {
-            const rawBody = JSON.stringify(req.body);
-            const signature = req.headers['x-callback-token'];
+    // Determine webhook type based on payload structure
+    determineWebhookType(payload) {
+        // Invoice webhook typically has: external_id, status, payment_method, paid_amount
+        // Refund webhook typically has: id, status, reference_id, amount, payment_id
 
-            // Verify webhook signature
-            const isValid = XenditHelper.verifyWebhookSignature(rawBody, signature);
-
-            if (!isValid) {
-                logger.warn('Invalid refund webhook signature');
-                return ResponseHelper.unauthorized(res, 'Invalid signature');
-            }
-
-            // Process refund webhook
-            const result = await BookingService.processRefundWebhook(req.body);
-
-            if (result) {
-                logger.info('Refund webhook processed successfully');
-                return ResponseHelper.success(res, 'Refund webhook processed successfully');
-            } else {
-                logger.warn('Refund webhook processing failed');
-                return ResponseHelper.error(res, 'Refund webhook processing failed', 400);
-            }
-        } catch (error) {
-            logger.error('Refund webhook processing error:', error);
-            return ResponseHelper.error(res, 'Refund webhook processing error', 500);
+        if (payload.external_id && payload.payment_method !== undefined) {
+            return 'INVOICE';
+        } else if (payload.reference_id && payload.payment_id) {
+            return 'REFUND';
         }
+
+        // Fallback: check for specific fields that are unique to each type
+        if (payload.paid_amount !== undefined) {
+            return 'INVOICE';
+        } else if (payload.payment_id !== undefined) {
+            return 'REFUND';
+        }
+
+        return 'UNKNOWN';
     }
 };
 

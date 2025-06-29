@@ -281,6 +281,7 @@ const BookingService = {
             const formattedBookings = bookings.map(booking => ({
                 bookingId: booking.id,
                 buildingName: booking.building.buildingName,
+                activityName: booking.activityName,
                 startDate: booking.startDate,
                 endDate: booking.endDate,
                 startTime: booking.startTime,
@@ -447,13 +448,12 @@ const BookingService = {
     // Get bookings with filters (admin)
     async adminGetBookings(filters) {
         try {
-            const { status, page = 1, limit = 10 } = filters;
+            const { page = 1, limit = 10 } = filters;
             const skip = (page - 1) * limit;
 
-            const whereClause = {};
-            if (status && status.trim() !== '') {
-                whereClause.bookingStatus = status;
-            }
+            const whereClause = {
+                bookingStatus: 'PROCESSING'
+            };
 
             const [bookings, totalItems] = await Promise.all([
                 prisma.booking.findMany({
@@ -461,12 +461,36 @@ const BookingService = {
                     include: {
                         building: {
                             select: {
-                                buildingName: true
+                                id: true,
+                                buildingName: true,
+                                description: true,
+                                location: true,
+                                buildingType: true,
+                                capacity: true,
+                                rentalPrice: true,
+                                buildingPhoto: true
                             }
                         },
                         user: {
                             select: {
-                                fullName: true
+                                id: true,
+                                fullName: true,
+                                email: true,
+                                phoneNumber: true,
+                                borrowerType: true,
+                                bankName: true,
+                                bankNumber: true
+                            }
+                        },
+                        payment: {
+                            select: {
+                                id: true,
+                                paymentStatus: true,
+                                totalAmount: true,
+                                paymentMethod: true,
+                                paymentDate: true,
+                                invoiceNumber: true,
+                                paymentUrl: true
                             }
                         }
                     },
@@ -482,15 +506,59 @@ const BookingService = {
             ]);
 
             const formattedBookings = bookings.map(booking => ({
+                // Basic booking info
                 bookingId: booking.id,
-                buildingName: booking.building.buildingName,
                 activityName: booking.activityName,
                 startDate: booking.startDate,
                 endDate: booking.endDate,
                 startTime: booking.startTime,
                 endTime: booking.endTime,
                 status: booking.bookingStatus,
-                borrowerName: booking.user?.fullName || 'Unknown'
+                rejectionReason: booking.rejectionReason,
+                proposalLetter: booking.proposalLetter,
+                createdAt: booking.createdAt,
+                updatedAt: booking.updatedAt,
+
+                // Detail object
+                detail: {
+                    borrower: {
+                        id: booking.user?.id,
+                        fullName: booking.user?.fullName || 'Unknown',
+                        email: booking.user?.email,
+                        phoneNumber: booking.user?.phoneNumber,
+                        borrowerType: booking.user?.borrowerType,
+                        bankInfo: {
+                            bankName: booking.user?.bankName,
+                            bankNumber: booking.user?.bankNumber
+                        }
+                    },
+                    building: {
+                        id: booking.building?.id,
+                        buildingName: booking.building?.buildingName,
+                        description: booking.building?.description,
+                        location: booking.building?.location,
+                        buildingType: booking.building?.buildingType,
+                        capacity: booking.building?.capacity,
+                        rentalPrice: booking.building?.rentalPrice,
+                        buildingPhoto: booking.building?.buildingPhoto
+                    },
+                    payment: booking.payment ? {
+                        id: booking.payment.id,
+                        paymentStatus: booking.payment.paymentStatus,
+                        totalAmount: booking.payment.totalAmount,
+                        paymentMethod: booking.payment.paymentMethod,
+                        paymentDate: booking.payment.paymentDate,
+                        invoiceNumber: booking.payment.invoiceNumber,
+                        paymentUrl: booking.payment.paymentUrl
+                    } : null,
+                    documents: {
+                        proposalLetter: booking.proposalLetter ? {
+                            url: booking.proposalLetter,
+                            previewUrl: booking.proposalLetter,
+                            downloadUrl: booking.proposalLetter
+                        } : null
+                    }
+                }
             }));
 
             return {
@@ -615,18 +683,36 @@ const BookingService = {
                     include: {
                         building: {
                             select: {
-                                buildingName: true
+                                id: true,
+                                buildingName: true,
+                                description: true,
+                                location: true,
+                                buildingType: true,
+                                capacity: true,
+                                rentalPrice: true,
+                                buildingPhoto: true
                             }
                         },
                         user: {
                             select: {
-                                fullName: true
+                                id: true,
+                                fullName: true,
+                                email: true,
+                                phoneNumber: true,
+                                borrowerType: true,
+                                bankName: true,
+                                bankNumber: true
                             }
                         },
                         payment: {
                             select: {
+                                id: true,
                                 paymentStatus: true,
-                                totalAmount: true
+                                totalAmount: true,
+                                paymentMethod: true,
+                                paymentDate: true,
+                                invoiceNumber: true,
+                                paymentUrl: true
                             }
                         }
                     },
@@ -642,17 +728,62 @@ const BookingService = {
             ]);
 
             const formattedBookings = bookings.map(booking => ({
+                // Basic booking info
                 bookingId: booking.id,
-                buildingName: booking.building.buildingName,
                 activityName: booking.activityName,
                 startDate: booking.startDate,
                 endDate: booking.endDate,
                 startTime: booking.startTime,
                 endTime: booking.endTime,
                 status: booking.bookingStatus,
-                borrowerName: booking.user?.fullName || 'Unknown',
-                paymentStatus: booking.payment?.paymentStatus || 'UNPAID',
-                totalAmount: booking.payment?.totalAmount || 0
+                rejectionReason: booking.rejectionReason,
+                proposalLetter: booking.proposalLetter,
+                createdAt: booking.createdAt,
+                updatedAt: booking.updatedAt,
+
+                // Detail object
+                detail: {
+                    borrower: {
+                        id: booking.user?.id,
+                        fullName: booking.user?.fullName || 'Unknown',
+                        email: booking.user?.email,
+                        phoneNumber: booking.user?.phoneNumber,
+                        borrowerType: booking.user?.borrowerType,
+                        bankInfo: {
+                            bankName: booking.user?.bankName,
+                            bankNumber: booking.user?.bankNumber
+                        }
+                    },
+                    building: {
+                        id: booking.building?.id,
+                        buildingName: booking.building?.buildingName,
+                        description: booking.building?.description,
+                        location: booking.building?.location,
+                        buildingType: booking.building?.buildingType,
+                        capacity: booking.building?.capacity,
+                        rentalPrice: booking.building?.rentalPrice,
+                        buildingPhoto: booking.building?.buildingPhoto
+                    },
+                    payment: booking.payment ? {
+                        id: booking.payment.id,
+                        paymentStatus: booking.payment.paymentStatus,
+                        totalAmount: booking.payment.totalAmount,
+                        paymentMethod: booking.payment.paymentMethod,
+                        paymentDate: booking.payment.paymentDate,
+                        invoiceNumber: booking.payment.invoiceNumber,
+                        paymentUrl: booking.payment.paymentUrl
+                    } : {
+                        paymentStatus: 'UNPAID',
+                        totalAmount: 0
+                    },
+                    documents: {
+                        proposalLetter: booking.proposalLetter ? {
+                            url: booking.proposalLetter,
+                            previewUrl: booking.proposalLetter,
+                            downloadUrl: booking.proposalLetter
+                        } : null
+                    }
+                }
             }));
 
             return {
@@ -789,7 +920,7 @@ const BookingService = {
                 where: {
                     startDate: today,
                     bookingStatus: {
-                        in: ['APPROVED', 'PROCESSING']
+                        in: ['APPROVED']
                     }
                 },
                 include: {
@@ -877,6 +1008,147 @@ const BookingService = {
             return true;
         } catch (error) {
             logger.error('Process refund webhook service error:', error);
+            throw error;
+        }
+    },
+
+    // Update expired bookings status (cronjob)
+    async updateExpiredBookings() {
+        try {
+            const today = moment().startOf('day');
+
+            // Get all bookings with PROCESSING or APPROVED status
+            const allBookings = await prisma.booking.findMany({
+                where: {
+                    bookingStatus: {
+                        in: ['PROCESSING', 'APPROVED']
+                    }
+                },
+                include: {
+                    building: {
+                        select: {
+                            buildingName: true
+                        }
+                    },
+                    user: {
+                        select: {
+                            fullName: true
+                        }
+                    },
+                    payment: true
+                }
+            });
+
+            // Filter expired bookings using moment.js
+            const expiredBookings = allBookings.filter(booking => {
+                const startDate = moment(booking.startDate, 'DD-MM-YYYY');
+                const endDate = booking.endDate ? moment(booking.endDate, 'DD-MM-YYYY') : startDate;
+
+                if (!startDate.isValid()) {
+                    return false; // Skip invalid dates
+                }
+
+                // Check if booking has passed (end date is before today)
+                return endDate.isBefore(today, 'day');
+            });
+
+            // Only log when there are expired bookings to process
+            if (expiredBookings.length > 0) {
+                logger.info(`Found ${expiredBookings.length} expired bookings to process`);
+            }
+
+            let processedCount = 0;
+            let rejectedCount = 0;
+            let completedCount = 0;
+
+            for (const booking of expiredBookings) {
+                try {
+                    let newStatus;
+                    let shouldRefund = false;
+
+                    // Determine new status based on current status
+                    if (booking.bookingStatus === 'PROCESSING') {
+                        newStatus = 'REJECTED';
+                        rejectedCount++;
+
+                        // Check if there's a paid payment that needs refund
+                        if (booking.payment && booking.payment.paymentStatus === 'PAID') {
+                            shouldRefund = true;
+                        }
+                    } else if (booking.bookingStatus === 'APPROVED') {
+                        newStatus = 'COMPLETED';
+                        completedCount++;
+                    }
+
+                    // Update booking status
+                    await prisma.booking.update({
+                        where: { id: booking.id },
+                        data: {
+                            bookingStatus: newStatus,
+                            rejectionReason: newStatus === 'REJECTED' ? 'Booking expired - melewati tanggal peminjaman' : null
+                        }
+                    });
+
+                    // Process refund if needed
+                    if (shouldRefund) {
+                        await prisma.payment.update({
+                            where: { id: booking.payment.id },
+                            data: {
+                                paymentStatus: 'REFUNDED'
+                            }
+                        });
+
+                        logger.info(`Automatic refund processed for expired booking: ${booking.id}`);
+                    }
+
+                    // Send notification to user
+                    try {
+                        const NotificationService = require('./notification.service');
+
+                        if (newStatus === 'REJECTED') {
+                            await NotificationService.createBookingNotification(booking.userId, 'REJECTED', {
+                                buildingName: booking.building.buildingName,
+                                bookingId: booking.id,
+                                rejectionReason: 'Booking expired - melewati tanggal peminjaman',
+                                startDate: booking.startDate,
+                                endDate: booking.endDate
+                            });
+                        } else if (newStatus === 'COMPLETED') {
+                            await NotificationService.createNotification(
+                                booking.userId,
+                                'BOOKING',
+                                'Booking Selesai',
+                                `Booking Anda untuk ${booking.building.buildingName} telah selesai`
+                            );
+                        }
+                    } catch (notificationError) {
+                        logger.warn(`Failed to send notification for booking ${booking.id}:`, notificationError);
+                    }
+
+                    processedCount++;
+
+                    // Only log individual updates if there are processed bookings
+                    if (processedCount === 1) {
+                        logger.info(`Processing ${expiredBookings.length} expired bookings...`);
+                    }
+
+                } catch (bookingError) {
+                    logger.error(`Error processing booking ${booking.id}:`, bookingError);
+                }
+            }
+
+            const summary = {
+                totalExpired: expiredBookings.length,
+                totalProcessed: processedCount,
+                rejected: rejectedCount,
+                completed: completedCount,
+                checkDate: today.format('DD-MM-YYYY')
+            };
+
+            return summary;
+
+        } catch (error) {
+            logger.error('Update expired bookings error:', error);
             throw error;
         }
     }

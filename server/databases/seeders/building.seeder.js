@@ -3,6 +3,13 @@ const FacilityFactory = require('../factories/facility.factory');
 const BuildingFactory = require('../factories/building.factory');
 const BuildingManagerFactory = require('../factories/building-manager.factory');
 
+/**
+ * Building Seeder dengan tarif yang disesuaikan berdasarkan artikel Genta Andalas:
+ * "Polemik Tarif Peminjaman Fasilitas Ruangan di UNAND Diluar Jam Kerja"
+ * 
+ * Termasuk gedung-gedung premium seperti Auditorium (Rp1.05jt), 
+ * Convention Hall (Rp500k), dan Ruang Seminar (Rp300k-550k)
+ */
 class BuildingSeeder {
     async run(options = {}) {
         const { buildingCount = 20, clearFirst = false } = options;
@@ -30,6 +37,17 @@ class BuildingSeeder {
             await prisma.building.create({ data: building });
         }
         console.log(`✅ Created ${buildings.length} buildings`);
+
+        // Tampilkan info gedung premium dengan tarif UNAND
+        const premiumBuildings = buildings.filter(b =>
+            ['Auditorium', 'Convention Hall', 'Ruang Seminar PKM', 'Ruang Seminar FE', 'Ruang Seminar Perpustakaan'].includes(b.buildingName)
+        );
+        if (premiumBuildings.length > 0) {
+            console.log(`🏛️  Premium buildings with UNAND tariff:`);
+            premiumBuildings.forEach(building => {
+                console.log(`   - ${building.buildingName}: Rp${building.rentalPrice.toLocaleString('id-ID')}`);
+            });
+        }
 
         // Seed building managers
         const managers = [];

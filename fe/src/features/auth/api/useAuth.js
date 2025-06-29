@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/shared/store/authStore';
 import { authAPI } from './authAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useAuth = () => {
     const [loading, setLoading] = useState(false);
@@ -50,7 +51,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Login gagal');
+            const errorMessage = extractErrorMessage(err, 'Login gagal');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -80,7 +82,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Registrasi gagal');
+            const errorMessage = extractErrorMessage(err, 'Registrasi gagal');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -110,7 +113,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Terjadi kesalahan saat memuat profile');
+            const errorMessage = extractErrorMessage(error, 'Terjadi kesalahan saat memuat profile');
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -130,7 +134,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memperbarui profil');
+            const errorMessage = extractErrorMessage(err, 'Gagal memperbarui profil');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -149,7 +154,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal mengubah password');
+            const errorMessage = extractErrorMessage(err, 'Gagal mengubah password');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -168,7 +174,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal mengirim email reset password');
+            const errorMessage = extractErrorMessage(err, 'Gagal mengirim email reset password');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -188,7 +195,8 @@ export const useAuth = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal reset password');
+            const errorMessage = extractErrorMessage(err, 'Gagal reset password');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -270,7 +278,14 @@ export const useLogin = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await login(formData);
+        try {
+            await login(formData);
+            // Reset form setelah login berhasil
+            resetForm();
+        } catch (error) {
+            // Form tidak di-reset jika ada error
+            console.error('Login error:', error);
+        }
     };
 
     const togglePasswordVisibility = () => {
@@ -324,7 +339,14 @@ export const useRegister = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await register(formData);
+        try {
+            await register(formData);
+            // Reset form setelah registrasi berhasil
+            resetForm();
+        } catch (error) {
+            // Form tidak di-reset jika ada error
+            console.error('Registration error:', error);
+        }
     };
 
     const togglePasswordVisibility = () => {
@@ -366,14 +388,26 @@ export const useForgotPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await forgotPassword(email);
+        try {
+            await forgotPassword(email);
+            // Reset form setelah berhasil mengirim email
+            setEmail('');
+        } catch (error) {
+            // Form tidak di-reset jika ada error
+            console.error('Forgot password error:', error);
+        }
+    };
+
+    const resetForm = () => {
+        setEmail('');
     };
 
     return {
         email,
         setEmail,
         loading,
-        handleSubmit
+        handleSubmit,
+        resetForm
     };
 };
 
@@ -400,7 +434,23 @@ export const useResetPassword = () => {
             toast.error('Konfirmasi password harus sama dengan password baru');
             return;
         }
-        await resetPassword(formData);
+        try {
+            await resetPassword(formData);
+            // Reset form setelah berhasil reset password
+            resetForm();
+        } catch (error) {
+            // Form tidak di-reset jika ada error
+            console.error('Reset password error:', error);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            token: '',
+            newPassword: '',
+            confirmPassword: ''
+        });
+        setShowPassword(false);
     };
 
     const togglePasswordVisibility = () => {
@@ -413,7 +463,8 @@ export const useResetPassword = () => {
         loading,
         handleChange,
         handleSubmit,
-        togglePasswordVisibility
+        togglePasswordVisibility,
+        resetForm
     };
 };
 
@@ -444,7 +495,27 @@ export const useChangePassword = () => {
             toast.error('Konfirmasi password harus sama dengan password baru');
             return;
         }
-        await changePassword(formData);
+        try {
+            await changePassword(formData);
+            // Reset form setelah berhasil ubah password
+            resetForm();
+        } catch (error) {
+            // Form tidak di-reset jika ada error
+            console.error('Change password error:', error);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+        });
+        setShowPasswords({
+            current: false,
+            new: false,
+            confirm: false
+        });
     };
 
     const togglePasswordVisibility = (field) => {
@@ -460,7 +531,8 @@ export const useChangePassword = () => {
         loading,
         handleChange,
         handleSubmit,
-        togglePasswordVisibility
+        togglePasswordVisibility,
+        resetForm
     };
 };
 
@@ -500,7 +572,14 @@ export const useUpdateProfile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await updateProfile(formData);
+        try {
+            await updateProfile(formData);
+            // Reload profile data setelah berhasil update
+            await loadProfile();
+        } catch (error) {
+            // Error akan ditangani oleh updateProfile
+            console.error('Update profile error:', error);
+        }
     };
 
     return {

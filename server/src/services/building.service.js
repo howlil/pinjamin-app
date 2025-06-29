@@ -353,14 +353,25 @@ const BuildingService = {
 
             const [buildings, totalItems] = await Promise.all([
                 prisma.building.findMany({
-                    select: {
-                        id: true,
-                        buildingName: true,
-                        description: true,
-                        rentalPrice: true,
-                        buildingType: true,
-                        location: true,
-                        buildingPhoto: true
+                    include: {
+                        facilityBuilding: {
+                            include: {
+                                facility: {
+                                    select: {
+                                        id: true,
+                                        facilityName: true,
+                                        iconUrl: true
+                                    }
+                                }
+                            }
+                        },
+                        buildingManager: {
+                            select: {
+                                id: true,
+                                managerName: true,
+                                phoneNumber: true
+                            }
+                        }
                     },
                     orderBy: {
                         buildingName: 'asc'
@@ -371,8 +382,29 @@ const BuildingService = {
                 prisma.building.count()
             ]);
 
+            // Format buildings with detail object
+            const formattedBuildings = buildings.map(building => ({
+                // Semua field gedung
+                id: building.id,
+                buildingName: building.buildingName,
+                description: building.description,
+                rentalPrice: building.rentalPrice,
+                capacity: building.capacity,
+                location: building.location,
+                buildingType: building.buildingType,
+                buildingPhoto: building.buildingPhoto,
+                createdAt: building.createdAt,
+                updatedAt: building.updatedAt,
+
+                // Detail object berisi array
+                detail: {
+                    facilities: building.facilityBuilding.map(fb => fb.facility),
+                    buildingManagers: building.buildingManager
+                }
+            }));
+
             return {
-                buildings,
+                buildings: formattedBuildings,
                 totalItems,
                 totalPages: Math.ceil(totalItems / limit),
                 currentPage: parseInt(page),
@@ -723,7 +755,7 @@ const BuildingService = {
                 data: updateData
             });
 
-            // Update facilities (run when facilities field is present in request)
+            // Update facilities (run only when facilities field is explicitly provided in request)
             if (facilities !== undefined) {
                 logger.info(`Starting facilities update for building ${buildingId}`, {
                     parsedFacilities,
@@ -784,14 +816,23 @@ const BuildingService = {
                 }
             }
 
-            // Update building managers
-            if (parsedManagers && Array.isArray(parsedManagers)) {
-                // Delete existing managers
-                await prisma.buildingManager.deleteMany({
+            // Update building managers (run only when buildingManagers field is explicitly provided in request)
+            if (buildingManagers !== undefined) {
+                logger.info(`Starting building managers update for building ${buildingId}`, {
+                    parsedManagers,
+                    isArray: Array.isArray(parsedManagers),
+                    length: parsedManagers?.length
+                });
+
+                // Get current building managers for comparison
+                const currentManagers = await prisma.buildingManager.findMany({
                     where: { buildingId }
                 });
 
-                // Create new managers
+                const currentManagerIds = currentManagers.map(m => m.id);
+                const updateManagerIds = [];
+
+                // Process managers in request
                 for (const manager of parsedManagers) {
                     // Check if it's an ID reference to existing manager
                     if (manager.id) {
@@ -800,11 +841,28 @@ const BuildingService = {
                         });
 
                         if (existingManager) {
-                            // Update the manager to be associated with this building
-                            await prisma.buildingManager.update({
-                                where: { id: manager.id },
-                                data: { buildingId: buildingId }
-                            });
+                            // Update existing manager (keep track of updated IDs)
+                            updateManagerIds.push(manager.id);
+
+                            // Update manager data if there are changes
+                            const updateData = {};
+                            if (manager.managerName) updateData.managerName = manager.managerName;
+                            if (manager.phoneNumber) updateData.phoneNumber = manager.phoneNumber;
+                            updateData.buildingId = buildingId;
+
+                            if (Object.keys(updateData).length > 1) { // more than just buildingId
+                                await prisma.buildingManager.update({
+                                    where: { id: manager.id },
+                                    data: updateData
+                                });
+                                logger.info(`Updated building manager: ${manager.id}`);
+                            } else {
+                                // Just reassign to building if no other changes
+                                await prisma.buildingManager.update({
+                                    where: { id: manager.id },
+                                    data: { buildingId: buildingId }
+                                });
+                            }
                         } else {
                             logger.warn('Building manager with ID not found, skipping:', manager.id);
                             continue;
@@ -812,7 +870,7 @@ const BuildingService = {
                     }
                     // Check if it's new manager data
                     else if (manager.managerName && manager.phoneNumber) {
-                        await prisma.buildingManager.create({
+                        const newManager = await prisma.buildingManager.create({
                             data: {
                                 id: uuidv4(),
                                 managerName: manager.managerName,
@@ -820,11 +878,17 @@ const BuildingService = {
                                 buildingId: buildingId
                             }
                         });
+                        updateManagerIds.push(newManager.id);
+                        logger.info(`Created new building manager: ${newManager.id}`);
                     } else {
                         logger.warn('Manager without ID or required fields skipped:', manager);
                         continue;
                     }
                 }
+
+                // Keep existing managers that weren't included in the update
+                // This prevents data loss when user only wants to add/update specific managers
+                logger.info(`Keeping ${currentManagerIds.length - updateManagerIds.filter(id => currentManagerIds.includes(id)).length} existing managers`);
             }
 
             // Get updated building data

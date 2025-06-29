@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { facilityManagementAPI } from './facilityManagementAPI';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useFacilityManagement = (filters = {}) => {
     const [facilities, setFacilities] = useState([]);
@@ -28,7 +29,7 @@ export const useFacilityManagement = (filters = {}) => {
                 setPagination(response.pagination || pagination);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memuat data fasilitas');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -67,7 +68,7 @@ export const useCreateFacility = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal membuat fasilitas');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -97,7 +98,7 @@ export const useUpdateFacility = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memperbarui fasilitas');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -127,7 +128,7 @@ export const useDeleteFacility = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal menghapus fasilitas');
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

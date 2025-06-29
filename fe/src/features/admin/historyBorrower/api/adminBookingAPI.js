@@ -4,7 +4,7 @@ import { apiClient } from '../../../../shared/services/apiClient';
 export const adminBookingAPI = {
 
     getBookingHistory: async (params = {}) => {
-        const response = await apiClient.get('/bookings/admin/list', { params });
+        const response = await apiClient.get('/bookings/admin/history', { params });
         return response;
     },
 

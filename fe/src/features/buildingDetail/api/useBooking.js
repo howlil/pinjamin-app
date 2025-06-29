@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { bookingAPI } from './bookingAPI';
 import { useAuthStore } from '@/shared/store/authStore';
+import { extractErrorMessage } from '@/shared/services/apiErrorHandler';
 
 export const useBooking = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -190,22 +191,18 @@ export const useBooking = () => {
                 return true;
             }
         } catch (error) {
-            // Handle specific validation errors from API
+            const errorMessage = extractErrorMessage(error, 'Gagal mengajukan peminjaman');
+            toast.error(errorMessage);
+
+            // Set field errors jika ada error validation dari API
             if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-                const errorMessages = error.response.data.errors.map(err => err.message);
-                const allErrorMessages = errorMessages.join(', ');
-
-                toast.error(`Data form tidak valid: ${allErrorMessages}`);
-
-                // Set field errors
                 const apiErrors = {};
                 error.response.data.errors.forEach(err => {
-                    apiErrors[err.field] = err.message;
+                    if (err.field && err.message) {
+                        apiErrors[err.field] = err.message;
+                    }
                 });
                 setErrors(prev => ({ ...prev, ...apiErrors }));
-            } else {
-                const errorMessage = error.response?.data?.message || 'Gagal mengajukan peminjaman';
-                toast.error(errorMessage);
             }
 
             return false;
@@ -282,7 +279,8 @@ export const useBookingHistory = () => {
                 }
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Gagal memuat riwayat peminjaman');
+            const errorMessage = extractErrorMessage(error, 'Gagal memuat riwayat peminjaman');
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -314,7 +312,8 @@ export const useCreateBooking = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal membuat booking');
+            const errorMessage = extractErrorMessage(err, 'Gagal membuat booking');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -344,7 +343,8 @@ export const useBookingRefund = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memproses refund');
+            const errorMessage = extractErrorMessage(err, 'Gagal memproses refund');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);

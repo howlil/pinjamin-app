@@ -101,6 +101,18 @@ class MainSeeder {
         }
 
         console.log(`✅ Created ${buildings.length} buildings`);
+
+        // Tampilkan info gedung premium dengan tarif UNAND dari artikel Genta Andalas
+        const premiumBuildings = buildings.filter(b =>
+            ['Auditorium', 'Convention Hall', 'Ruang Seminar PKM', 'Ruang Seminar FE', 'Ruang Seminar Perpustakaan'].includes(b.buildingName)
+        );
+        if (premiumBuildings.length > 0) {
+            console.log(`🏛️  Premium buildings with UNAND tariff (source: Genta Andalas):`);
+            premiumBuildings.forEach(building => {
+                console.log(`   - ${building.buildingName}: Rp${building.rentalPrice.toLocaleString('id-ID')}`);
+            });
+        }
+
         return buildings;
     }
 
