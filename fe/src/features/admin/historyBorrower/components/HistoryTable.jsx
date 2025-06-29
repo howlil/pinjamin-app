@@ -45,16 +45,16 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
     console.log('HistoryTable received bookings:', bookings);
     console.log('HistoryTable loading state:', loading);
 
-    const getStatusColor = (status) => {
+    const getStatusConfig = (status) => {
         switch (status) {
             case 'APPROVED':
-                return 'green';
+                return { bg: '#21D179', color: 'white' };
             case 'REJECTED':
-                return 'red';
+                return { bg: '#EF4444', color: 'white' };
             case 'COMPLETED':
-                return 'blue';
+                return { bg: '#3B82F6', color: 'white' };
             default:
-                return 'gray';
+                return { bg: '#9CA3AF', color: 'white' };
         }
     };
 
@@ -185,10 +185,14 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                 </Td>
                                 <Td>
                                     <Badge
-                                        colorScheme={getStatusColor(booking.status)}
-                                        borderRadius="full"
+                                        bg={getStatusConfig(booking.status).bg}
+                                        color={getStatusConfig(booking.status).color}
+                                        borderRadius="20px"
                                         px={3}
                                         py={1}
+                                        fontSize="xs"
+                                        fontWeight="600"
+                                        fontFamily="Inter, sans-serif"
                                     >
                                         {getStatusText(booking.status)}
                                     </Badge>
@@ -199,8 +203,19 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                             <IconButton
                                                 icon={<Eye size={16} />}
                                                 size="sm"
-                                                variant="ghost"
-                                                colorScheme="blue"
+                                                bg="rgba(33, 209, 121, 0.1)"
+                                                color="#21D179"
+                                                borderRadius="9999px"
+                                                border="1px solid rgba(33, 209, 121, 0.3)"
+                                                _hover={{
+                                                    bg: "rgba(33, 209, 121, 0.2)",
+                                                    transform: "translateY(-1px)",
+                                                    boxShadow: "0 2px 8px rgba(33, 209, 121, 0.2)"
+                                                }}
+                                                _active={{
+                                                    transform: "translateY(0)"
+                                                }}
+                                                transition="all 0.2s ease"
                                                 onClick={() => handleDetailClick(booking)}
                                             />
                                         </Tooltip>
@@ -210,8 +225,21 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                                 <Button
                                                     leftIcon={<RefreshCw size={16} />}
                                                     size="sm"
-                                                    colorScheme="orange"
-                                                    variant="outline"
+                                                    bg="#F59E0B"
+                                                    color="white"
+                                                    borderRadius="9999px"
+                                                    fontFamily="Inter, sans-serif"
+                                                    fontWeight="600"
+                                                    fontSize="xs"
+                                                    _hover={{
+                                                        bg: "#D97706",
+                                                        transform: "translateY(-1px)",
+                                                        boxShadow: "0 2px 8px rgba(245, 158, 11, 0.3)"
+                                                    }}
+                                                    _active={{
+                                                        transform: "translateY(0)"
+                                                    }}
+                                                    transition="all 0.2s ease"
                                                     onClick={() => handleRefundClick(booking)}
                                                 >
                                                     Refund
@@ -227,39 +255,150 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
             </Box>
 
             {/* Refund Modal */}
-            <Modal isOpen={isOpen} onClose={onClose} size="md">
-                <ModalOverlay />
-                <ModalContent>
-                    <ModalHeader>Proses Refund</ModalHeader>
+            <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+                <ModalOverlay
+                    bg="rgba(215, 215, 215, 0.5)"
+                    backdropFilter="blur(10px)"
+                />
+                <ModalContent
+                    bg="rgba(255, 255, 255, 0.95)"
+                    backdropFilter="blur(15px)"
+                    borderRadius="24px"
+                    border="1px solid rgba(215, 215, 215, 0.5)"
+                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
+                    fontFamily="Inter, sans-serif"
+                    mx={4}
+                >
+                    <ModalHeader pb={2} pt={6}>
+                        <Text
+                            fontSize="xl"
+                            fontWeight="700"
+                            color="#2A2A2A"
+                            fontFamily="Inter, sans-serif"
+                        >
+                            Proses Refund
+                        </Text>
+                    </ModalHeader>
                     <ModalCloseButton />
-                    <ModalBody>
-                        <VStack spacing={4} align="stretch">
+
+                    <ModalBody pb={4}>
+                        <VStack spacing={5} align="stretch">
+                            {/* Detail Peminjaman */}
                             <Box>
-                                <Text fontWeight="medium" mb={2}>
+                                <Text
+                                    fontSize="sm"
+                                    fontWeight="600"
+                                    color="#2A2A2A"
+                                    mb={3}
+                                    fontFamily="Inter, sans-serif"
+                                >
                                     Detail Peminjaman:
                                 </Text>
-                                <VStack align="start" spacing={1} p={3} bg="gray.50" borderRadius="md">
-                                    <Text fontSize="sm">
-                                        <strong>Peminjam:</strong> {selectedBooking?.borrowerName}
-                                    </Text>
-                                    <Text fontSize="sm">
-                                        <strong>Gedung:</strong> {selectedBooking?.buildingName}
-                                    </Text>
-                                    <Text fontSize="sm">
-                                        <strong>Kegiatan:</strong> {selectedBooking?.activityName}
-                                    </Text>
-                                    <Text fontSize="sm">
-                                        <strong>Tanggal:</strong> {formatDate(selectedBooking?.startDate)}
-                                        {selectedBooking?.endDate && selectedBooking?.endDate !== selectedBooking?.startDate &&
-                                            ` - ${formatDate(selectedBooking?.endDate)}`
-                                        }
-                                    </Text>
-                                </VStack>
+                                <Box
+                                    bg="rgba(255, 255, 255, 0.8)"
+                                    backdropFilter="blur(10px)"
+                                    borderRadius="24px"
+                                    border="1px solid rgba(215, 215, 215, 0.3)"
+                                    p={4}
+                                >
+                                    <VStack align="start" spacing={3}>
+                                        <HStack spacing={3} w="full">
+                                            <Text
+                                                fontSize="sm"
+                                                color="#2A2A2A"
+                                                opacity={0.7}
+                                                fontWeight="500"
+                                                minW="80px"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                Peminjam:
+                                            </Text>
+                                            <Text
+                                                fontSize="sm"
+                                                fontWeight="600"
+                                                color="#2A2A2A"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                {selectedBooking?.detail?.borrower?.fullName || 'N/A'}
+                                            </Text>
+                                        </HStack>
+                                        <HStack spacing={3} w="full">
+                                            <Text
+                                                fontSize="sm"
+                                                color="#2A2A2A"
+                                                opacity={0.7}
+                                                fontWeight="500"
+                                                minW="80px"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                Gedung:
+                                            </Text>
+                                            <Text
+                                                fontSize="sm"
+                                                fontWeight="600"
+                                                color="#2A2A2A"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                {selectedBooking?.detail?.building?.buildingName || 'N/A'}
+                                            </Text>
+                                        </HStack>
+                                        <HStack spacing={3} w="full">
+                                            <Text
+                                                fontSize="sm"
+                                                color="#2A2A2A"
+                                                opacity={0.7}
+                                                fontWeight="500"
+                                                minW="80px"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                Kegiatan:
+                                            </Text>
+                                            <Text
+                                                fontSize="sm"
+                                                fontWeight="600"
+                                                color="#2A2A2A"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                {selectedBooking?.activityName}
+                                            </Text>
+                                        </HStack>
+                                        <HStack spacing={3} w="full">
+                                            <Text
+                                                fontSize="sm"
+                                                color="#2A2A2A"
+                                                opacity={0.7}
+                                                fontWeight="500"
+                                                minW="80px"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                Tanggal:
+                                            </Text>
+                                            <Text
+                                                fontSize="sm"
+                                                fontWeight="600"
+                                                color="#2A2A2A"
+                                                fontFamily="Inter, sans-serif"
+                                            >
+                                                {formatDate(selectedBooking?.startDate)}
+                                                {selectedBooking?.endDate && selectedBooking?.endDate !== selectedBooking?.startDate &&
+                                                    ` - ${formatDate(selectedBooking?.endDate)}`
+                                                }
+                                            </Text>
+                                        </HStack>
+                                    </VStack>
+                                </Box>
                             </Box>
 
+                            {/* Alasan Refund */}
                             <Box>
-                                <Text fontWeight="medium" mb={2}>
-                                    Alasan Refund: <Text as="span" color="red.500">*</Text>
+                                <Text
+                                    fontSize="sm"
+                                    fontWeight="600"
+                                    color="#2A2A2A"
+                                    mb={3}
+                                    fontFamily="Inter, sans-serif"
+                                >
+                                    Alasan Refund: <Text as="span" color="#EF4444">*</Text>
                                 </Text>
                                 <Textarea
                                     value={refundReason}
@@ -267,24 +406,98 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                     placeholder="Masukkan alasan refund..."
                                     rows={4}
                                     resize="vertical"
+                                    bg="rgba(255, 255, 255, 0.8)"
+                                    backdropFilter="blur(10px)"
+                                    border="1px solid rgba(215, 215, 215, 0.5)"
+                                    borderRadius="24px"
+                                    fontFamily="Inter, sans-serif"
+                                    fontSize="sm"
+                                    p={4}
+                                    _placeholder={{
+                                        color: "#999",
+                                        opacity: 0.8
+                                    }}
+                                    _focus={{
+                                        borderColor: "#21D179",
+                                        boxShadow: "0 0 0 1px #21D179",
+                                        bg: "rgba(255, 255, 255, 0.95)"
+                                    }}
+                                    _hover={{
+                                        borderColor: "rgba(33, 209, 121, 0.6)"
+                                    }}
                                 />
+                                {!refundReason.trim() && (
+                                    <Text
+                                        fontSize="xs"
+                                        color="#EF4444"
+                                        mt={2}
+                                        fontFamily="Inter, sans-serif"
+                                    >
+                                        Alasan refund wajib diisi
+                                    </Text>
+                                )}
                             </Box>
                         </VStack>
                     </ModalBody>
-                    <ModalFooter>
+
+                    <ModalFooter
+                        justifyContent="space-between"
+                        gap={3}
+                        pt={2}
+                        pb={6}
+                    >
                         <Button
-                            variant="ghost"
-                            mr={3}
                             onClick={onClose}
                             isDisabled={refundLoading}
+                            bg="rgba(215, 215, 215, 0.5)"
+                            backdropFilter="blur(10px)"
+                            color="#2A2A2A"
+                            borderRadius="9999px"
+                            fontFamily="Inter, sans-serif"
+                            fontWeight="600"
+                            w="48%"
+                            h="48px"
+                            border="1px solid rgba(215, 215, 215, 0.5)"
+                            _hover={{
+                                bg: "rgba(215, 215, 215, 0.8)",
+                                transform: "translateY(-2px)",
+                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
+                            }}
+                            _active={{
+                                transform: "translateY(0)"
+                            }}
+                            transition="all 0.2s ease"
                         >
                             Batal
                         </Button>
                         <Button
-                            colorScheme="orange"
                             onClick={handleRefund}
                             isLoading={refundLoading}
                             loadingText="Memproses..."
+                            bg="#F59E0B"
+                            color="white"
+                            borderRadius="9999px"
+                            fontFamily="Inter, sans-serif"
+                            fontWeight="600"
+                            w="48%"
+                            h="48px"
+                            isDisabled={!refundReason.trim()}
+                            _hover={{
+                                bg: "#D97706",
+                                transform: "translateY(-2px)",
+                                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
+                            }}
+                            _active={{
+                                transform: "translateY(0)"
+                            }}
+                            _disabled={{
+                                bg: "#D1D5DB",
+                                color: "#9CA3AF",
+                                cursor: "not-allowed",
+                                transform: "none",
+                                boxShadow: "none"
+                            }}
+                            transition="all 0.2s ease"
                         >
                             Proses Refund
                         </Button>

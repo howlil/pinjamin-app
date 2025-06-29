@@ -47,20 +47,17 @@ jobs:
         sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           
-          # Check Node.js
           if ! command -v node >/dev/null 2>&1; then
             echo "Installing Node.js..."
             curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
             sudo apt-get install -y nodejs
           fi
           
-          # Check pnpm
           if ! command -v pnpm >/dev/null 2>&1; then
             echo "Installing pnpm..."
             sudo npm install -g pnpm
           fi
           
-          # Check PM2
           if ! command -v pm2 >/dev/null 2>&1; then
             echo "Installing PM2..."
             sudo npm install -g pm2
@@ -71,47 +68,41 @@ jobs:
           pnpm run db:generate
         '
 
-    - name: Create configuration files
+    - name: Create ecosystem config
       run: |
         sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
-          
-          # Create ecosystem.config.js
-          cat > ecosystem.config.js << EOF
-module.exports = {
-  apps: [{
-    name: "pbf-server",
-    script: "./app.js",
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: "1G",
-    env: {
-      NODE_ENV: "production",
-      PORT: 3000
-    }
-  }]
-};
-EOF
+          echo "Creating ecosystem config..."
+          echo "module.exports = {" > ecosystem.config.js
+          echo "  apps: [{" >> ecosystem.config.js
+          echo "    name: \"pbf-server\"," >> ecosystem.config.js
+          echo "    script: \"./app.js\"," >> ecosystem.config.js
+          echo "    instances: 1," >> ecosystem.config.js
+          echo "    autorestart: true," >> ecosystem.config.js
+          echo "    watch: false," >> ecosystem.config.js
+          echo "    max_memory_restart: \"1G\"," >> ecosystem.config.js
+          echo "    env: {" >> ecosystem.config.js
+          echo "      NODE_ENV: \"production\"," >> ecosystem.config.js
+          echo "      PORT: 3000" >> ecosystem.config.js
+          echo "    }" >> ecosystem.config.js
+          echo "  }]" >> ecosystem.config.js
+          echo "};" >> ecosystem.config.js
         '
 
     - name: Setup environment variables
       run: |
         sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
-          
-          # Create .env file
-          cat > .env << EOF
-DATABASE_URL="${{ secrets.DATABASE_URL }}"
-JWT_SECRET="${{ secrets.JWT_SECRET }}"
-EMAIL_USER="${{ secrets.EMAIL_USER }}"
-EMAIL_PASS="${{ secrets.EMAIL_PASS }}"
-XENDIT_SECRET_KEY="${{ secrets.XENDIT_SECRET_KEY }}"
-PUSHER_APP_ID="${{ secrets.PUSHER_APP_ID }}"
-PUSHER_KEY="${{ secrets.PUSHER_KEY }}"
-PUSHER_SECRET="${{ secrets.PUSHER_SECRET }}"
-PUSHER_CLUSTER="${{ secrets.PUSHER_CLUSTER }}"
-EOF
+          echo "Setting up environment variables..."
+          echo "DATABASE_URL=\"${{ secrets.DATABASE_URL }}\"" > .env
+          echo "JWT_SECRET=\"${{ secrets.JWT_SECRET }}\"" >> .env
+          echo "EMAIL_USER=\"${{ secrets.EMAIL_USER }}\"" >> .env
+          echo "EMAIL_PASS=\"${{ secrets.EMAIL_PASS }}\"" >> .env
+          echo "XENDIT_SECRET_KEY=\"${{ secrets.XENDIT_SECRET_KEY }}\"" >> .env
+          echo "PUSHER_APP_ID=\"${{ secrets.PUSHER_APP_ID }}\"" >> .env
+          echo "PUSHER_KEY=\"${{ secrets.PUSHER_KEY }}\"" >> .env
+          echo "PUSHER_SECRET=\"${{ secrets.PUSHER_SECRET }}\"" >> .env
+          echo "PUSHER_CLUSTER=\"${{ secrets.PUSHER_CLUSTER }}\"" >> .env
         '
 
     - name: Deploy and start application
@@ -120,15 +111,15 @@ EOF
           cd ~/pbf-server/server
           
           echo "Stopping existing PM2 process..."
-          pm2 stop pbf-server || true
-          pm2 delete pbf-server || true
+          pm2 stop pbf-server 2>/dev/null || true
+          pm2 delete pbf-server 2>/dev/null || true
           
           echo "Starting application..."
           pm2 start ecosystem.config.js
           pm2 save
           
           echo "Setting up PM2 startup..."
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME || true
+          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME 2>/dev/null || true
           
           echo "Deployment completed successfully!"
           pm2 list

@@ -5,6 +5,7 @@ import {
     VStack,
     Text,
     Image,
+    useDisclosure
 } from '@chakra-ui/react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLogin } from '../api/useAuth';
@@ -13,6 +14,7 @@ import gambarBackground from '@assets/gambar.svg';
 import { PrimaryButton } from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import FormField from '@shared/components/FormField';
+import ForgotPasswordModal from './ForgotPasswordModal';
 import { COLORS } from '@utils/designTokens';
 
 const LoginForm = ({ onToggle }) => {
@@ -27,6 +29,7 @@ const LoginForm = ({ onToggle }) => {
     } = useLogin();
 
     const [errors, setErrors] = useState({});
+    const { isOpen: isForgotPasswordOpen, onOpen: onForgotPasswordOpen, onClose: onForgotPasswordClose } = useDisclosure();
 
     // Reset errors ketika component mount
     useEffect(() => {
@@ -139,7 +142,7 @@ const LoginForm = ({ onToggle }) => {
                             cursor="pointer"
                             fontWeight="medium"
                             _hover={{ textDecoration: 'underline' }}
-                            onClick={() => window.location.href = '/forgot-password'}
+                            onClick={onForgotPasswordOpen}
                         >
                             Lupa password?
                         </Text>
@@ -176,6 +179,12 @@ const LoginForm = ({ onToggle }) => {
                 />
 
             </Box>
+
+            {/* Forgot Password Modal */}
+            <ForgotPasswordModal
+                isOpen={isForgotPasswordOpen}
+                onClose={onForgotPasswordClose}
+            />
         </Flex>
     );
 };
