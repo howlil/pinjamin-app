@@ -7,7 +7,7 @@ import {
     AlertIcon
 } from '@chakra-ui/react';
 import { H1, H3 } from '@shared/components/Typography';
-import { usePendingBookings, useBookingApproval } from './api/usePendingBookings';
+import { usePendingBookings, useBookingApproval } from './api/useBorrowerManagement.js';
 import BorrowerTable from './components/BorrowerTable';
 import ApprovalModal from './components/ApprovalModal';
 import BookingDetailModal from '@shared/components/BookingDetailModal';
@@ -19,10 +19,10 @@ const ManageBorrowerPage = () => {
         bookings,
         loading: bookingsLoading,
         error: bookingsError,
-        refetch: refetchBookings
+        refresh: refetchBookings
     } = usePendingBookings();
 
-    const { approveOrRejectBooking, loading: approvalLoading } = useBookingApproval();
+    const { approveBooking, loading: approvalLoading } = useBookingApproval();
 
     const handleApprove = (booking) => {
         setModalConfig({ type: 'approve', booking });
@@ -39,12 +39,12 @@ const ManageBorrowerPage = () => {
     const handleConfirmAction = async (bookingId, data) => {
         try {
             if (modalConfig.type === 'approve') {
-                await approveOrRejectBooking(bookingId, {
+                await approveBooking(bookingId, {
                     bookingStatus: 'APPROVED',
                     adminNotes: data.reason || ''
                 });
             } else if (modalConfig.type === 'reject') {
-                await approveOrRejectBooking(bookingId, {
+                await approveBooking(bookingId, {
                     bookingStatus: 'REJECTED',
                     adminNotes: data.reason || ''
                 });
