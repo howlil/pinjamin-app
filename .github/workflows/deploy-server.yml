@@ -22,79 +22,74 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install -y sshpass
         
-        # Disable host key checking untuk VM ini
-        export SSHPASS=${{ secrets.GCP_VM_PASSWORD }}
-        
         echo "🚀 Deploy to VM: ${{ secrets.GCP_VM_IP }}"
         
-        # Clone atau update repo
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "
-          cd ~ &&
+        # Clone/update repo
+        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+          cd ~
           if [ ! -d pbf-server ]; then
             git clone https://github.com/${{ github.repository }}.git pbf-server
           else
-            cd pbf-server && git pull origin main
+            cd pbf-server
+            git fetch origin
+            git reset --hard origin/main
           fi
-        "
+        '
         
-        # Install system dependencies
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "
-          cd ~/pbf-server/server &&
+        # Install dependencies
+        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+          cd ~/pbf-server/server
           if ! command -v node >/dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - &&
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
             sudo apt-get install -y nodejs
-          fi &&
-          if ! command -v pnpm >/dev/null; then sudo npm install -g pnpm; fi &&
-          if ! command -v pm2 >/dev/null; then sudo npm install -g pm2; fi
-        "
+          fi
+          if ! command -v pnpm >/dev/null; then
+            sudo npm install -g pnpm
+          fi
+          if ! command -v pm2 >/dev/null; then
+            sudo npm install -g pm2
+          fi
+          pnpm install
+        '
         
-        # Install project dependencies
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "
-          cd ~/pbf-server/server &&
-          pnpm install &&
-          pnpm run db:generate || echo 'No db:generate script'
-        "
+        # Create config files
+        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+          cd ~/pbf-server/server
+          
+          # PM2 config
+          echo "module.exports = {" > ecosystem.config.js
+          echo "  apps: [{" >> ecosystem.config.js
+          echo "    name: \"pbf-server\"," >> ecosystem.config.js
+          echo "    script: \"./app.js\"," >> ecosystem.config.js
+          echo "    instances: 1," >> ecosystem.config.js
+          echo "    autorestart: true," >> ecosystem.config.js
+          echo "    watch: false," >> ecosystem.config.js
+          echo "    env: {" >> ecosystem.config.js
+          echo "      NODE_ENV: \"production\"," >> ecosystem.config.js
+          echo "      PORT: 3000" >> ecosystem.config.js
+          echo "    }" >> ecosystem.config.js
+          echo "  }]" >> ecosystem.config.js
+          echo "};" >> ecosystem.config.js
+          
+          # Environment file
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "EMAIL_USER=${{ secrets.EMAIL_USER }}" >> .env
+          echo "EMAIL_PASS=${{ secrets.EMAIL_PASS }}" >> .env
+          echo "XENDIT_SECRET_KEY=${{ secrets.XENDIT_SECRET_KEY }}" >> .env
+          echo "PUSHER_APP_ID=${{ secrets.PUSHER_APP_ID }}" >> .env
+          echo "PUSHER_KEY=${{ secrets.PUSHER_KEY }}" >> .env
+          echo "PUSHER_SECRET=${{ secrets.PUSHER_SECRET }}" >> .env
+          echo "PUSHER_CLUSTER=${{ secrets.PUSHER_CLUSTER }}" >> .env
+        '
         
-        # Create ecosystem config
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "
-          cd ~/pbf-server/server &&
-          echo 'module.exports = {' > ecosystem.config.js &&
-          echo '  apps: [{' >> ecosystem.config.js &&
-          echo '    name: \"pbf-server\",' >> ecosystem.config.js &&
-          echo '    script: \"./app.js\",' >> ecosystem.config.js &&
-          echo '    instances: 1,' >> ecosystem.config.js &&
-          echo '    autorestart: true,' >> ecosystem.config.js &&
-          echo '    watch: false,' >> ecosystem.config.js &&
-          echo '    max_memory_restart: \"1G\",' >> ecosystem.config.js &&
-          echo '    env: {' >> ecosystem.config.js &&
-          echo '      NODE_ENV: \"production\",' >> ecosystem.config.js &&
-          echo '      PORT: 3000' >> ecosystem.config.js &&
-          echo '    }' >> ecosystem.config.js &&
-          echo '  }]' >> ecosystem.config.js &&
-          echo '};' >> ecosystem.config.js
-        "
-        
-        # Create env file
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "
-          cd ~/pbf-server/server &&
-          echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' > .env &&
-          echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env &&
-          echo 'EMAIL_USER=${{ secrets.EMAIL_USER }}' >> .env &&
-          echo 'EMAIL_PASS=${{ secrets.EMAIL_PASS }}' >> .env &&
-          echo 'XENDIT_SECRET_KEY=${{ secrets.XENDIT_SECRET_KEY }}' >> .env &&
-          echo 'PUSHER_APP_ID=${{ secrets.PUSHER_APP_ID }}' >> .env &&
-          echo 'PUSHER_KEY=${{ secrets.PUSHER_KEY }}' >> .env &&
-          echo 'PUSHER_SECRET=${{ secrets.PUSHER_SECRET }}' >> .env &&
-          echo 'PUSHER_CLUSTER=${{ secrets.PUSHER_CLUSTER }}' >> .env
-        "
-        
-        # Start application
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "
-          cd ~/pbf-server/server &&
-          pm2 stop pbf-server || true &&
-          pm2 delete pbf-server || true &&
-          pm2 start ecosystem.config.js &&
-          pm2 save &&
-          echo '✅ Server deployed!' &&
+        # Start app
+        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+          cd ~/pbf-server/server
+          pm2 stop pbf-server || true
+          pm2 delete pbf-server || true
+          pm2 start ecosystem.config.js
+          pm2 save
+          echo "✅ Deployed!"
           pm2 list
-        "
+        '
