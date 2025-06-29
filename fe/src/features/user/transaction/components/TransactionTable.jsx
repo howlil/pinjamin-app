@@ -15,7 +15,7 @@ import PrimaryButton from '@shared/components/Button';
 import { useTransactionInvoice } from '../api/useTransactions';
 
 const TransactionTable = ({ transactions }) => {
-    const { generateInvoice, loading: invoiceLoading } = useTransactionInvoice();
+    const { generatePDFInvoice, loading: invoiceLoading } = useTransactionInvoice();
 
     const getStatusConfig = (status) => {
         switch (status?.toUpperCase()) {
@@ -64,7 +64,7 @@ const TransactionTable = ({ transactions }) => {
 
     const handleGenerateInvoice = async (bookingsId) => {
         console.log('Transaction data for invoice:', bookingsId); // Debug log
-        await generateInvoice(bookingsId);
+        await generatePDFInvoice(bookingsId);
     };
 
     const canGenerateInvoice = (status) => {
@@ -273,7 +273,7 @@ const TransactionTable = ({ transactions }) => {
                                             isLoading={invoiceLoading}
                                             onClick={() => {
                                                 console.log('Full transaction object:', transaction); // Debug log
-                                                handleGenerateInvoice(transaction.bookingsId || transaction.transactionId || transaction.id);
+                                                handleGenerateInvoice(transaction.bookingId);
                                             }}
                                         >
                                             Cetak Invoice

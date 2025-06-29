@@ -16,27 +16,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup SSH
+    - name: Install sshpass and setup SSH
       run: |
+        sudo apt-get update
+        sudo apt-get install -y sshpass
         mkdir -p ~/.ssh
-        echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
         ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
         
-        # Create SSH config
-        cat > ~/.ssh/config << EOF
-        Host gcp-vm
-            HostName ${{ secrets.GCP_VM_IP }}
-            User ${{ secrets.GCP_VM_USER }}
-            IdentityFile ~/.ssh/deploy_key
-            IdentitiesOnly yes
-            StrictHostKeyChecking no
-        EOF
-        chmod 600 ~/.ssh/config
+        # Test SSH connection with password
+        echo "🔍 Testing SSH connection with password..."
+        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} 'echo "SSH connection successful!"'
 
     - name: Deploy to GCP VM
       run: |
-        ssh gcp-vm '
+        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           # Navigate to project directory
           cd ~/pbf-server || {
             echo "Project directory not found. Cloning repository..."
