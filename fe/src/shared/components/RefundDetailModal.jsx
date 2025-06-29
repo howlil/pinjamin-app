@@ -41,6 +41,11 @@ const RefundDetailModal = ({ isOpen, onClose, bookingId }) => {
         error
     } = isAdmin ? adminHook : userHook;
 
+    // Safety check to ensure hooks are available
+    if (!getRefundDetails || !clearRefundDetails) {
+        return null;
+    }
+
     useEffect(() => {
         if (isOpen && bookingId) {
             getRefundDetails(bookingId);
@@ -51,6 +56,8 @@ const RefundDetailModal = ({ isOpen, onClose, bookingId }) => {
                 clearRefundDetails();
             }
         };
+        // Only depend on isOpen and bookingId to prevent infinite loops
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, bookingId]);
 
     const handleClose = () => {
@@ -226,7 +233,25 @@ const RefundDetailModal = ({ isOpen, onClose, bookingId }) => {
 
                 <ModalBody py={6}>
                     <VStack spacing={6} align="stretch">
-                        {loading ? (
+                        {!bookingId ? (
+                            <Alert
+                                status="warning"
+                                borderRadius="16px"
+                                bg="rgba(245, 158, 11, 0.05)"
+                                border="1px solid rgba(245, 158, 11, 0.2)"
+                                color="#D97706"
+                            >
+                                <AlertIcon as={AlertCircle} color="#D97706" />
+                                <Box fontFamily="Inter, sans-serif">
+                                    <AlertTitle fontSize="sm" fontWeight="600">
+                                        Data tidak tersedia
+                                    </AlertTitle>
+                                    <AlertDescription fontSize="xs" mt={1}>
+                                        ID booking tidak ditemukan. Silakan tutup modal dan coba lagi.
+                                    </AlertDescription>
+                                </Box>
+                            </Alert>
+                        ) : loading ? (
                             <VStack spacing={4}>
                                 <Skeleton height="60px" borderRadius="16px" />
                                 <Skeleton height="40px" borderRadius="16px" />

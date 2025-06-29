@@ -64,6 +64,19 @@ const FacilityService = {
                 }
             });
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('FACILITY_CREATED', {
+                    facilityId: facility.id,
+                    facilityName: facility.facilityName,
+                    iconUrl: facility.iconUrl,
+                    action: 'CREATED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send facility creation notification:', notificationError);
+            }
+
             logger.info(`Facility created: ${facilityId}`);
 
             return {
@@ -115,6 +128,19 @@ const FacilityService = {
                 data: updateData
             });
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('FACILITY_UPDATED', {
+                    facilityId: updatedFacility.id,
+                    facilityName: updatedFacility.facilityName,
+                    iconUrl: updatedFacility.iconUrl,
+                    action: 'UPDATED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send facility update notification:', notificationError);
+            }
+
             logger.info(`Facility updated: ${facilityId}`);
 
             return {
@@ -152,6 +178,18 @@ const FacilityService = {
             await prisma.facility.delete({
                 where: { id: facilityId }
             });
+
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('FACILITY_DELETED', {
+                    facilityId: facilityId,
+                    facilityName: existingFacility.facilityName,
+                    action: 'DELETED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send facility deletion notification:', notificationError);
+            }
 
             logger.info(`Facility deleted: ${facilityId}`);
 

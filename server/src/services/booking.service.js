@@ -703,7 +703,14 @@ const BookingService = {
                 where: { id: bookingId },
                 include: {
                     building: true,
-                    user: true,
+                    user: {
+                        select: {
+                            id: true,
+                            fullName: true,
+                            email: true,
+                            phoneNumber: true
+                        }
+                    },
                     payment: true
                 }
             });
@@ -731,21 +738,47 @@ const BookingService = {
                 data: updateData
             });
 
-            // Create notification for user
+            // Create notifications
             if (bookingStatus === 'APPROVED') {
+                // Notification for user
                 await NotificationService.createBookingNotification(booking.userId, 'APPROVED', {
                     buildingName: booking.building.buildingName,
                     bookingId: booking.id,
                     startDate: booking.startDate,
                     endDate: booking.endDate
                 });
+
+                // Notification for admin (log the approval)
+                await PusherHelper.sendAdminNotification('BOOKING_APPROVED', {
+                    bookingId: booking.id,
+                    buildingName: booking.building.buildingName,
+                    borrowerName: booking.user.fullName,
+                    borrowerEmail: booking.user.email,
+                    startDate: booking.startDate,
+                    endDate: booking.endDate,
+                    action: 'APPROVED'
+                });
+
             } else if (bookingStatus === 'REJECTED') {
+                // Notification for user
                 await NotificationService.createBookingNotification(booking.userId, 'REJECTED', {
                     buildingName: booking.building.buildingName,
                     bookingId: booking.id,
                     rejectionReason: rejectionReason,
                     startDate: booking.startDate,
                     endDate: booking.endDate
+                });
+
+                // Notification for admin (log the rejection)
+                await PusherHelper.sendAdminNotification('BOOKING_REJECTED', {
+                    bookingId: booking.id,
+                    buildingName: booking.building.buildingName,
+                    borrowerName: booking.user.fullName,
+                    borrowerEmail: booking.user.email,
+                    rejectionReason: rejectionReason,
+                    startDate: booking.startDate,
+                    endDate: booking.endDate,
+                    action: 'REJECTED'
                 });
 
                 // Process refund if payment was made
@@ -1004,13 +1037,29 @@ const BookingService = {
                 }
             });
 
-            // Send notification to user
-            await NotificationService.createRefundNotification(booking.userId, {
-                buildingName: booking.building.buildingName,
-                bookingId: bookingId,
-                refundAmount: booking.payment.totalAmount,
-                refundReason: refundReason
-            });
+            // Send notifications
+            try {
+                // Notification for user
+                await NotificationService.createRefundNotification(booking.userId, {
+                    buildingName: booking.building.buildingName,
+                    bookingId: bookingId,
+                    refundAmount: booking.payment.totalAmount,
+                    refundReason: refundReason
+                });
+
+                // Notification for admin
+                await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
+                    bookingId: bookingId,
+                    buildingName: booking.building.buildingName,
+                    borrowerName: booking.user.fullName,
+                    borrowerEmail: booking.user.email,
+                    refundAmount: booking.payment.totalAmount,
+                    refundReason: refundReason,
+                    action: 'MANUAL_REFUND'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send refund notifications:', notificationError);
+            }
 
             logger.info(`Refund processed for booking: ${bookingId}`);
 
@@ -1056,13 +1105,27 @@ const BookingService = {
                 }
             });
 
-            // Send notification to user
-            await NotificationService.createRefundNotification(booking.userId, {
-                buildingName: booking.building.buildingName,
-                bookingId: bookingId,
-                refundAmount: booking.payment.totalAmount,
-                refundReason: reason
-            });
+            // Send notifications
+            try {
+                // Notification for user
+                await NotificationService.createRefundNotification(booking.userId, {
+                    buildingName: booking.building.buildingName,
+                    bookingId: bookingId,
+                    refundAmount: booking.payment.totalAmount,
+                    refundReason: reason
+                });
+
+                // Notification for admin
+                await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
+                    bookingId: bookingId,
+                    buildingName: booking.building.buildingName,
+                    refundAmount: booking.payment.totalAmount,
+                    refundReason: reason,
+                    action: 'AUTOMATIC_REFUND'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send automatic refund notifications:', notificationError);
+            }
 
             logger.info(`Automatic refund processed for booking: ${bookingId}`);
         } catch (error) {
@@ -1231,16 +1294,28 @@ const BookingService = {
                     }
                 });
 
-                // Send notification to user
+                // Send notifications
                 try {
+                    // Notification for user
                     await NotificationService.createRefundNotification(booking.userId, {
                         buildingName: booking.building.buildingName,
                         bookingId: booking.id,
                         refundAmount: amount,
-                        refundReason: 'Refund berhasil diproses'
+                        refundReason: 'Refund berhasil diproses melalui webhook'
+                    });
+
+                    // Notification for admin
+                    await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
+                        bookingId: booking.id,
+                        buildingName: booking.building.buildingName,
+                        borrowerName: booking.user.fullName,
+                        borrowerEmail: booking.user.email,
+                        refundAmount: amount,
+                        refundReason: 'Refund berhasil diproses melalui webhook',
+                        action: 'WEBHOOK_REFUND'
                     });
                 } catch (notificationError) {
-                    logger.warn('Failed to send refund notification:', notificationError);
+                    logger.warn('Failed to send refund webhook notifications:', notificationError);
                 }
             }
 
@@ -1344,14 +1419,29 @@ const BookingService = {
                             }
                         });
 
+                        // Send refund notification to admin
+                        try {
+                            await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
+                                bookingId: booking.id,
+                                buildingName: booking.building.buildingName,
+                                borrowerName: booking.user.fullName,
+                                refundAmount: booking.payment.totalAmount,
+                                refundReason: 'Booking expired - melewati tanggal peminjaman',
+                                action: 'EXPIRED_REFUND'
+                            });
+                        } catch (notificationError) {
+                            logger.warn('Failed to send expired refund notification to admin:', notificationError);
+                        }
+
                         logger.info(`Automatic refund processed for expired booking: ${booking.id}`);
                     }
 
-                    // Send notification to user
+                    // Send notifications to user and admin
                     try {
                         const NotificationService = require('./notification.service');
 
                         if (newStatus === 'REJECTED') {
+                            // Notification for user
                             await NotificationService.createBookingNotification(booking.userId, 'REJECTED', {
                                 buildingName: booking.building.buildingName,
                                 bookingId: booking.id,
@@ -1359,16 +1449,39 @@ const BookingService = {
                                 startDate: booking.startDate,
                                 endDate: booking.endDate
                             });
+
+                            // Notification for admin
+                            await PusherHelper.sendAdminNotification('BOOKING_EXPIRED', {
+                                bookingId: booking.id,
+                                buildingName: booking.building.buildingName,
+                                borrowerName: booking.user.fullName,
+                                rejectionReason: 'Booking expired - melewati tanggal peminjaman',
+                                startDate: booking.startDate,
+                                endDate: booking.endDate,
+                                action: 'EXPIRED_REJECTED'
+                            });
+
                         } else if (newStatus === 'COMPLETED') {
+                            // Notification for user
                             await NotificationService.createNotification(
                                 booking.userId,
                                 'BOOKING',
                                 'Booking Selesai',
                                 `Booking Anda untuk ${booking.building.buildingName} telah selesai`
                             );
+
+                            // Notification for admin
+                            await PusherHelper.sendAdminNotification('BOOKING_COMPLETED', {
+                                bookingId: booking.id,
+                                buildingName: booking.building.buildingName,
+                                borrowerName: booking.user.fullName,
+                                startDate: booking.startDate,
+                                endDate: booking.endDate,
+                                action: 'AUTO_COMPLETED'
+                            });
                         }
                     } catch (notificationError) {
-                        logger.warn(`Failed to send notification for booking ${booking.id}:`, notificationError);
+                        logger.warn(`Failed to send notifications for booking ${booking.id}:`, notificationError);
                     }
 
                     processedCount++;

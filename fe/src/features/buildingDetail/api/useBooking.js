@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { bookingAPI } from './bookingAPI';
@@ -362,16 +362,31 @@ export const useRefundDetails = () => {
     const [loading, setLoading] = useState(false);
     const [refundDetails, setRefundDetails] = useState(null);
     const [error, setError] = useState(null);
+    const requestInProgress = useRef(false);
 
-    const getRefundDetails = async (bookingId) => {
+    const getRefundDetails = useCallback(async (bookingId) => {
+        if (!bookingId) {
+            setError('ID booking tidak valid');
+            return;
+        }
+
+        // Prevent multiple simultaneous requests
+        if (requestInProgress.current) {
+            return;
+        }
+
+        requestInProgress.current = true;
         setLoading(true);
         setError(null);
+
         try {
             const response = await bookingAPI.getRefundDetails(bookingId);
 
             if (response?.status === 'success') {
                 setRefundDetails(response.data);
                 return response.data;
+            } else {
+                throw new Error('Invalid response format');
             }
         } catch (error) {
             const errorMessage = extractErrorMessage(error, 'Gagal memuat detail refund');
@@ -380,13 +395,14 @@ export const useRefundDetails = () => {
             throw error;
         } finally {
             setLoading(false);
+            requestInProgress.current = false;
         }
-    };
+    }, []);
 
-    const clearRefundDetails = () => {
+    const clearRefundDetails = useCallback(() => {
         setRefundDetails(null);
         setError(null);
-    };
+    }, []);
 
     return {
         getRefundDetails,

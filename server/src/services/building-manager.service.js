@@ -120,6 +120,21 @@ const BuildingManagerService = {
                 }
             });
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('BUILDING_MANAGER_CREATED', {
+                    managerId: buildingManager.id,
+                    managerName: buildingManager.managerName,
+                    phoneNumber: buildingManager.phoneNumber,
+                    buildingId: buildingManager.buildingId,
+                    buildingName: buildingManager.building?.buildingName || null,
+                    action: 'CREATED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building manager creation notification:', notificationError);
+            }
+
             logger.info(`Building manager created: ${managerId}`);
 
             return {
@@ -191,6 +206,24 @@ const BuildingManagerService = {
                 }
             });
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                const action = buildingManager.buildingId ? 'REASSIGNED' : 'ASSIGNED';
+                await PusherHelper.sendAdminNotification('BUILDING_MANAGER_ASSIGNED', {
+                    managerId: updatedManager.id,
+                    managerName: updatedManager.managerName,
+                    phoneNumber: updatedManager.phoneNumber,
+                    buildingId: updatedManager.buildingId,
+                    buildingName: updatedManager.building.buildingName,
+                    previousBuildingId: buildingManager.buildingId,
+                    previousBuildingName: buildingManager.building?.buildingName || null,
+                    action: action
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building manager assignment notification:', notificationError);
+            }
+
             logger.info(`Building manager assignment completed: ${managerId} -> ${buildingId}`);
 
             return {
@@ -254,6 +287,21 @@ const BuildingManagerService = {
                 }
             });
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('BUILDING_MANAGER_UPDATED', {
+                    managerId: updatedManager.id,
+                    managerName: updatedManager.managerName,
+                    phoneNumber: updatedManager.phoneNumber,
+                    buildingId: updatedManager.buildingId,
+                    buildingName: updatedManager.building?.buildingName || null,
+                    action: 'UPDATED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building manager update notification:', notificationError);
+            }
+
             logger.info(`Building manager updated: ${managerId}`);
 
             return {
@@ -285,6 +333,19 @@ const BuildingManagerService = {
             await prisma.buildingManager.delete({
                 where: { id: managerId }
             });
+
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('BUILDING_MANAGER_DELETED', {
+                    managerId: managerId,
+                    managerName: existingManager.managerName,
+                    phoneNumber: existingManager.phoneNumber,
+                    action: 'DELETED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building manager deletion notification:', notificationError);
+            }
 
             logger.info(`Building manager deleted: ${managerId}`);
 

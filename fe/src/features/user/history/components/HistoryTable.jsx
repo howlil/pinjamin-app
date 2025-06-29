@@ -15,9 +15,9 @@ import {
     Tooltip,
     useDisclosure
 } from '@chakra-ui/react';
-import { Eye } from 'lucide-react';
+import { Eye, DollarSign } from 'lucide-react';
 import BookingDetailModal from '@shared/components/BookingDetailModal';
-// import RefundDetailModal from '../../../../shared/components/RefundDetailModal';
+import RefundDetailModal from '@shared/components/RefundDetailModal';
 
 const HistoryTable = ({ bookings }) => {
     const [selectedBooking, setSelectedBooking] = useState(null);
@@ -26,21 +26,21 @@ const HistoryTable = ({ bookings }) => {
         onOpen: onDetailModalOpen,
         onClose: onDetailModalClose
     } = useDisclosure();
-    // const {
-    //     isOpen: isRefundDetailModalOpen,
-    //     onOpen: onRefundDetailModalOpen,
-    //     onClose: onRefundDetailModalClose
-    // } = useDisclosure();
+    const {
+        isOpen: isRefundDetailModalOpen,
+        onOpen: onRefundDetailModalOpen,
+        onClose: onRefundDetailModalClose
+    } = useDisclosure();
 
     const handleDetailClick = (booking) => {
         setSelectedBooking(booking);
         onDetailModalOpen();
     };
 
-    // const handleRefundDetailClick = (booking) => {
-    //     setSelectedBooking(booking);
-    //     onRefundDetailModalOpen();
-    // };
+    const handleRefundDetailClick = (booking) => {
+        setSelectedBooking(booking);
+        onRefundDetailModalOpen();
+    };
 
     const getStatusConfig = (status) => {
         switch (status?.toUpperCase()) {
@@ -307,7 +307,7 @@ const HistoryTable = ({ bookings }) => {
                                                 />
                                             </Tooltip>
 
-                                            {/* <Tooltip label="Detail Refund">
+                                            <Tooltip label="Detail Refund">
                                                 <IconButton
                                                     icon={<DollarSign size={16} />}
                                                     size="sm"
@@ -326,7 +326,7 @@ const HistoryTable = ({ bookings }) => {
                                                     transition="all 0.2s ease"
                                                     onClick={() => handleRefundDetailClick(booking)}
                                                 />
-                                            </Tooltip> */}
+                                            </Tooltip>
                                         </HStack>
                                     </Td>
                                 </Tr>
@@ -344,11 +344,11 @@ const HistoryTable = ({ bookings }) => {
             />
 
             {/* Refund Detail Modal */}
-            {/* <RefundDetailModal
+            <RefundDetailModal
                 isOpen={isRefundDetailModalOpen}
                 onClose={onRefundDetailModalClose}
-                bookingId={selectedBooking?.bookingId}
-            /> */}
+                bookingId={selectedBooking?.bookingId || selectedBooking?.id}
+            />
         </Box>
     );
 };

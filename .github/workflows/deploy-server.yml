@@ -16,15 +16,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+
     - name: Deploy to GCP VM
       run: |
-        # Install sshpass
-        sudo apt-get update && sudo apt-get install -y sshpass
-        
         echo "🚀 Deploy to VM: ${{ secrets.GCP_VM_IP }}"
         
         # Clone/update repo
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -i ~/.ssh/id_rsa ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~
           if [ ! -d pbf-server ]; then
             git clone https://github.com/${{ github.repository }}.git pbf-server
@@ -36,7 +40,7 @@ jobs:
         '
         
         # Install dependencies
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -i ~/.ssh/id_rsa ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           if ! command -v node >/dev/null; then
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -53,7 +57,7 @@ jobs:
         '
         
         # Create config files
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -i ~/.ssh/id_rsa ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           
           # PM2 config
@@ -84,7 +88,7 @@ jobs:
         '
         
         # Start app
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -i ~/.ssh/id_rsa ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           pm2 stop pbf-server || true
           pm2 delete pbf-server || true
@@ -93,3 +97,8 @@ jobs:
           echo "✅ Deployed!"
           pm2 list
         '
+
+    - name: Cleanup SSH Key
+      if: always()
+      run: |
+        rm -f ~/.ssh/id_rsa

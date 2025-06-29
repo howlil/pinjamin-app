@@ -654,6 +654,22 @@ const BuildingService = {
             // Get complete building data
             const completeBuilding = await this.getBuildingWithRelations(buildingId);
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('BUILDING_CREATED', {
+                    buildingId: building.id,
+                    buildingName: building.buildingName,
+                    location: building.location,
+                    buildingType: building.buildingType,
+                    rentalPrice: building.rentalPrice,
+                    capacity: building.capacity,
+                    action: 'CREATED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building creation notification:', notificationError);
+            }
+
             logger.info(`Building created: ${buildingId}`);
             return completeBuilding;
         } catch (error) {
@@ -939,6 +955,22 @@ const BuildingService = {
             // Get updated building data
             const updatedBuilding = await this.getBuildingWithRelations(buildingId);
 
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('BUILDING_UPDATED', {
+                    buildingId: building.id,
+                    buildingName: building.buildingName,
+                    location: building.location,
+                    buildingType: building.buildingType,
+                    rentalPrice: building.rentalPrice,
+                    capacity: building.capacity,
+                    action: 'UPDATED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building update notification:', notificationError);
+            }
+
             logger.info(`Building updated: ${buildingId}`);
             return updatedBuilding;
         } catch (error) {
@@ -991,6 +1023,20 @@ const BuildingService = {
             await prisma.building.delete({
                 where: { id: buildingId }
             });
+
+            // Send notification to admin
+            try {
+                const PusherHelper = require('../libs/pusher.lib');
+                await PusherHelper.sendAdminNotification('BUILDING_DELETED', {
+                    buildingId: buildingId,
+                    buildingName: buildingToDelete.buildingName,
+                    location: buildingToDelete.location,
+                    buildingType: buildingToDelete.buildingType,
+                    action: 'DELETED'
+                });
+            } catch (notificationError) {
+                logger.warn('Failed to send building deletion notification:', notificationError);
+            }
 
             logger.info(`Building deleted: ${buildingId}`);
             return {
