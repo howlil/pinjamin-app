@@ -16,16 +16,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy to GCP VM
-      env:
-        SSHPASS: ${{ secrets.GCP_VM_PASSWORD }}
+    - name: Setup SSH Key
       run: |
-        sudo apt-get update && sudo apt-get install -y sshpass
-        
+        mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to GCP VM
+      run: |
         echo "🚀 Deploy to VM: ${{ secrets.GCP_VM_IP }}"
         
         # Clone/update repo
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~
           if [ ! -d pbf-server ]; then
             git clone https://github.com/${{ github.repository }}.git pbf-server
@@ -37,7 +40,7 @@ jobs:
         '
         
         # Install dependencies
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           if ! command -v node >/dev/null; then
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -53,7 +56,7 @@ jobs:
         '
         
         # Create config files
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           
           # PM2 config
@@ -84,7 +87,7 @@ jobs:
         '
         
         # Start app
-        sshpass -e ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           pm2 stop pbf-server || true
           pm2 delete pbf-server || true

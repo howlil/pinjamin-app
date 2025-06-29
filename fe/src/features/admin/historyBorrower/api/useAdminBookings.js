@@ -170,7 +170,8 @@ export const useBookingRefund = () => {
                 return response.data;
             }
         } catch (err) {
-            setError(extractErrorMessage(err));
+            const errorMessage = extractErrorMessage(err, 'Gagal memproses refund');
+            setError(errorMessage);
             throw err;
         } finally {
             setLoading(false);
@@ -181,5 +182,44 @@ export const useBookingRefund = () => {
         processRefund,
         loading,
         error
+    };
+};
+
+export const useRefundDetails = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [refundDetails, setRefundDetails] = useState(null);
+
+    const getRefundDetails = async (bookingId) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await adminBookingAPI.getRefundDetails(bookingId);
+
+            if (response.status === 'success') {
+                setRefundDetails(response.data);
+                return response.data;
+            }
+        } catch (err) {
+            const errorMessage = extractErrorMessage(err, 'Gagal mengambil detail refund');
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const clearRefundDetails = () => {
+        setRefundDetails(null);
+        setError(null);
+    };
+
+    return {
+        getRefundDetails,
+        refundDetails,
+        loading,
+        error,
+        clearRefundDetails
     };
 }; 

@@ -68,5 +68,11 @@ export const bookingAPI = {
     getTodayBookings: async () => {
         const response = await apiClient.get('/bookings/today');
         return response;
+    },
+
+    // GET /api/v1/bookings/{id}/refund - Get refund details for a booking
+    getRefundDetails: async (bookingId) => {
+        const response = await apiClient.get(`/bookings/${bookingId}/refund`);
+        return response;
     }
 }; 
