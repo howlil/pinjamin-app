@@ -1,4 +1,4 @@
-name: Deploy Server to GCP VM
+name: Deploy Server to GCP VM (Simple)
 
 on:
   push:
@@ -16,111 +16,101 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install SSH tools
+    - name: Create deploy script
       run: |
-        sudo apt-get update
-        sudo apt-get install -y sshpass
-
-    - name: Test SSH connection
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
-        echo "Testing SSH connection..."
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} 'echo "SSH connection successful!"'
-
-    - name: Setup project directory
-      run: |
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
-          cd ~ || exit 1
-          if [ ! -d "pbf-server" ]; then
-            echo "Cloning repository..."
-            git clone https://github.com/${{ github.repository }}.git pbf-server
-          fi
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        echo "📁 Setting up project directory..."
+        cd $HOME
+        
+        # Clone or update repository
+        if [ ! -d "pbf-server" ]; then
+          echo "📥 Cloning repository..."
+          git clone https://github.com/$1.git pbf-server
+        else
+          echo "📥 Updating existing repository..."
           cd pbf-server
-          echo "Pulling latest changes..."
           git fetch origin
           git reset --hard origin/main
-        '
+          cd $HOME
+        fi
+        
+        cd pbf-server/server
+        
+        # Install dependencies
+        if ! command -v node >/dev/null 2>&1; then
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+        fi
+        
+        if ! command -v pnpm >/dev/null 2>&1; then
+          sudo npm install -g pnpm
+        fi
+        
+        if ! command -v pm2 >/dev/null 2>&1; then
+          sudo npm install -g pm2
+        fi
+        
+        echo "📦 Installing project dependencies..."
+        pnpm install
+        
+        # Create PM2 config
+        cat > ecosystem.config.js << 'EOFPM2'
+module.exports = {
+  apps: [{
+    name: "pbf-server",
+    script: "./app.js",
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: "1G",
+    env: {
+      NODE_ENV: "production",
+      PORT: 3000
+    }
+  }]
+};
+EOFPM2
+        
+        mkdir -p logs
+        
+        echo "🛑 Stopping existing processes..."
+        pm2 stop pbf-server 2>/dev/null || true
+        pm2 delete pbf-server 2>/dev/null || true
+        
+        echo "🚀 Starting application..."
+        pm2 start ecosystem.config.js
+        pm2 save
+        
+        echo "✅ Deployment completed!"
+        pm2 list
+        EOF
+        
+        chmod +x deploy.sh
 
-    - name: Install dependencies
+    - name: Create environment file
       run: |
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
-          cd ~/pbf-server/server
-          
-          if ! command -v node >/dev/null 2>&1; then
-            echo "Installing Node.js..."
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-          
-          if ! command -v pnpm >/dev/null 2>&1; then
-            echo "Installing pnpm..."
-            sudo npm install -g pnpm
-          fi
-          
-          if ! command -v pm2 >/dev/null 2>&1; then
-            echo "Installing PM2..."
-            sudo npm install -g pm2
-          fi
-          
-          echo "Installing project dependencies..."
-          pnpm install
-          pnpm run db:generate
-        '
+        cat > .env << EOF
+   
 
-    - name: Create ecosystem config
+    - name: Setup SSH and Deploy
       run: |
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
-          cd ~/pbf-server/server
-          echo "Creating ecosystem config..."
-          echo "module.exports = {" > ecosystem.config.js
-          echo "  apps: [{" >> ecosystem.config.js
-          echo "    name: \"pbf-server\"," >> ecosystem.config.js
-          echo "    script: \"./app.js\"," >> ecosystem.config.js
-          echo "    instances: 1," >> ecosystem.config.js
-          echo "    autorestart: true," >> ecosystem.config.js
-          echo "    watch: false," >> ecosystem.config.js
-          echo "    max_memory_restart: \"1G\"," >> ecosystem.config.js
-          echo "    env: {" >> ecosystem.config.js
-          echo "      NODE_ENV: \"production\"," >> ecosystem.config.js
-          echo "      PORT: 3000" >> ecosystem.config.js
-          echo "    }" >> ecosystem.config.js
-          echo "  }]" >> ecosystem.config.js
-          echo "};" >> ecosystem.config.js
-        '
-
-    - name: Setup environment variables
-      run: |
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
-          cd ~/pbf-server/server
-          echo "Setting up environment variables..."
-          echo "DATABASE_URL=\"${{ secrets.DATABASE_URL }}\"" > .env
-          echo "JWT_SECRET=\"${{ secrets.JWT_SECRET }}\"" >> .env
-          echo "EMAIL_USER=\"${{ secrets.EMAIL_USER }}\"" >> .env
-          echo "EMAIL_PASS=\"${{ secrets.EMAIL_PASS }}\"" >> .env
-          echo "XENDIT_SECRET_KEY=\"${{ secrets.XENDIT_SECRET_KEY }}\"" >> .env
-          echo "PUSHER_APP_ID=\"${{ secrets.PUSHER_APP_ID }}\"" >> .env
-          echo "PUSHER_KEY=\"${{ secrets.PUSHER_KEY }}\"" >> .env
-          echo "PUSHER_SECRET=\"${{ secrets.PUSHER_SECRET }}\"" >> .env
-          echo "PUSHER_CLUSTER=\"${{ secrets.PUSHER_CLUSTER }}\"" >> .env
-        '
-
-    - name: Deploy and start application
-      run: |
-        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
-          cd ~/pbf-server/server
-          
-          echo "Stopping existing PM2 process..."
-          pm2 stop pbf-server 2>/dev/null || true
-          pm2 delete pbf-server 2>/dev/null || true
-          
-          echo "Starting application..."
-          pm2 start ecosystem.config.js
-          pm2 save
-          
-          echo "Setting up PM2 startup..."
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME 2>/dev/null || true
-          
-          echo "Deployment completed successfully!"
-          pm2 list
-        ' 
+        mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+        
+        # Copy files to server
+        scp deploy.sh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }}:~/
+        scp .env ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }}:~/
+        
+        # Execute deploy script
+        ssh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "bash ~/deploy.sh ${{ github.repository }}"
+        
+        # Move .env to correct location
+        ssh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "mv ~/.env ~/pbf-server/server/"
+        
+        # Restart with env
+        ssh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} "cd ~/pbf-server/server && pm2 restart pbf-server"

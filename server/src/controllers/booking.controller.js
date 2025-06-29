@@ -177,6 +177,15 @@ const BookingController = {
                 return ResponseHelper.conflict(res, error.message);
             }
 
+            if (error.message.includes('wajib diisi')) {
+                return ResponseHelper.validationError(res, error.message);
+            }
+
+            // If error has meaningful message from service layer, use it
+            if (error.message && !error.message.includes('undefined') && !error.message.includes('null')) {
+                return ResponseHelper.error(res, error.message, 500);
+            }
+
             return ResponseHelper.error(res, 'Terjadi kesalahan saat memperbarui status booking', 500);
         }
     },
@@ -213,20 +222,99 @@ const BookingController = {
             const { id } = req.params;
             const { refundReason } = req.body;
 
+            if (!refundReason || refundReason.trim() === '') {
+                return ResponseHelper.validationError(res, 'Alasan refund wajib diisi');
+            }
+
             const result = await BookingService.processRefund(id, refundReason);
             return ResponseHelper.success(res, 'Refund berhasil diproses', result);
         } catch (error) {
             logger.error('Admin process refund controller error:', error);
 
+            // Handle specific error messages
             if (error.message === 'Booking tidak ditemukan') {
                 return ResponseHelper.notFound(res, error.message);
             }
 
-            if (error.message.includes('tidak bisa')) {
+            if (error.message.includes('tidak bisa direfund')) {
                 return ResponseHelper.conflict(res, error.message);
             }
 
+            if (error.message.includes('sudah selesai')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            if (error.message.includes('sudah pernah diproses')) {
+                return ResponseHelper.conflict(res, error.message);
+            }
+
+            // Handle Prisma validation errors
+            if (error.name === 'PrismaClientValidationError') {
+                logger.error('Prisma validation error details:', error.message);
+                return ResponseHelper.error(res, 'Data tidak valid untuk proses refund. Silakan hubungi administrator.', 400);
+            }
+
+            // Handle Prisma constraint errors
+            if (error.code === 'P2002') {
+                return ResponseHelper.conflict(res, 'Refund untuk booking ini sudah pernah diproses');
+            }
+
+            // Handle foreign key constraint errors
+            if (error.code === 'P2003') {
+                return ResponseHelper.error(res, 'Data pembayaran tidak valid untuk refund', 400);
+            }
+
+            // If error has meaningful message from service layer, use it
+            if (error.message && !error.message.includes('undefined') && !error.message.includes('null')) {
+                return ResponseHelper.error(res, error.message, 500);
+            }
+
             return ResponseHelper.error(res, 'Terjadi kesalahan saat memproses refund', 500);
+        }
+    },
+
+    // Get refund details (user)
+    async getRefundDetails(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            const result = await BookingService.getRefundDetails(id, userId, false);
+            return ResponseHelper.success(res, 'Detail refund berhasil diambil', result);
+        } catch (error) {
+            logger.error('Get refund details controller error:', error);
+
+            if (error.message === 'Booking tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message.includes('tidak ditemukan')) {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil detail refund', 500);
+        }
+    },
+
+    // Get refund details (admin)
+    async adminGetRefundDetails(req, res) {
+        try {
+            const { id } = req.params;
+
+            const result = await BookingService.getRefundDetails(id, null, true);
+            return ResponseHelper.success(res, 'Detail refund berhasil diambil', result);
+        } catch (error) {
+            logger.error('Admin get refund details controller error:', error);
+
+            if (error.message === 'Booking tidak ditemukan') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message.includes('tidak ditemukan')) {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.error(res, 'Terjadi kesalahan saat mengambil detail refund', 500);
         }
     },
 

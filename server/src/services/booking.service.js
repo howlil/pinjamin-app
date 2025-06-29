@@ -313,6 +313,22 @@ const BookingService = {
                             select: {
                                 buildingName: true
                             }
+                        },
+                        payment: {
+                            select: {
+                                id: true,
+                                paymentStatus: true,
+                                totalAmount: true,
+                                refund: {
+                                    select: {
+                                        id: true,
+                                        refundAmount: true,
+                                        refundStatus: true,
+                                        refundReason: true,
+                                        refundDate: true
+                                    }
+                                }
+                            }
                         }
                     },
                     orderBy: {
@@ -334,7 +350,17 @@ const BookingService = {
                 endDate: booking.endDate,
                 startTime: booking.startTime,
                 endTime: booking.endTime,
-                status: booking.bookingStatus
+                status: booking.bookingStatus,
+                payment: booking.payment ? {
+                    paymentStatus: booking.payment.paymentStatus,
+                    totalAmount: booking.payment.totalAmount,
+                    refund: booking.payment.refund ? {
+                        refundAmount: booking.payment.refund.refundAmount,
+                        refundStatus: booking.payment.refund.refundStatus,
+                        refundReason: booking.payment.refund.refundReason,
+                        refundDate: booking.payment.refund.refundDate
+                    } : null
+                } : null
             }));
 
             return {
@@ -570,7 +596,16 @@ const BookingService = {
                                 paymentMethod: true,
                                 paymentDate: true,
                                 invoiceNumber: true,
-                                paymentUrl: true
+                                paymentUrl: true,
+                                refund: {
+                                    select: {
+                                        id: true,
+                                        refundAmount: true,
+                                        refundStatus: true,
+                                        refundReason: true,
+                                        refundDate: true
+                                    }
+                                }
                             }
                         }
                     },
@@ -629,7 +664,14 @@ const BookingService = {
                         paymentMethod: booking.payment.paymentMethod,
                         paymentDate: booking.payment.paymentDate,
                         invoiceNumber: booking.payment.invoiceNumber,
-                        paymentUrl: booking.payment.paymentUrl
+                        paymentUrl: booking.payment.paymentUrl,
+                        refund: booking.payment.refund ? {
+                            id: booking.payment.refund.id,
+                            refundAmount: booking.payment.refund.refundAmount,
+                            refundStatus: booking.payment.refund.refundStatus,
+                            refundReason: booking.payment.refund.refundReason,
+                            refundDate: booking.payment.refund.refundDate
+                        } : null
                     } : null,
                     documents: {
                         proposalLetter: booking.proposalLetter ? {
@@ -792,7 +834,16 @@ const BookingService = {
                                 paymentMethod: true,
                                 paymentDate: true,
                                 invoiceNumber: true,
-                                paymentUrl: true
+                                paymentUrl: true,
+                                refund: {
+                                    select: {
+                                        id: true,
+                                        refundAmount: true,
+                                        refundStatus: true,
+                                        refundReason: true,
+                                        refundDate: true
+                                    }
+                                }
                             }
                         }
                     },
@@ -851,10 +902,18 @@ const BookingService = {
                         paymentMethod: booking.payment.paymentMethod,
                         paymentDate: booking.payment.paymentDate,
                         invoiceNumber: booking.payment.invoiceNumber,
-                        paymentUrl: booking.payment.paymentUrl
+                        paymentUrl: booking.payment.paymentUrl,
+                        refund: booking.payment.refund ? {
+                            id: booking.payment.refund.id,
+                            refundAmount: booking.payment.refund.refundAmount,
+                            refundStatus: booking.payment.refund.refundStatus,
+                            refundReason: booking.payment.refund.refundReason,
+                            refundDate: booking.payment.refund.refundDate
+                        } : null
                     } : {
                         paymentStatus: 'UNPAID',
-                        totalAmount: 0
+                        totalAmount: 0,
+                        refund: null
                     },
                     documents: {
                         proposalLetter: booking.proposalLetter ? {
@@ -903,6 +962,15 @@ const BookingService = {
                 throw new Error('Booking yang sudah selesai tidak bisa direfund');
             }
 
+            // Check if refund already exists for this payment
+            const existingRefund = await prisma.refund.findUnique({
+                where: { paymentId: booking.payment.id }
+            });
+
+            if (existingRefund) {
+                throw new Error('Refund untuk booking ini sudah pernah diproses');
+            }
+
             // Create refund with Xendit (if supported)
             const refundData = {
                 invoice_id: booking.payment.xenditTransactionId,
@@ -913,15 +981,21 @@ const BookingService = {
             // For now, we'll mark as refunded without actually calling Xendit
             // In production, you would call Xendit's refund API here
 
-            // Update payment status
-            await prisma.payment.update({
-                where: { id: booking.payment.id },
+            // Create refund record
+            const refundId = uuidv4();
+            await prisma.refund.create({
                 data: {
-                    paymentStatus: 'REFUNDED'
+                    id: refundId,
+                    paymentId: booking.payment.id,
+                    refundAmount: booking.payment.totalAmount,
+                    refundStatus: 'SUCCEEDED',
+                    refundReason: refundReason,
+                    xenditRefundTransactionId: `refund-${refundId}`,
+                    refundDate: moment().format('DD-MM-YYYY')
                 }
             });
 
-            // Update booking status
+            // Update booking status (payment status tetap PAID, tapi ada refund record)
             await prisma.booking.update({
                 where: { id: bookingId },
                 data: {
@@ -968,11 +1042,17 @@ const BookingService = {
                 return;
             }
 
-            // Update payment status
-            await prisma.payment.update({
-                where: { id: booking.payment.id },
+            // Create refund record for automatic refund
+            const refundId = uuidv4();
+            await prisma.refund.create({
                 data: {
-                    paymentStatus: 'REFUNDED'
+                    id: refundId,
+                    paymentId: booking.payment.id,
+                    refundAmount: booking.payment.totalAmount,
+                    refundStatus: 'SUCCEEDED',
+                    refundReason: reason,
+                    xenditRefundTransactionId: `auto-refund-${refundId}`,
+                    refundDate: moment().format('DD-MM-YYYY')
                 }
             });
 
@@ -988,6 +1068,79 @@ const BookingService = {
         } catch (error) {
             logger.error('Process automatic refund error:', error);
             // Don't throw error to prevent breaking the main flow
+        }
+    },
+
+    // Get refund details
+    async getRefundDetails(bookingId, userId = null, isAdmin = false) {
+        try {
+            const whereClause = { id: bookingId };
+
+            // If not admin, ensure user can only see their own booking
+            if (!isAdmin && userId) {
+                whereClause.userId = userId;
+            }
+
+            const booking = await prisma.booking.findUnique({
+                where: whereClause,
+                include: {
+                    payment: {
+                        include: {
+                            refund: true
+                        }
+                    },
+                    building: {
+                        select: {
+                            buildingName: true
+                        }
+                    },
+                    user: {
+                        select: {
+                            fullName: true,
+                            email: true
+                        }
+                    }
+                }
+            });
+
+            if (!booking) {
+                throw new Error('Booking tidak ditemukan');
+            }
+
+            if (!booking.payment) {
+                throw new Error('Data payment tidak ditemukan');
+            }
+
+            if (!booking.payment.refund) {
+                return {
+                    bookingId: booking.id,
+                    buildingName: booking.building.buildingName,
+                    totalAmount: booking.payment.totalAmount,
+                    paymentStatus: booking.payment.paymentStatus,
+                    refundStatus: 'NO_REFUND',
+                    message: 'Tidak ada refund untuk booking ini'
+                };
+            }
+
+            return {
+                bookingId: booking.id,
+                buildingName: booking.building.buildingName,
+                borrowerName: booking.user.fullName,
+                borrowerEmail: booking.user.email,
+                totalAmount: booking.payment.totalAmount,
+                paymentStatus: booking.payment.paymentStatus,
+                refund: {
+                    id: booking.payment.refund.id,
+                    refundAmount: booking.payment.refund.refundAmount,
+                    refundStatus: booking.payment.refund.refundStatus,
+                    refundReason: booking.payment.refund.refundReason,
+                    refundDate: booking.payment.refund.refundDate,
+                    xenditRefundId: booking.payment.refund.xenditRefundTransactionId
+                }
+            };
+        } catch (error) {
+            logger.error('Get refund details service error:', error);
+            throw error;
         }
     },
 
@@ -1054,12 +1207,19 @@ const BookingService = {
                 return false;
             }
 
-            // Update payment status based on refund status
+            // Create or update refund record based on refund status
             if (status === 'SUCCEEDED') {
-                await prisma.payment.update({
-                    where: { id: booking.payment.id },
+                // Create refund record from webhook
+                const refundId = uuidv4();
+                await prisma.refund.create({
                     data: {
-                        paymentStatus: 'REFUNDED'
+                        id: refundId,
+                        paymentId: booking.payment.id,
+                        refundAmount: amount,
+                        refundStatus: 'SUCCEEDED',
+                        refundReason: 'Refund berhasil diproses melalui webhook',
+                        xenditRefundTransactionId: id,
+                        refundDate: moment().format('DD-MM-YYYY')
                     }
                 });
 
@@ -1171,10 +1331,16 @@ const BookingService = {
 
                     // Process refund if needed
                     if (shouldRefund) {
-                        await prisma.payment.update({
-                            where: { id: booking.payment.id },
+                        const refundId = uuidv4();
+                        await prisma.refund.create({
                             data: {
-                                paymentStatus: 'REFUNDED'
+                                id: refundId,
+                                paymentId: booking.payment.id,
+                                refundAmount: booking.payment.totalAmount,
+                                refundStatus: 'SUCCEEDED',
+                                refundReason: 'Booking expired - melewati tanggal peminjaman',
+                                xenditRefundTransactionId: `expired-refund-${refundId}`,
+                                refundDate: moment().format('DD-MM-YYYY')
                             }
                         });
 

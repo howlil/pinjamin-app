@@ -46,6 +46,13 @@ router.get('/bookings/:id/invoice',
     BookingController.generateInvoice
 );
 
+// Get refund details for a booking (user)
+router.get('/bookings/:id/refund',
+    AuthMiddleware.authenticate,
+    ValidationMiddleware.validateParams(BookingValidation.bookingParamsSchema),
+    BookingController.getRefundDetails
+);
+
 // ===== ADMIN ROUTES (Admin authentication required) =====
 
 // Get bookings with filters (admin)
@@ -80,6 +87,14 @@ router.post('/bookings/admin/:id/refund',
     ValidationMiddleware.validateParams(BookingValidation.bookingParamsSchema),
     ValidationMiddleware.validate(BookingValidation.processRefundSchema),
     BookingController.processRefund
+);
+
+// Get refund details (admin)
+router.get('/bookings/admin/:id/refund',
+    AuthMiddleware.authenticate,
+    AuthMiddleware.requireAdmin,
+    ValidationMiddleware.validateParams(BookingValidation.bookingParamsSchema),
+    BookingController.adminGetRefundDetails
 );
 
 // ===== CRONJOB ROUTES =====

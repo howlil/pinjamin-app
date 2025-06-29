@@ -8,6 +8,7 @@ import PrivateAdminLayout from '../shared/components/PrivateAdminLayout';
 // Page Components
 import AuthPage from '../features/auth/AuthPage';
 import ProfilePage from '../features/auth/ProfilePage';
+import ResetPasswordPage from '../features/auth/ResetPasswordPage';
 import HomePage from '../features/home/HomePage';
 import SchedulePage from '../features/schedule/SchedulePage';
 import UserTransactionPage from '../features/user/transaction/UserTransactionPage';
@@ -50,6 +51,7 @@ const AppRouter = () => {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Private Routes for Borrowers */}
             <Route path="/transaction" element={
