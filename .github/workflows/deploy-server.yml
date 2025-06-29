@@ -17,20 +17,28 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Setup SSH
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}
-
-    - name: Add VM to known hosts
       run: |
         mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
         ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+        
+        # Create SSH config
+        cat > ~/.ssh/config << EOF
+        Host gcp-vm
+            HostName ${{ secrets.GCP_VM_IP }}
+            User ${{ secrets.GCP_VM_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking no
+        EOF
+        chmod 600 ~/.ssh/config
 
     - name: Deploy to GCP VM
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        ssh gcp-vm '
           # Navigate to project directory
-          cd /home/${{ secrets.GCP_VM_USER }}/pbf-server || {
+          cd ~/pbf-server || {
             echo "Project directory not found. Cloning repository..."
             git clone https://github.com/${{ github.repository }}.git pbf-server
             cd pbf-server
@@ -100,5 +108,5 @@ jobs:
           pm2 save
 
           # Setup PM2 startup script
-          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ${{ secrets.GCP_VM_USER }} --hp /home/${{ secrets.GCP_VM_USER }} || true
+          sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME || true
         ' 

@@ -13,26 +13,35 @@ export const useSchedule = (filters = {}) => {
     const transformScheduleData = (apiData) => {
         if (!Array.isArray(apiData)) return [];
 
-        return apiData.map(item => ({
-            id: item.id,
-            date: item.startDate, // API uses startDate, component expects date
-            startDate: item.startDate,
-            endDate: item.endDate,
-            activityName: item.activityName,
-            startTime: item.startTime,
-            endTime: item.endTime,
-            status: item.status,
-            borrowerName: item.borrowerDetail?.borrowerName || 'Unknown',
-            buildingName: item.buildingDetail?.buildingName || 'Unknown Building',
-            buildingId: item.buildingDetail?.buildingId,
-            // Add additional fields for better display
-            title: item.activityName,
-            time: `${item.startTime} - ${item.endTime}`,
-            organizer: {
-                name: item.borrowerDetail?.borrowerName || 'Unknown',
-                avatar: null
-            }
-        }));
+        return apiData.map(item => {
+            console.log('Transforming booking item:', item); // Debug log
+
+            return {
+                id: item.id,
+                date: item.startDate, // API uses startDate, component expects date
+                startDate: item.startDate,
+                endDate: item.endDate, // Preserve endDate for multi-day bookings
+                activityName: item.activityName,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                status: item.status,
+                borrowerName: item.borrowerDetail?.borrowerName || 'Unknown',
+                buildingName: item.buildingDetail?.buildingName || 'Unknown Building',
+                buildingId: item.buildingDetail?.buildingId,
+                // Add additional fields for better display
+                title: item.activityName,
+                time: `${item.startTime} - ${item.endTime}`,
+                organizer: {
+                    name: item.borrowerDetail?.borrowerName || 'Unknown',
+                    avatar: null
+                },
+                // Add date range info for display
+                isMultiDay: item.endDate && item.endDate !== item.startDate,
+                dateRange: item.endDate && item.endDate !== item.startDate
+                    ? `${item.startDate} - ${item.endDate}`
+                    : item.startDate
+            };
+        });
     };
 
     const fetchSchedule = useCallback(async (params = {}) => {

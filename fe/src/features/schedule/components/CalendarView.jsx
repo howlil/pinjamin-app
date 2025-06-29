@@ -122,12 +122,42 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
 
         const filteredBookings = bookings.filter(booking => {
             // Check both date and startDate properties for compatibility
-            const bookingDate = booking.date || booking.startDate;
-            console.log('Comparing:', bookingDate, 'with', dateStr);
-            return bookingDate === dateStr;
+            const bookingStartDate = booking.startDate || booking.date;
+            const bookingEndDate = booking.endDate || booking.startDate || booking.date;
+
+            console.log('Checking booking:', booking.activityName);
+            console.log('Start date:', bookingStartDate, 'End date:', bookingEndDate, 'Target date:', dateStr);
+
+            // If it's a single day booking (no endDate or same as startDate)
+            if (!booking.endDate || bookingStartDate === bookingEndDate) {
+                return bookingStartDate === dateStr;
+            }
+
+            // For multi-day bookings, check if target date is within range
+            const targetDate = new Date(year, month - 1, day); // month - 1 because JS months are 0-indexed
+
+            // Parse start date (DD-MM-YYYY format)
+            const [startDay, startMonth, startYear] = bookingStartDate.split('-').map(Number);
+            const startDateObj = new Date(startYear, startMonth - 1, startDay);
+
+            // Parse end date (DD-MM-YYYY format)
+            const [endDay, endMonth, endYear] = bookingEndDate.split('-').map(Number);
+            const endDateObj = new Date(endYear, endMonth - 1, endDay);
+
+            // Check if target date is within the booking range (inclusive)
+            const isInRange = targetDate >= startDateObj && targetDate <= endDateObj;
+
+            console.log('Date range check:', {
+                targetDate: targetDate.toDateString(),
+                startDate: startDateObj.toDateString(),
+                endDate: endDateObj.toDateString(),
+                isInRange
+            });
+
+            return isInRange;
         });
 
-        console.log('Filtered bookings:', filteredBookings);
+        console.log('Filtered bookings for', dateStr, ':', filteredBookings);
         return filteredBookings;
     };
 
@@ -393,6 +423,7 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
                                                                     fontFamily="Inter, sans-serif"
                                                                 >
                                                                     {booking.activityName}
+                                                                    {booking.isMultiDay && " 📅"}
                                                                 </Text>
                                                                 <Text
                                                                     fontSize="xs"
@@ -403,6 +434,17 @@ const CalendarView = ({ bookings = [], onDateSelect, selectedDate, onBookingClic
                                                                 >
                                                                     {booking.startTime}-{booking.endTime}
                                                                 </Text>
+                                                                {booking.isMultiDay && (
+                                                                    <Text
+                                                                        fontSize="xs"
+                                                                        color="white"
+                                                                        opacity={0.8}
+                                                                        noOfLines={1}
+                                                                        fontFamily="Inter, sans-serif"
+                                                                    >
+                                                                        {booking.startDate}-{booking.endDate}
+                                                                    </Text>
+                                                                )}
                                                             </VStack>
                                                         </Box>
                                                     ))}

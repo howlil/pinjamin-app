@@ -36,6 +36,49 @@ const BookingService = {
                 where: { id: userId }
             });
 
+            // Validate dates
+            const startMomentValidation = moment(startDate, 'DD-MM-YYYY');
+            const endMomentValidation = moment(endDate || startDate, 'DD-MM-YYYY');
+            const today = moment().startOf('day');
+
+            if (!startMomentValidation.isValid()) {
+                throw new Error('Format tanggal mulai tidak valid. Gunakan format DD-MM-YYYY');
+            }
+
+            if (endDate && !endMomentValidation.isValid()) {
+                throw new Error('Format tanggal selesai tidak valid. Gunakan format DD-MM-YYYY');
+            }
+
+            if (startMomentValidation.isBefore(today)) {
+                throw new Error('Tanggal mulai tidak boleh di masa lalu');
+            }
+
+            if (endDate && endMomentValidation.isBefore(startMomentValidation)) {
+                throw new Error('Tanggal selesai tidak boleh lebih awal dari tanggal mulai');
+            }
+
+            // Calculate rental duration and total cost
+            const targetEndDate = endDate || startDate;
+            const startMoment = moment(startDate, 'DD-MM-YYYY');
+            const endMoment = moment(targetEndDate, 'DD-MM-YYYY');
+
+            // Calculate number of days (inclusive of both start and end date)
+            const rentalDays = endMoment.diff(startMoment, 'days') + 1;
+
+            // Validate rental duration (max 30 days)
+            const maxRentalDays = 30;
+            if (rentalDays > maxRentalDays) {
+                throw new Error(`Durasi peminjaman maksimal ${maxRentalDays} hari`);
+            }
+
+            if (rentalDays < 1) {
+                throw new Error('Durasi peminjaman minimal 1 hari');
+            }
+
+            const totalAmount = building.rentalPrice * rentalDays;
+
+            logger.info(`Booking calculation: ${rentalDays} days × Rp${building.rentalPrice.toLocaleString()} = Rp${totalAmount.toLocaleString()}`);
+
             // Create booking
             const bookingId = uuidv4();
             const proposalLetterUrl = getFileUrl(proposalLetter.filename, 'documents');
@@ -47,7 +90,7 @@ const BookingService = {
                     buildingId,
                     activityName,
                     startDate,
-                    endDate: endDate || startDate,
+                    endDate: targetEndDate,
                     startTime,
                     endTime,
                     proposalLetter: proposalLetterUrl,
@@ -58,14 +101,14 @@ const BookingService = {
             // Create Xendit invoice
             const invoiceData = {
                 externalId: bookingId,
-                amount: building.rentalPrice,
+                amount: totalAmount,
                 payerEmail: user.email,
-                description: `Pembayaran sewa ${building.buildingName} - ${activityName}`,
+                description: `Pembayaran sewa ${building.buildingName} - ${activityName} (${rentalDays} hari)`,
                 successRedirectUrl: `${process.env.FRONTEND_URL}/payment/success`,
                 failureRedirectUrl: `${process.env.FRONTEND_URL}/payment/failed`,
                 items: [{
-                    name: building.buildingName,
-                    quantity: 1,
+                    name: `${building.buildingName} (${rentalDays} hari)`,
+                    quantity: rentalDays,
                     price: building.rentalPrice
                 }]
             };
@@ -100,8 +143,8 @@ const BookingService = {
                     bookingId,
                     invoiceNumber: XenditHelper.generateInvoiceNumber(),
                     paymentDate: moment().format('DD-MM-YYYY'),
-                    paymentAmount: building.rentalPrice,
-                    totalAmount: building.rentalPrice,
+                    paymentAmount: totalAmount,
+                    totalAmount: totalAmount,
                     paymentMethod: 'XENDIT',
                     paymentUrl: xenditInvoice.invoice_url,
                     snapToken: xenditInvoice.id,
@@ -117,7 +160,8 @@ const BookingService = {
                     bookingId: booking.id,
                     startDate: booking.startDate,
                     endDate: booking.endDate,
-                    amount: building.rentalPrice
+                    rentalDays: rentalDays,
+                    amount: totalAmount
                 });
 
                 // Notification for admin
@@ -127,7 +171,8 @@ const BookingService = {
                     borrowerName: user.fullName,
                     startDate: booking.startDate,
                     endDate: booking.endDate,
-                    amount: building.rentalPrice
+                    rentalDays: rentalDays,
+                    amount: totalAmount
                 });
             } catch (notificationError) {
                 logger.warn('Failed to send booking notifications:', notificationError);
@@ -142,6 +187,9 @@ const BookingService = {
                 endDate: booking.endDate,
                 startTime: booking.startTime,
                 endTime: booking.endTime,
+                rentalDays: rentalDays,
+                pricePerDay: building.rentalPrice,
+                totalAmount: totalAmount,
                 status: booking.bookingStatus,
                 payment: {
                     paymentUrl: xenditInvoice.invoice_url
