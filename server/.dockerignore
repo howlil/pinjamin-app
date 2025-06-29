@@ -1,0 +1,75 @@
+# Dependencies
+node_modules
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment files
+.env*
+!.env.example
+
+# Development files
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# Documentation
+README.md
+*.md
+!api.md
+
+# Git files
+.git
+.gitignore
+
+# Testing
+test
+tests
+*.test.js
+*.spec.js
+
+# PM2
+ecosystem.config.js
+
+# Temporary files
+tmp
+temp
+
+# OS generated files
+Thumbs.db
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# Build artifacts (if any)
+dist
+build
+
+# Database files (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# Prisma
+prisma/migrations/**/migration.sql
+prisma/dev.db*
+
+# Local uploads during development
+uploads/*
+!uploads/.gitkeep 

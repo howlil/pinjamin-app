@@ -31,7 +31,20 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 # Menggunakan VITE_API_BASE_URL yang sama
 ENV VITE_API_BASE_URL=
 
-EXPOSE 80
+# Port environment variable (default 80 untuk Docker, Cloud Run akan override)
+ENV PORT=80
 
-# Script untuk mengganti environment variables dan start nginx
-CMD envsubst '${VITE_API_BASE_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;' 
+# Expose port 8080 untuk Cloud Run (Cloud Run default) 
+EXPOSE 8080
+
+# Create startup script untuk Cloud Run compatibility
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'echo "Starting with PORT=${PORT}, VITE_API_BASE_URL=${VITE_API_BASE_URL}"' >> /start.sh && \
+    echo 'envsubst '"'"'${VITE_API_BASE_URL} ${PORT}'"'"' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "Generated nginx config:"' >> /start.sh && \
+    echo 'cat /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'nginx -g "daemon off;"' >> /start.sh && \
+    chmod +x /start.sh
+
+# Use startup script
+CMD ["/start.sh"] 

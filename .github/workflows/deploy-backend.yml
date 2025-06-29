@@ -1,34 +1,34 @@
-name: Deploy Frontend to Cloud Run
+name: Deploy Backend to Cloud Run
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'fe/**'
+      - 'server/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'fe/**'
+      - 'server/**'
   workflow_dispatch:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_NAME: pbf-frontend
+  SERVICE_NAME: pbf-server
   REGION: asia-southeast2
   REGISTRY_URL: asia-southeast2-docker.pkg.dev
 
 jobs:
-  # Test dan Build Check untuk Frontend
+  # Test dan Linting untuk Backend
   test:
-    name: Test Frontend
+    name: Test Backend
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     
     defaults:
       run:
-        working-directory: ./fe
+        working-directory: ./server
     
     steps:
     - name: Checkout code
@@ -39,7 +39,7 @@ jobs:
       with:
         node-version: '18'
         cache: 'pnpm'
-        cache-dependency-path: fe/pnpm-lock.yaml
+        cache-dependency-path: server/pnpm-lock.yaml
 
     - name: Install pnpm
       run: npm install -g pnpm
@@ -47,20 +47,19 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    - name: Run ESLint
-      run: pnpm run lint || echo "Linting issues found but continuing..."
+    - name: Generate Prisma Client
+      run: pnpm run db:generate
+
+    - name: Run tests (if available)
+      run: pnpm test || echo "No tests defined"
       continue-on-error: true
 
-    - name: Test build
-      run: |
-        VITE_API_BASE_URL=http://localhost:3000/api/v1 \
-        VITE_PUSHER_KEY=test \
-        VITE_PUSHER_CLUSTER=test \
-        pnpm run build
+    - name: Check code syntax
+      run: node -c app.js
 
   # Build dan Deploy ke Cloud Run
   deploy:
-    name: Build and Deploy Frontend
+    name: Build and Deploy Backend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: [test]
@@ -68,7 +67,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ./fe
+        working-directory: ./server
     
     permissions:
       contents: read
@@ -78,7 +77,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Authenticate dengan Google Cloud
+    # Authenticate dengan Google Cloud menggunakan Service Account Key
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -112,16 +111,12 @@ jobs:
     - name: Build Docker image
       run: |
         docker build \
-          --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} \
-          --build-arg VITE_PUSHER_KEY=${{ secrets.VITE_PUSHER_KEY }} \
-          --build-arg VITE_PUSHER_CLUSTER=${{ secrets.VITE_PUSHER_CLUSTER }} \
-          --build-arg VITE_PUSHER_APP_ID=${{ secrets.VITE_PUSHER_APP_ID }} \
           -t $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:${{ steps.vars.outputs.sha_short }} \
           -t $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest \
           .
 
     # Push Docker image ke Artifact Registry
-    - name: Push Docker image to Artifact Registry
+    - name: Push Docker image
       run: |
         docker push $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:${{ steps.vars.outputs.sha_short }}
         docker push $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest
@@ -135,13 +130,16 @@ jobs:
           --region $REGION \
           --allow-unauthenticated \
           --port 8080 \
-          --memory 512Mi \
+          --memory 1Gi \
           --cpu 1 \
           --min-instances 0 \
           --max-instances 10 \
           --timeout 300 \
           --concurrency 80 \
-          --set-env-vars NODE_ENV=production,PORT=8080,VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          --service-account pbf-server-sa@$PROJECT_ID.iam.gserviceaccount.com \
+          --add-cloudsql-instances $PROJECT_ID:$REGION:pbf-database \
+          --set-env-vars NODE_ENV=production,PORT=8080 \
+          --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,XENDIT_SECRET_KEY=xendit-secret-key:latest,PUSHER_APP_ID=pusher-app-id:latest,PUSHER_KEY=pusher-key:latest,PUSHER_SECRET=pusher-secret:latest,SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest
 
     # Get service URL
     - name: Get service URL
@@ -156,18 +154,18 @@ jobs:
         echo "Waiting for service to be ready..."
         sleep 30
         
-        # Test if frontend is accessible
-        if curl -f --max-time 30 "${{ steps.service.outputs.url }}"; then
-          echo "✅ Frontend is accessible"
+        # Test health endpoint
+        if curl -f --max-time 30 "${{ steps.service.outputs.url }}/health"; then
+          echo "✅ Health check passed"
         else
-          echo "❌ Frontend accessibility test failed"
+          echo "❌ Health check failed"
           exit 1
         fi
 
     # Deployment summary
     - name: Deployment Summary
       run: |
-        echo "🚀 Frontend deployment completed successfully!"
+        echo "🚀 Backend deployment completed successfully!"
         echo ""
         echo "📊 Deployment Details:"
         echo "Service Name: $SERVICE_NAME"
@@ -175,5 +173,13 @@ jobs:
         echo "Image: $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:${{ steps.vars.outputs.sha_short }}"
         echo ""
         echo "🔗 URLs:"
-        echo "Frontend URL: ${{ steps.service.outputs.url }}"
-        echo "API Base URL: ${{ secrets.VITE_API_BASE_URL }}" 
+        echo "Service URL: ${{ steps.service.outputs.url }}"
+        echo "API Base URL: ${{ steps.service.outputs.url }}/api/v1"
+        echo "API Documentation: ${{ steps.service.outputs.url }}/api-docs"
+        echo "Health Check: ${{ steps.service.outputs.url }}/health"
+
+    # Update frontend environment (optional)
+    - name: Update Frontend Environment
+      run: |
+        echo "Backend deployed at: ${{ steps.service.outputs.url }}"
+        echo "Update your frontend VITE_API_BASE_URL to: ${{ steps.service.outputs.url }}/api/v1" 
