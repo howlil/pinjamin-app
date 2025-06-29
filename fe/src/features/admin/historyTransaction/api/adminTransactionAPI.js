@@ -15,30 +15,19 @@ export const adminTransactionAPI = {
     // GET /api/v1/transactions/admin/export
     exportTransactions: async () => {
         try {
-            // Use axios instance directly for blob response
-            const response = await apiClient.axios.get('/api/v1/transactions/admin/export', {
-                responseType: 'blob',
-                headers: {
-                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                }
-            });
+            const response = await apiClient.get('/transactions/admin/export');
 
-            // Create blob and download
-            const blob = new Blob([response.data], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `transactions_export.xlsx`;
-            document.body.appendChild(link);
-            link.click();
+            if (response.data.fileUrl) {
+                // Direct download from server URL
+                const link = document.createElement('a');
+                link.href = response.data.fileUrl;
+                link.download = response.data.fileUrl.split('/').pop(); // Get filename from URL
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
 
-            // Cleanup
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(link);
-
-            return { status: 'success' };
+            return response.data;
         } catch (error) {
             console.error('Export error:', error);
             throw error;

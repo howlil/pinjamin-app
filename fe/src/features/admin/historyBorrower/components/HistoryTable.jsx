@@ -25,8 +25,9 @@ import {
     useDisclosure,
     useToast
 } from '@chakra-ui/react';
-import { RefreshCw, Eye } from 'lucide-react';
+import { RefreshCw, Eye, DollarSign } from 'lucide-react';
 import { useBookingRefund } from '../api/useAdminBookings';
+import RefundDetailModal from '@shared/components/RefundDetailModal';
 import BookingDetailModal from '@shared/components/BookingDetailModal';
 
 const HistoryTable = ({ bookings, loading, onRefresh }) => {
@@ -37,6 +38,11 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
         isOpen: isDetailModalOpen,
         onOpen: onDetailModalOpen,
         onClose: onDetailModalClose
+    } = useDisclosure();
+    const {
+        isOpen: isRefundDetailModalOpen,
+        onOpen: onRefundDetailModalOpen,
+        onClose: onRefundDetailModalClose
     } = useDisclosure();
     const { processRefund, loading: refundLoading } = useBookingRefund();
     const toast = useToast();
@@ -80,6 +86,11 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
     const handleDetailClick = (booking) => {
         setSelectedBooking(booking);
         onDetailModalOpen();
+    };
+
+    const handleRefundDetailClick = (booking) => {
+        setSelectedBooking(booking);
+        onRefundDetailModalOpen();
     };
 
     const handleRefund = async () => {
@@ -217,6 +228,27 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                                 }}
                                                 transition="all 0.2s ease"
                                                 onClick={() => handleDetailClick(booking)}
+                                            />
+                                        </Tooltip>
+
+                                        <Tooltip label="Detail Refund">
+                                            <IconButton
+                                                icon={<DollarSign size={16} />}
+                                                size="sm"
+                                                bg="rgba(59, 130, 246, 0.1)"
+                                                color="#3B82F6"
+                                                borderRadius="9999px"
+                                                border="1px solid rgba(59, 130, 246, 0.3)"
+                                                _hover={{
+                                                    bg: "rgba(59, 130, 246, 0.2)",
+                                                    transform: "translateY(-1px)",
+                                                    boxShadow: "0 2px 8px rgba(59, 130, 246, 0.2)"
+                                                }}
+                                                _active={{
+                                                    transform: "translateY(0)"
+                                                }}
+                                                transition="all 0.2s ease"
+                                                onClick={() => handleRefundDetailClick(booking)}
                                             />
                                         </Tooltip>
 
@@ -510,6 +542,13 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                 isOpen={isDetailModalOpen}
                 onClose={onDetailModalClose}
                 booking={selectedBooking}
+            />
+
+            {/* Refund Detail Modal */}
+            <RefundDetailModal
+                isOpen={isRefundDetailModalOpen}
+                onClose={onRefundDetailModalClose}
+                bookingId={selectedBooking?.bookingId}
             />
         </>
     );

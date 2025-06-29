@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { Eye } from 'lucide-react';
 import BookingDetailModal from '@shared/components/BookingDetailModal';
+// import RefundDetailModal from '../../../../shared/components/RefundDetailModal';
 
 const HistoryTable = ({ bookings }) => {
     const [selectedBooking, setSelectedBooking] = useState(null);
@@ -25,11 +26,21 @@ const HistoryTable = ({ bookings }) => {
         onOpen: onDetailModalOpen,
         onClose: onDetailModalClose
     } = useDisclosure();
+    // const {
+    //     isOpen: isRefundDetailModalOpen,
+    //     onOpen: onRefundDetailModalOpen,
+    //     onClose: onRefundDetailModalClose
+    // } = useDisclosure();
 
     const handleDetailClick = (booking) => {
         setSelectedBooking(booking);
         onDetailModalOpen();
     };
+
+    // const handleRefundDetailClick = (booking) => {
+    //     setSelectedBooking(booking);
+    //     onRefundDetailModalOpen();
+    // };
 
     const getStatusConfig = (status) => {
         switch (status?.toUpperCase()) {
@@ -274,15 +285,49 @@ const HistoryTable = ({ bookings }) => {
                                         borderColor="rgba(215, 215, 215, 0.2)"
                                         textAlign="center"
                                     >
-                                        <Tooltip label="Lihat Detail">
-                                            <IconButton
-                                                icon={<Eye size={16} />}
-                                                size="sm"
-                                                variant="ghost"
-                                                colorScheme="blue"
-                                                onClick={() => handleDetailClick(booking)}
-                                            />
-                                        </Tooltip>
+                                        <HStack spacing={2} justify="center">
+                                            <Tooltip label="Lihat Detail">
+                                                <IconButton
+                                                    icon={<Eye size={16} />}
+                                                    size="sm"
+                                                    bg="rgba(33, 209, 121, 0.1)"
+                                                    color="#21D179"
+                                                    borderRadius="9999px"
+                                                    border="1px solid rgba(33, 209, 121, 0.3)"
+                                                    _hover={{
+                                                        bg: "rgba(33, 209, 121, 0.2)",
+                                                        transform: "translateY(-1px)",
+                                                        boxShadow: "0 2px 8px rgba(33, 209, 121, 0.2)"
+                                                    }}
+                                                    _active={{
+                                                        transform: "translateY(0)"
+                                                    }}
+                                                    transition="all 0.2s ease"
+                                                    onClick={() => handleDetailClick(booking)}
+                                                />
+                                            </Tooltip>
+
+                                            {/* <Tooltip label="Detail Refund">
+                                                <IconButton
+                                                    icon={<DollarSign size={16} />}
+                                                    size="sm"
+                                                    bg="rgba(59, 130, 246, 0.1)"
+                                                    color="#3B82F6"
+                                                    borderRadius="9999px"
+                                                    border="1px solid rgba(59, 130, 246, 0.3)"
+                                                    _hover={{
+                                                        bg: "rgba(59, 130, 246, 0.2)",
+                                                        transform: "translateY(-1px)",
+                                                        boxShadow: "0 2px 8px rgba(59, 130, 246, 0.2)"
+                                                    }}
+                                                    _active={{
+                                                        transform: "translateY(0)"
+                                                    }}
+                                                    transition="all 0.2s ease"
+                                                    onClick={() => handleRefundDetailClick(booking)}
+                                                />
+                                            </Tooltip> */}
+                                        </HStack>
                                     </Td>
                                 </Tr>
                             );
@@ -297,6 +342,13 @@ const HistoryTable = ({ bookings }) => {
                 onClose={onDetailModalClose}
                 booking={selectedBooking}
             />
+
+            {/* Refund Detail Modal */}
+            {/* <RefundDetailModal
+                isOpen={isRefundDetailModalOpen}
+                onClose={onRefundDetailModalClose}
+                bookingId={selectedBooking?.bookingId}
+            /> */}
         </Box>
     );
 };
