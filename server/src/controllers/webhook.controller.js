@@ -7,15 +7,33 @@ const WebhookController = {
     // Handle Xendit unified webhook callback
     async handleXenditCallback(req, res) {
         try {
-            const rawBody = JSON.stringify(req.body);
+            const rawBody = req.rawBody; // Use captured raw body untuk signature verification
             const signature = req.headers['x-callback-token'];
+            const nodeEnv = process.env.NODE_ENV || 'development';
+
+            logger.info('Xendit webhook received:', {
+                hasSignature: !!signature,
+                hasRawBody: !!rawBody,
+                rawBodyLength: rawBody ? rawBody.length : 0,
+                environment: nodeEnv,
+                webhookType: 'determining...'
+            });
 
             // Verify webhook signature
             const isValid = XenditHelper.verifyWebhookSignature(rawBody, signature);
 
             if (!isValid) {
-                logger.warn('Invalid webhook signature');
-                return ResponseHelper.unauthorized(res, 'Invalid signature');
+                const errorMessage = nodeEnv === 'development'
+                    ? 'Invalid webhook signature. In development, ensure XENDIT_CALLBACK_TOKEN is set or signature verification will be skipped.'
+                    : 'Invalid signature';
+
+                logger.warn('Webhook signature verification failed:', {
+                    environment: nodeEnv,
+                    hasCallbackToken: !!process.env.XENDIT_CALLBACK_TOKEN,
+                    hasSignature: !!signature
+                });
+
+                return ResponseHelper.unauthorized(res, errorMessage);
             }
 
             // Determine webhook type based on payload structure

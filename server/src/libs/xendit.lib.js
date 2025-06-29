@@ -124,8 +124,18 @@ const XenditHelper = {
     verifyWebhookSignature(rawBody, signature) {
         try {
             const callbackToken = process.env.XENDIT_CALLBACK_TOKEN;
+
+            // Handle development environment atau ketika token tidak di-set
             if (!callbackToken) {
-                throw new Error('XENDIT_CALLBACK_TOKEN is not set');
+                const nodeEnv = process.env.NODE_ENV || 'development';
+
+                if (nodeEnv === 'development') {
+                    logger.warn('XENDIT_CALLBACK_TOKEN is not set in development environment. Webhook signature verification skipped.');
+                    return true; // Skip verification in development
+                } else {
+                    logger.error('XENDIT_CALLBACK_TOKEN is not set in production environment');
+                    throw new Error('XENDIT_CALLBACK_TOKEN is not set');
+                }
             }
 
             const crypto = require('crypto');
@@ -134,7 +144,27 @@ const XenditHelper = {
                 .update(rawBody)
                 .digest('hex');
 
-            return hash === signature;
+            const isValid = hash === signature;
+
+            logger.info('Webhook signature verification:', {
+                isValid,
+                receivedSignature: signature ? signature.substring(0, 10) + '...' : 'missing',
+                calculatedSignature: hash ? hash.substring(0, 10) + '...' : 'missing',
+                rawBodyLength: rawBody ? rawBody.length : 0,
+                callbackTokenSet: !!callbackToken,
+                environment: process.env.NODE_ENV || 'development'
+            });
+
+            // Debug signature mismatch in development
+            if (!isValid && (process.env.NODE_ENV || 'development') === 'development') {
+                logger.debug('Signature verification debug:', {
+                    receivedSignature: signature,
+                    calculatedSignature: hash,
+                    rawBodySample: rawBody ? rawBody.substring(0, 100) + '...' : 'missing'
+                });
+            }
+
+            return isValid;
         } catch (error) {
             logger.error('Error verifying Xendit webhook signature:', error);
             return false;

@@ -12,6 +12,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: pbf-frontend
   REGION: asia-southeast2
+  REGISTRY_URL: asia-southeast2-docker.pkg.dev
 
 jobs:
   deploy:
@@ -21,14 +22,27 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
     - name: Setup Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
       with:
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
         project_id: ${{ secrets.GCP_PROJECT_ID }}
 
     - name: Configure Docker to use gcloud as credential helper
-      run: gcloud auth configure-docker
+      run: |
+        gcloud auth configure-docker
+        gcloud auth configure-docker $REGISTRY_URL
+
+    - name: Create Artifact Registry repository if not exists
+      run: |
+        gcloud artifacts repositories create $SERVICE_NAME \
+          --repository-format=docker \
+          --location=$REGION \
+          --description="Docker repository for $SERVICE_NAME" || echo "Repository already exists"
 
     - name: Build Docker image
       run: |
@@ -37,18 +51,18 @@ jobs:
           --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
           --build-arg VITE_PUSHER_KEY=${{ secrets.VITE_PUSHER_KEY }} \
           --build-arg VITE_PUSHER_CLUSTER=${{ secrets.VITE_PUSHER_CLUSTER }} \
-          -t gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
-          -t gcr.io/$PROJECT_ID/$SERVICE_NAME:latest .
+          -t $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:$GITHUB_SHA \
+          -t $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest .
 
-    - name: Push Docker image to Container Registry
+    - name: Push Docker image to Artifact Registry
       run: |
-        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
-        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
+        docker push $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:$GITHUB_SHA
+        docker push $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:latest
 
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy $SERVICE_NAME \
-          --image gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
+          --image $REGISTRY_URL/$PROJECT_ID/$SERVICE_NAME/$SERVICE_NAME:$GITHUB_SHA \
           --platform managed \
           --region $REGION \
           --allow-unauthenticated \
