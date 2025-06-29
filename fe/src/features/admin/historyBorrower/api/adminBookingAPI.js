@@ -1,4 +1,5 @@
-import { apiClient } from '@/shared/services/apiClient';
+import { apiClient } from '../../../../shared/services/apiClient';
+
 
 export const adminBookingAPI = {
 
@@ -7,16 +8,11 @@ export const adminBookingAPI = {
         return response;
     },
 
-    // GET /api/v1/bookings/admin
-    getAllBookings: async (params) => {
-        const response = await apiClient.get('/bookings/admin', { params });
-        return response;
-    },
 
     // POST /api/v1/bookings/admin/{id}/refund
     processRefund: async (id, refundData) => {
         const response = await apiClient.post(`/bookings/admin/${id}/refund`, refundData);
-        return response;
+        return response.data;
     },
 
     // GET /api/v1/bookings/admin/{id}/refund

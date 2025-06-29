@@ -74,5 +74,11 @@ export const bookingAPI = {
     getRefundDetails: async (bookingId) => {
         const response = await apiClient.get(`/bookings/${bookingId}/refund`);
         return response;
+    },
+
+    // POST /api/v1/bookings/{id}/refund - Process refund for a booking (user)
+    processRefund: async (bookingId, refundData) => {
+        const response = await apiClient.post(`/bookings/${bookingId}/refund`, refundData);
+        return response;
     }
 }; 

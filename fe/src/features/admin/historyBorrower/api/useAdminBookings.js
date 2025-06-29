@@ -170,8 +170,7 @@ export const useBookingRefund = () => {
                 return response.data;
             }
         } catch (err) {
-            const errorMessage = extractErrorMessage(err, 'Gagal memproses refund');
-            setError(errorMessage);
+            setError(extractErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -185,26 +184,26 @@ export const useBookingRefund = () => {
     };
 };
 
-export const useRefundDetails = () => {
+export const useAdminRefundDetails = () => {
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [refundDetails, setRefundDetails] = useState(null);
+    const [error, setError] = useState(null);
 
     const getRefundDetails = async (bookingId) => {
         setLoading(true);
         setError(null);
-
         try {
             const response = await adminBookingAPI.getRefundDetails(bookingId);
 
-            if (response.status === 'success') {
+            if (response?.status === 'success') {
                 setRefundDetails(response.data);
                 return response.data;
             }
-        } catch (err) {
-            const errorMessage = extractErrorMessage(err, 'Gagal mengambil detail refund');
+        } catch (error) {
+            const errorMessage = extractErrorMessage(error, 'Gagal memuat detail refund');
             setError(errorMessage);
-            throw err;
+            toast.error(errorMessage);
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -217,9 +216,9 @@ export const useRefundDetails = () => {
 
     return {
         getRefundDetails,
+        clearRefundDetails,
         refundDetails,
         loading,
-        error,
-        clearRefundDetails
+        error
     };
 }; 

@@ -356,4 +356,43 @@ export const useBookingRefund = () => {
         loading,
         error
     };
+};
+
+export const useRefundDetails = () => {
+    const [loading, setLoading] = useState(false);
+    const [refundDetails, setRefundDetails] = useState(null);
+    const [error, setError] = useState(null);
+
+    const getRefundDetails = async (bookingId) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await bookingAPI.getRefundDetails(bookingId);
+
+            if (response?.status === 'success') {
+                setRefundDetails(response.data);
+                return response.data;
+            }
+        } catch (error) {
+            const errorMessage = extractErrorMessage(error, 'Gagal memuat detail refund');
+            setError(errorMessage);
+            toast.error(errorMessage);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const clearRefundDetails = () => {
+        setRefundDetails(null);
+        setError(null);
+    };
+
+    return {
+        getRefundDetails,
+        clearRefundDetails,
+        refundDetails,
+        loading,
+        error
+    };
 }; 

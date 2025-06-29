@@ -16,34 +16,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup SSH Key
-      run: |
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        
-        # Debug: Check if private key exists
-        echo "Setting up SSH key..."
-        echo "${{ secrets.GCP_VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        # Debug: Check key format
-        echo "Checking SSH key format:"
-        head -1 ~/.ssh/id_rsa
-        tail -1 ~/.ssh/id_rsa
-        
-        # Add host to known_hosts
-        ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
-        
-        # Debug: Test SSH connection
-        echo "Testing SSH connection..."
-        ssh -v -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} 'echo "SSH test successful"' || echo "SSH connection failed"
-
     - name: Deploy to GCP VM
       run: |
+        # Install sshpass
+        sudo apt-get update && sudo apt-get install -y sshpass
+        
         echo "🚀 Deploy to VM: ${{ secrets.GCP_VM_IP }}"
         
         # Clone/update repo
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~
           if [ ! -d pbf-server ]; then
             git clone https://github.com/${{ github.repository }}.git pbf-server
@@ -55,7 +36,7 @@ jobs:
         '
         
         # Install dependencies
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           if ! command -v node >/dev/null; then
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -68,10 +49,11 @@ jobs:
             sudo npm install -g pm2
           fi
           pnpm install
+          pnpm run db:generate || echo "No db:generate script"
         '
         
         # Create config files
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           
           # PM2 config
@@ -102,7 +84,7 @@ jobs:
         '
         
         # Start app
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
+        sshpass -p '${{ secrets.GCP_VM_PASSWORD }}' ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_IP }} '
           cd ~/pbf-server/server
           pm2 stop pbf-server || true
           pm2 delete pbf-server || true
