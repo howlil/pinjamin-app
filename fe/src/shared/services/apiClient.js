@@ -2,7 +2,7 @@ import axios from 'axios';
 import { showToast, handleResponseError } from './apiErrorHandler';
 import { retryRequest } from './apiRetry';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IS_DEVELOPMENT = import.meta.env.DEV;
 
 const axiosInstance = axios.create({

@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(215, 215, 215, 0.3)',
+        borderBottomColor: '#E5E5E5',
     },
     itemCell: {
         fontSize: 11,
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     footer: {
         marginTop: 40,
         padding: 20,
-        backgroundColor: 'rgba(215, 215, 215, 0.1)',
+        backgroundColor: '#F8F8F8',
         borderRadius: 12,
         textAlign: 'center',
     },
@@ -321,7 +321,7 @@ const InvoicePDF = ({ invoiceData }) => {
                             marginTop: 8,
                             paddingTop: 8,
                             borderTopWidth: 1,
-                            borderTopColor: 'rgba(33, 209, 121, 0.3)'
+                            borderTopColor: '#21D179'
                         }}>
                             <Text style={{ fontSize: 10, color: '#666' }}>
                                 Status: LUNAS
