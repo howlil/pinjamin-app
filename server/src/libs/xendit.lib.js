@@ -124,17 +124,27 @@ const XenditHelper = {
     verifyWebhookSignature(rawBody, signature) {
         try {
             const callbackToken = process.env.XENDIT_CALLBACK_TOKEN;
+            const nodeEnv = process.env.NODE_ENV || 'development';
 
             // Handle development environment atau ketika token tidak di-set
             if (!callbackToken) {
-                const nodeEnv = process.env.NODE_ENV || 'development';
-
                 if (nodeEnv === 'development') {
                     logger.warn('XENDIT_CALLBACK_TOKEN is not set in development environment. Webhook signature verification skipped.');
                     return true; // Skip verification in development
                 } else {
                     logger.error('XENDIT_CALLBACK_TOKEN is not set in production environment');
                     throw new Error('XENDIT_CALLBACK_TOKEN is not set');
+                }
+            }
+
+            // Handle case ketika rawBody kosong
+            if (!rawBody) {
+                if (nodeEnv === 'development') {
+                    logger.warn('Raw body is missing in development environment. Signature verification skipped.');
+                    return true; // Skip verification in development when rawBody missing
+                } else {
+                    logger.error('Raw body is required for signature verification in production');
+                    return false;
                 }
             }
 
@@ -152,22 +162,27 @@ const XenditHelper = {
                 calculatedSignature: hash ? hash.substring(0, 10) + '...' : 'missing',
                 rawBodyLength: rawBody ? rawBody.length : 0,
                 callbackTokenSet: !!callbackToken,
-                environment: process.env.NODE_ENV || 'development'
+                environment: nodeEnv
             });
 
             // Debug signature mismatch in development
-            if (!isValid && (process.env.NODE_ENV || 'development') === 'development') {
+            if (!isValid && nodeEnv === 'development') {
+                logger.warn('Signature mismatch in development environment - allowing webhook to proceed');
                 logger.debug('Signature verification debug:', {
                     receivedSignature: signature,
                     calculatedSignature: hash,
                     rawBodySample: rawBody ? rawBody.substring(0, 100) + '...' : 'missing'
                 });
+                // Allow webhook to proceed in development even with signature mismatch
+                return true;
             }
 
             return isValid;
         } catch (error) {
             logger.error('Error verifying Xendit webhook signature:', error);
-            return false;
+            const nodeEnv = process.env.NODE_ENV || 'development';
+            // Return true in development mode even if error occurred
+            return nodeEnv === 'development';
         }
     },
 

@@ -7,15 +7,21 @@ const WebhookController = {
     // Handle Xendit unified webhook callback
     async handleXenditCallback(req, res) {
         try {
-            const rawBody = req.rawBody; // Use captured raw body untuk signature verification
             const signature = req.headers['x-callback-token'];
             const nodeEnv = process.env.NODE_ENV || 'development';
+
+            // Generate raw body untuk signature verification jika tidak tersedia
+            let rawBody = req.rawBody;
+            if (!rawBody && req.body) {
+                rawBody = JSON.stringify(req.body);
+            }
 
             logger.info('Xendit webhook received:', {
                 hasSignature: !!signature,
                 hasRawBody: !!rawBody,
                 rawBodyLength: rawBody ? rawBody.length : 0,
                 environment: nodeEnv,
+                externalId: req.body?.external_id || 'N/A',
                 webhookType: 'determining...'
             });
 
