@@ -1,132 +1,126 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
-    Container,
+    Box,
     VStack,
-    HStack,
-    Text,
-    useDisclosure,
-    IconButton,
-    Tooltip
+    Spinner,
+    Alert,
+    AlertIcon
 } from '@chakra-ui/react';
-import { Users, RefreshCw } from 'lucide-react';
-import toast from 'react-hot-toast';
-import ErrorState from '@shared/components/ErrorState';
-import BookingDetailModal from '@shared/components/BookingDetailModal';
+import { H1, H3 } from '@shared/components/Typography';
+import { usePendingBookings, useBookingApproval } from './api/usePendingBookings';
 import BorrowerTable from './components/BorrowerTable';
 import ApprovalModal from './components/ApprovalModal';
-import {
-    usePendingBookings,
-    useBookingApproval
-} from './api/useBorrowerManagement';
+import BookingDetailModal from '@shared/components/BookingDetailModal';
 
 const ManageBorrowerPage = () => {
-    // Modal state
-    const { isOpen: isApprovalOpen, onOpen: onApprovalOpen, onClose: onApprovalClose } = useDisclosure();
-    const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
-    const [modalConfig, setModalConfig] = useState({ type: '', booking: null });
-    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [modalConfig, setModalConfig] = useState({ type: null, booking: null });
 
-    // Hooks
     const {
-        bookings: pendingBookings,
-        loading: pendingLoading,
-        error: pendingError,
-        pagination: pendingPagination,
-        refresh,
-        handlePageChange
+        bookings,
+        loading: bookingsLoading,
+        error: bookingsError,
+        refetch: refetchBookings
     } = usePendingBookings();
 
-    const { approveBooking, loading: approvalLoading } = useBookingApproval();
+    const { approveOrRejectBooking, loading: approvalLoading } = useBookingApproval();
 
-    // Action handlers
-    const handleApprove = useCallback((booking) => {
+    const handleApprove = (booking) => {
         setModalConfig({ type: 'approve', booking });
-        onApprovalOpen();
-    }, [onApprovalOpen]);
+    };
 
-    const handleReject = useCallback((booking) => {
+    const handleReject = (booking) => {
         setModalConfig({ type: 'reject', booking });
-        onApprovalOpen();
-    }, [onApprovalOpen]);
+    };
 
-    const handleRefund = useCallback((booking) => {
-        setModalConfig({ type: 'refund', booking });
-        onApprovalOpen();
-    }, [onApprovalOpen]);
+    const handleViewDetail = (booking) => {
+        setModalConfig({ type: 'detail', booking });
+    };
 
-    const handleViewDetail = useCallback((booking) => {
-        setSelectedBooking(booking);
-        onDetailOpen();
-    }, [onDetailOpen]);
-
-    const handleModalConfirm = async (bookingId, data) => {
+    const handleConfirmAction = async (bookingId, data) => {
         try {
-            if (modalConfig.type === 'approve' || modalConfig.type === 'reject') {
-                await approveBooking(bookingId, data);
-                // Refresh data setelah approval
-                refresh();
-            } else if (modalConfig.type === 'refund') {
-                // Mock refund processing for now
-                console.log('Refund processed:', bookingId, data);
-                toast.success('Refund berhasil diproses');
-                refresh();
+            if (modalConfig.type === 'approve') {
+                await approveOrRejectBooking(bookingId, {
+                    bookingStatus: 'APPROVED',
+                    adminNotes: data.reason || ''
+                });
+            } else if (modalConfig.type === 'reject') {
+                await approveOrRejectBooking(bookingId, {
+                    bookingStatus: 'REJECTED',
+                    adminNotes: data.reason || ''
+                });
             }
+
+            setModalConfig({ type: null, booking: null });
+            refetchBookings(); // Refresh data after action
         } catch (error) {
-            console.error('Error processing action:', error);
+            console.error('Error processing booking:', error);
         }
     };
 
-    const handleRefresh = useCallback(() => {
-        refresh();
-    }, [refresh]);
-
-    if (pendingError) {
-        return (
-            <Container maxW="7xl" py={8}>
-                <ErrorState
-                    title="Error Loading Data"
-                    description={pendingError}
-                    onRetry={handleRefresh}
-                />
-            </Container>
-        );
-    }
+    const handleCloseModal = () => {
+        setModalConfig({ type: null, booking: null });
+    };
 
     return (
-        <Container maxW="7xl" py={8}>
-            <VStack spacing={6} align="stretch">
+        <Box px={{ base: 4, md: 6, lg: 8 }} py={8} minH="100vh">
+            <Box maxW="1200px" mx="auto">
+                <VStack spacing={6} align="stretch">
+                    {/* Header */}
+                    <VStack spacing={2} align="start">
+                        <H1 fontSize="2xl" fontWeight="700" color="#2A2A2A">
+                            Kelola Peminjam
+                        </H1>
+                        <H3 fontSize="md" color="#2A2A2A" opacity={0.7} fontWeight="400">
+                            Kelola persetujuan peminjaman gedung
+                        </H3>
+                    </VStack>
 
+                    <VStack spacing={6} align="stretch">
+                        {bookingsError && (
+                            <Alert status="error" borderRadius="16px">
+                                <AlertIcon />
+                                {bookingsError}
+                            </Alert>
+                        )}
 
-                {/* Table */}
-                <BorrowerTable
-                    bookings={pendingBookings}
-                    loading={pendingLoading}
-                    pagination={pendingPagination}
-                    onPageChange={handlePageChange}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                    onRefund={handleRefund}
-                    onViewDetail={handleViewDetail}
+                        {bookingsLoading ? (
+                            <Box display="flex" justifyContent="center" py={12}>
+                                <Spinner size="lg" color="#21D179" thickness="3px" />
+                            </Box>
+                        ) : (
+                            <BorrowerTable
+                                bookings={bookings}
+                                loading={bookingsLoading}
+                                onApprove={handleApprove}
+                                onReject={handleReject}
+                                onViewDetail={handleViewDetail}
+                            />
+                        )}
+                    </VStack>
+                </VStack>
+            </Box>
+
+            {/* Approval/Rejection Modal */}
+            {(modalConfig.type === 'approve' || modalConfig.type === 'reject') && (
+                <ApprovalModal
+                    isOpen={true}
+                    onClose={handleCloseModal}
+                    onConfirm={handleConfirmAction}
+                    booking={modalConfig.booking}
+                    type={modalConfig.type}
+                    loading={approvalLoading}
                 />
-            </VStack>
-
-            {/* Approval Modal */}
-            <ApprovalModal
-                isOpen={isApprovalOpen}
-                onClose={onApprovalClose}
-                booking={modalConfig.booking}
-                type={modalConfig.type}
-                loading={approvalLoading}
-                onConfirm={handleModalConfirm}
-            />
+            )}
 
             {/* Detail Modal */}
-            <BookingDetailModal
-                isOpen={isDetailOpen}
-                onClose={onDetailClose}
-                booking={selectedBooking}
-            />
-        </Container>
+            {modalConfig.type === 'detail' && (
+                <BookingDetailModal
+                    isOpen={true}
+                    onClose={handleCloseModal}
+                    booking={modalConfig.booking}
+                />
+            )}
+        </Box>
     );
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import notificationAPI from '../services/notificationAPI';
 import { useApiToast } from './useApiToast';
 import { useAuthStore } from '../store/authStore';
@@ -15,7 +15,11 @@ export const useNotifications = () => {
         itemsPerPage: 10
     });
 
-    const { showError, showSuccess } = useApiToast();
+    // Add refs for debouncing and preventing duplicate calls
+    const markAllAsReadInProgress = useRef(false);
+    const lastMarkAllAsReadTime = useRef(0);
+
+    const { showError, showSuccess, handleError } = useApiToast();
     const { isAuthenticated } = useAuthStore();
 
     // Fetch notifications
@@ -34,11 +38,11 @@ export const useNotifications = () => {
             }
         } catch (error) {
             console.error('Error fetching notifications:', error);
-            showError(error, 'Gagal memuat notifikasi');
+            handleError(error, 'Gagal memuat notifikasi');
         } finally {
             setLoading(false);
         }
-    }, [showError, isAuthenticated]);
+    }, [handleError, isAuthenticated]);
 
     // Fetch unread count
     const fetchUnreadCount = useCallback(async () => {
@@ -121,7 +125,7 @@ export const useNotifications = () => {
             // Revert unread count
             setUnreadCount(prev => prev + 1);
 
-            showError(error, 'Gagal menandai notifikasi sebagai dibaca');
+            handleError(error, 'Gagal menandai notifikasi sebagai dibaca');
         } finally {
             // Remove from marking set
             setMarkingAsRead(prev => {
@@ -130,12 +134,25 @@ export const useNotifications = () => {
                 return newSet;
             });
         }
-    }, [notifications, markingAsRead, showError, isAuthenticated]);
+    }, [notifications, markingAsRead, handleError, isAuthenticated]);
 
-    // Mark all notifications as read
+    // Mark all notifications as read - improved with debouncing and validation
     const markAllAsRead = useCallback(async () => {
         if (!isAuthenticated) {
             console.log('User not authenticated, cannot mark all as read');
+            return;
+        }
+
+        // Debouncing - prevent rapid successive calls
+        const now = Date.now();
+        if (now - lastMarkAllAsReadTime.current < 2000) { // 2 second debounce
+            console.log('markAllAsRead: Debouncing, ignoring rapid call');
+            return;
+        }
+
+        // Prevent duplicate concurrent calls
+        if (markAllAsReadInProgress.current) {
+            console.log('markAllAsRead: Already in progress, ignoring call');
             return;
         }
 
@@ -155,6 +172,10 @@ export const useNotifications = () => {
 
         console.log('Marking all notifications as read, unreadCount:', unreadCount);
 
+        // Set flags for debouncing and duplicate prevention
+        lastMarkAllAsReadTime.current = now;
+        markAllAsReadInProgress.current = true;
+
         try {
             setLoading(true);
 
@@ -169,13 +190,26 @@ export const useNotifications = () => {
             const response = await notificationAPI.markAllAsRead();
             console.log('Mark all as read API response:', response);
 
+            // Validate API response
+            if (response?.data?.updatedCount !== undefined) {
+                const updatedCount = response.data.updatedCount;
+                console.log(`Successfully marked ${updatedCount} notifications as read`);
+
+                if (updatedCount > 0) {
+                    showSuccess(`${updatedCount} notifikasi ditandai sebagai dibaca`);
+                } else {
+                    showSuccess('Semua notifikasi sudah dibaca');
+                }
+            } else {
+                console.warn('Unexpected API response structure:', response);
+                showSuccess('Semua notifikasi ditandai sebagai dibaca');
+            }
+
             // Refresh unread count and notifications after successful mark all
             await Promise.all([
                 fetchUnreadCount(),
                 fetchNotifications({ page: 1, limit: 10 })
             ]);
-
-            showSuccess('Semua notifikasi ditandai sebagai dibaca');
 
         } catch (error) {
             console.error('Error marking all notifications as read:', error);
@@ -189,11 +223,12 @@ export const useNotifications = () => {
             );
             setUnreadCount(unreadNotifications.length);
 
-            showError(error, 'Gagal menandai semua notifikasi sebagai dibaca');
+            handleError(error, 'Gagal menandai semua notifikasi sebagai dibaca');
         } finally {
             setLoading(false);
+            markAllAsReadInProgress.current = false;
         }
-    }, [notifications, unreadCount, showError, showSuccess, isAuthenticated, fetchUnreadCount, fetchNotifications]);
+    }, [notifications, unreadCount, handleError, showSuccess, isAuthenticated, fetchUnreadCount, fetchNotifications]);
 
     // Refresh notifications
     const refreshNotifications = useCallback(async () => {

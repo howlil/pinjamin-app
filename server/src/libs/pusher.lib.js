@@ -66,6 +66,17 @@ const PusherHelper = {
     // Send admin notification (for all admins)
     async sendAdminNotification(type, data) {
         try {
+            logger.info(`Attempting to send admin notification - type: ${type}`, {
+                dataKeys: data ? Object.keys(data) : [],
+                hasData: !!data,
+                pusherConfig: {
+                    appId: !!process.env.PUSHER_APP_ID,
+                    key: !!process.env.PUSHER_KEY,
+                    secret: !!process.env.PUSHER_SECRET,
+                    cluster: process.env.PUSHER_CLUSTER || 'ap1'
+                }
+            });
+
             const notificationData = {
                 type: 'ADMIN',
                 subType: type,
@@ -75,11 +86,38 @@ const PusherHelper = {
                 timestamp: new Date().toISOString()
             };
 
+            logger.info(`Admin notification payload:`, {
+                notificationType: notificationData.type,
+                subType: notificationData.subType,
+                title: notificationData.title,
+                message: notificationData.message,
+                hasData: !!notificationData.data,
+                timestamp: notificationData.timestamp
+            });
+
             await pusher.trigger('admin-channel', 'admin-notification', notificationData);
-            logger.info(`Admin notification sent - type: ${type}`);
+
+            logger.info(`Admin notification sent successfully - type: ${type}`, {
+                channel: 'admin-channel',
+                event: 'admin-notification',
+                subType: type,
+                timestamp: notificationData.timestamp
+            });
+
             return true;
         } catch (error) {
-            logger.error('Pusher admin notification error:', error);
+            logger.error('Pusher admin notification error:', {
+                error: error.message,
+                stack: error.stack,
+                type: type,
+                data: data,
+                pusherConfig: {
+                    appId: !!process.env.PUSHER_APP_ID,
+                    key: !!process.env.PUSHER_KEY,
+                    secret: !!process.env.PUSHER_SECRET,
+                    cluster: process.env.PUSHER_CLUSTER || 'ap1'
+                }
+            });
             throw error;
         }
     },
@@ -133,7 +171,12 @@ const PusherHelper = {
         const titles = {
             'NEW_BOOKING': 'Booking Baru',
             'PAYMENT_SUCCESS': 'Pembayaran Berhasil',
-            'REFUND_REQUEST': 'Permintaan Refund'
+            'REFUND_REQUEST': 'Permintaan Refund',
+            'REFUND_PROCESSED': 'Refund Diproses',
+            'BOOKING_APPROVED': 'Booking Disetujui',
+            'BOOKING_REJECTED': 'Booking Ditolak',
+            'BOOKING_EXPIRED': 'Booking Kedaluwarsa',
+            'BOOKING_COMPLETED': 'Booking Selesai'
         };
         return titles[type] || 'Notifikasi Admin';
     },
@@ -142,7 +185,12 @@ const PusherHelper = {
         const messages = {
             'NEW_BOOKING': `Booking baru untuk ${data.buildingName} oleh ${data.borrowerName} memerlukan persetujuan`,
             'PAYMENT_SUCCESS': `Pembayaran untuk booking ${data.buildingName} oleh ${data.borrowerName} berhasil`,
-            'REFUND_REQUEST': `Permintaan refund untuk booking ${data.buildingName}`
+            'REFUND_REQUEST': `Permintaan refund untuk booking ${data.buildingName}`,
+            'REFUND_PROCESSED': `Refund sebesar Rp ${data.refundAmount?.toLocaleString('id-ID')} untuk booking ${data.buildingName} oleh ${data.borrowerName} telah diproses. Alasan: ${data.refundReason}`,
+            'BOOKING_APPROVED': `Booking ${data.buildingName} oleh ${data.borrowerName} telah disetujui`,
+            'BOOKING_REJECTED': `Booking ${data.buildingName} oleh ${data.borrowerName} telah ditolak. Alasan: ${data.rejectionReason}`,
+            'BOOKING_EXPIRED': `Booking ${data.buildingName} oleh ${data.borrowerName} telah kedaluwarsa`,
+            'BOOKING_COMPLETED': `Booking ${data.buildingName} oleh ${data.borrowerName} telah selesai`
         };
         return messages[type] || 'Update admin tersedia';
     },

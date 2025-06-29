@@ -49,7 +49,22 @@ const NotificationController = {
         try {
             const userId = req.user.id;
 
+            // Log request details for debugging
+            logger.info('Mark all notifications as read request:', {
+                userId: userId,
+                hasBody: !!req.body,
+                bodyKeys: req.body ? Object.keys(req.body) : [],
+                contentType: req.get('Content-Type'),
+                method: req.method,
+                url: req.originalUrl
+            });
+
             const result = await NotificationService.markAsAllRead(userId);
+
+            logger.info('Mark all notifications as read result:', {
+                userId: userId,
+                updatedCount: result.updatedCount
+            });
 
             return ResponseHelper.success(res, 'Semua notifikasi berhasil ditandai sebagai dibaca', {
                 updatedCount: result.updatedCount

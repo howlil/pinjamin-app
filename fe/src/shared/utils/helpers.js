@@ -225,6 +225,133 @@ export const groupBy = (array, key) => {
     }, {});
 };
 
+// Notification utilities
+export const notificationUtils = {
+    // Validate notification object structure
+    validateNotification: (notification) => {
+        if (!notification || typeof notification !== 'object') {
+            return false;
+        }
+
+        const requiredFields = ['id', 'title', 'message', 'readStatus'];
+        return requiredFields.every(field => notification.hasOwnProperty(field));
+    },
+
+    // Count unread notifications from array
+    countUnreadNotifications: (notifications) => {
+        if (!Array.isArray(notifications)) {
+            console.warn('countUnreadNotifications: Expected array, got:', typeof notifications);
+            return 0;
+        }
+
+        return notifications.filter(notif =>
+            notificationUtils.validateNotification(notif) && notif.readStatus === 0
+        ).length;
+    },
+
+    // Debug notification state
+    debugNotificationState: (notifications, unreadCount, prefix = 'NOTIF_DEBUG') => {
+        console.group(`[${prefix}] Notification State Debug`);
+        console.log('Total notifications:', notifications?.length || 0);
+        console.log('API unreadCount:', unreadCount);
+
+        if (Array.isArray(notifications)) {
+            const localUnreadCount = notificationUtils.countUnreadNotifications(notifications);
+            console.log('Local unreadCount:', localUnreadCount);
+            console.log('Count mismatch:', localUnreadCount !== unreadCount);
+
+            const unreadNotifs = notifications.filter(n => n.readStatus === 0);
+            console.log('Unread notifications:', unreadNotifs);
+        }
+
+        console.groupEnd();
+    },
+
+    // Format notification for logging
+    formatNotificationForLogging: (notification) => {
+        if (!notificationUtils.validateNotification(notification)) {
+            return 'Invalid notification object';
+        }
+
+        return `[${notification.id}] ${notification.title} (${notification.readStatus === 0 ? 'UNREAD' : 'READ'})`;
+    }
+};
+
+// Refund utilities
+export const refundUtils = {
+    // Check if booking has refund
+    hasRefund: (booking) => {
+        // Check if booking has refund information
+        // Based on the API response structure, refund info could be in different places:
+
+        // 1. Direct refund field in booking
+        if (booking.refund && booking.refund.refundStatus) {
+            return true;
+        }
+
+        // 2. Refund status field directly in booking
+        if (booking.refundStatus && booking.refundStatus !== 'NO_REFUND' && booking.refundStatus !== null) {
+            return true;
+        }
+
+        // 3. Has refund boolean field
+        if (booking.hasRefund === true) {
+            return true;
+        }
+
+        // 4. Refund info in detail object
+        if (booking.detail && booking.detail.refund && booking.detail.refund.refundStatus) {
+            return true;
+        }
+
+        // 5. Refund ID exists (indicates refund has been processed)
+        if (booking.refundId || (booking.refund && booking.refund.id)) {
+            return true;
+        }
+
+        // 6. Check for any refund-related fields that indicate refund exists
+        if (booking.refundAmount || booking.refundDate || booking.refundReason) {
+            return true;
+        }
+
+        return false;
+    },
+
+    // Check if refund button should be shown
+    shouldShowRefundButton: (booking) => {
+        const isRejected = booking.status?.toUpperCase() === 'REJECTED';
+        return isRejected && !refundUtils.hasRefund(booking);
+    },
+
+    // Get refund status display text
+    getRefundStatusText: (refundStatus) => {
+        const statusMap = {
+            'NO_REFUND': 'Tidak Ada Refund',
+            'PENDING': 'Menunggu Proses',
+            'PROCESSING': 'Sedang Diproses',
+            'COMPLETED': 'Selesai',
+            'SUCCEEDED': 'Berhasil',
+            'FAILED': 'Gagal',
+            'REJECTED': 'Ditolak'
+        };
+        return statusMap[refundStatus] || refundStatus;
+    },
+
+    // Get refund status color config
+    getRefundStatusColor: (refundStatus) => {
+        const colorMap = {
+            'NO_REFUND': { color: 'gray', bg: '#9CA3AF' },
+            'PENDING': { color: 'yellow', bg: '#F59E0B' },
+            'PROCESSING': { color: 'blue', bg: '#3B82F6' },
+            'COMPLETED': { color: 'green', bg: '#21D179' },
+            'SUCCEEDED': { color: 'green', bg: '#21D179' },
+            'FAILED': { color: 'red', bg: '#EF4444' },
+            'REJECTED': { color: 'red', bg: '#EF4444' }
+        };
+        return colorMap[refundStatus] || colorMap['NO_REFUND'];
+    }
+};
+
 export default {
     formatCurrency,
     formatDate,

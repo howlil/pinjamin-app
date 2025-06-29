@@ -50,6 +50,13 @@ const styles = StyleSheet.create({
         textAlign: 'right',
         marginTop: 4,
     },
+    transactionId: {
+        fontSize: 10,
+        color: '#999',
+        textAlign: 'right',
+        marginTop: 2,
+        fontFamily: 'Courier',
+    },
     section: {
         marginBottom: 20,
     },
@@ -177,6 +184,19 @@ const styles = StyleSheet.create({
         marginTop: 10,
         width: 120,
         alignSelf: 'flex-end',
+    },
+    infoSection: {
+        backgroundColor: '#F0F9FF',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+        border: '1pt solid #0EA5E9',
+    },
+    infoText: {
+        fontSize: 10,
+        color: '#0369A1',
+        textAlign: 'center',
+        lineHeight: 1.3,
     }
 });
 
@@ -222,6 +242,17 @@ const InvoicePDF = ({ invoiceData }) => {
         }
     };
 
+    const formatPaymentMethod = (method) => {
+        const methodMap = {
+            'BANK_TRANSFER': 'Transfer Bank',
+            'CREDIT_CARD': 'Kartu Kredit',
+            'DEBIT_CARD': 'Kartu Debit',
+            'E_WALLET': 'E-Wallet',
+            'CASH': 'Tunai'
+        };
+        return methodMap[method] || method?.replace('_', ' ') || 'Unknown';
+    };
+
     return (
         <Document>
             <Page size="A4" style={styles.page}>
@@ -236,20 +267,37 @@ const InvoicePDF = ({ invoiceData }) => {
                             <Text style={{ fontSize: 10, color: '#666', marginTop: 4 }}>
                                 Sistem Peminjaman Gedung
                             </Text>
+                            <Text style={{ fontSize: 9, color: '#999', marginTop: 2 }}>
+                                Universitas Andalas
+                            </Text>
                         </View>
                         <View>
                             <Text style={styles.invoiceTitle}>INVOICE</Text>
                             <Text style={styles.invoiceNumber}>
                                 {invoiceData.invoiceNumber}
                             </Text>
+                            {invoiceData.transactionId && (
+                                <Text style={styles.transactionId}>
+                                    TXN: {invoiceData.transactionId.slice(0, 8)}...
+                                </Text>
+                            )}
                             <Text style={styles.date}>
                                 {formatDate(invoiceData.date)}
                             </Text>
                             <View style={styles.paymentMethod}>
-                                <Text>{invoiceData.paymentMethod?.replace('_', ' ')}</Text>
+                                <Text>{formatPaymentMethod(invoiceData.paymentMethod)}</Text>
                             </View>
                         </View>
                     </View>
+
+                    {/* Transaction Info */}
+                    {invoiceData.transactionId && (
+                        <View style={styles.infoSection}>
+                            <Text style={styles.infoText}>
+                                ID Transaksi: {invoiceData.transactionId}
+                            </Text>
+                        </View>
+                    )}
 
                     {/* Customer Information */}
                     <View style={styles.section}>
@@ -327,7 +375,7 @@ const InvoicePDF = ({ invoiceData }) => {
                                 Status: LUNAS
                             </Text>
                             <Text style={{ fontSize: 10, color: '#666' }}>
-                                Metode: {invoiceData.paymentMethod?.replace('_', ' ')}
+                                Metode: {formatPaymentMethod(invoiceData.paymentMethod)}
                             </Text>
                         </View>
                     </View>
@@ -339,11 +387,16 @@ const InvoicePDF = ({ invoiceData }) => {
                             untuk peminjaman gedung. Harap simpan invoice ini untuk keperluan administrasi.
                         </Text>
                         <Text style={[styles.footerText, { marginTop: 8, fontWeight: 'bold' }]}>
-                            PINJAMIN - Sistem Peminjaman Gedung
+                            PINJAMIN - Sistem Peminjaman Gedung Universitas Andalas
                         </Text>
                         <Text style={[styles.footerText, { fontSize: 9, marginTop: 4 }]}>
                             Dokumen ini dibuat secara otomatis pada {formatDate(invoiceData.date)}
                         </Text>
+                        {invoiceData.transactionId && (
+                            <Text style={[styles.footerText, { fontSize: 8, marginTop: 2, fontFamily: 'Courier' }]}>
+                                Ref: {invoiceData.transactionId}
+                            </Text>
+                        )}
                     </View>
                 </View>
             </Page>

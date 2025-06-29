@@ -24,7 +24,6 @@ const BorrowerTable = ({
     onPageChange,
     onApprove,
     onReject,
-    onRefund,
     onViewDetail
 }) => {
     if (loading) {
@@ -146,7 +145,6 @@ const BorrowerTable = ({
                                     booking={booking}
                                     onApprove={onApprove}
                                     onReject={onReject}
-                                    onRefund={onRefund}
                                     onViewDetail={onViewDetail}
                                 />
                             ))}

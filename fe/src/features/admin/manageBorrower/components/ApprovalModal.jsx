@@ -23,7 +23,7 @@ const ApprovalModal = ({
     isOpen,
     onClose,
     booking,
-    type, // 'approve', 'reject', or 'refund'
+    type, // 'approve' or 'reject'
     loading = false,
     onConfirm
 }) => {
@@ -35,17 +35,12 @@ const ApprovalModal = ({
     };
 
     const handleConfirm = () => {
-        if (type === 'approve') {
-            onConfirm(booking.bookingId, { bookingStatus: 'APPROVED' });
-        } else if (type === 'reject') {
-            onConfirm(booking.bookingId, {
-                bookingStatus: 'REJECTED',
-                rejectionReason: reason
-            });
-        } else if (type === 'refund') {
-            onConfirm(booking.bookingId, { refundReason: reason });
+        if (type === 'reject' && !reason.trim()) {
+            return; // Don't proceed if rejection reason is empty
         }
-        handleClose();
+        onConfirm(booking.bookingId, { reason: reason.trim() });
+        setReason(''); // Reset after confirmation
+        onClose();
     };
 
     const getModalConfig = () => {
@@ -64,22 +59,12 @@ const ApprovalModal = ({
                     title: 'Tolak Peminjaman',
                     icon: <X size={24} color="#EF4444" />,
                     color: 'red',
-                    message: 'Peminjaman akan ditolak. Pastikan Anda memberikan alasan yang jelas.',
+                    message: 'Peminjaman akan ditolak. Alasan penolakan wajib diisi.',
                     confirmText: 'Tolak',
                     showReason: true,
                     reasonLabel: 'Alasan Penolakan',
-                    reasonPlaceholder: 'Masukkan alasan penolakan peminjaman...'
-                };
-            case 'refund':
-                return {
-                    title: 'Proses Refund',
-                    icon: <DollarSign size={24} color="#FF8C00" />,
-                    color: 'orange',
-                    message: 'Refund akan diproses untuk peminjaman yang ditolak ini.',
-                    confirmText: 'Proses Refund',
-                    showReason: true,
-                    reasonLabel: 'Alasan Refund',
-                    reasonPlaceholder: 'Masukkan alasan refund...'
+                    reasonPlaceholder: 'Masukkan alasan penolakan peminjaman...',
+                    reasonRequired: true
                 };
             default:
                 return {};
@@ -163,7 +148,7 @@ const ApprovalModal = ({
                         <Divider />
 
                         {/* Message */}
-                        <Alert status="info" borderRadius="12px">
+                        <Alert status={config.color === 'red' ? 'warning' : 'info'} borderRadius="12px">
                             <AlertIcon />
                             <Text fontSize="sm">{config.message}</Text>
                         </Alert>

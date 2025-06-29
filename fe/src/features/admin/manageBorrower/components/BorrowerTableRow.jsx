@@ -6,13 +6,12 @@ import {
     Badge,
     VStack,
     HStack,
-    Button,
     Tooltip,
     IconButton
 } from '@chakra-ui/react';
-import { Check, X, Eye, DollarSign } from 'lucide-react';
+import { Check, X, Eye } from 'lucide-react';
 
-const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund, onViewDetail }) => {
+const BorrowerTableRow = ({ booking, onApprove, onReject, onViewDetail }) => {
     const getStatusColor = (status) => {
         switch (status?.toUpperCase()) {
             case 'PROCESSING':
@@ -63,13 +62,8 @@ const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund, onViewDetail
         onReject(booking);
     };
 
-    const handleRefund = () => {
-        onRefund(booking);
-    };
-
     const statusConfig = getStatusColor(booking.status);
     const isProcessing = booking.status?.toUpperCase() === 'PROCESSING';
-    const isRejected = booking.status?.toUpperCase() === 'REJECTED';
 
     return (
         <Tr _hover={{ bg: 'rgba(33, 209, 121, 0.02)' }} transition="all 0.2s ease">
@@ -172,22 +166,6 @@ const BorrowerTableRow = ({ booking, onApprove, onReject, onRefund, onViewDetail
                                 />
                             </Tooltip>
                         </>
-                    )}
-
-                    {/* Refund Action for Rejected */}
-                    {isRejected && (
-                        <Tooltip label="Proses Refund">
-                            <Button
-                                leftIcon={<DollarSign size={14} />}
-                                size="sm"
-                                colorScheme="orange"
-                                variant="outline"
-                                onClick={handleRefund}
-                                fontSize="xs"
-                            >
-                                Refund
-                            </Button>
-                        </Tooltip>
                     )}
                 </HStack>
             </Td>

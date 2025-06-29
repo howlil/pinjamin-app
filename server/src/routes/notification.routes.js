@@ -20,7 +20,7 @@ router.get('/notifications/unread-count',
 );
 
 // Mark all notifications as read
-router.patch('/notifications/mark-all-read',
+router.patch('/notifications/mark-all-as-read',
     AuthMiddleware.authenticate,
     NotificationController.markAsAllRead
 );

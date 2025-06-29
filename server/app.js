@@ -19,19 +19,20 @@ app.use(cors({
     origin: "*",
     credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Middleware to handle empty/null body for specific endpoints
+// Conditional JSON parsing - skip untuk endpoint tertentu
 app.use((req, res, next) => {
-    if (req.method === 'PATCH' && req.url.includes('/notifications/mark-all-read')) {
-        // Ensure body is an object for this endpoint
-        if (!req.body || typeof req.body !== 'object') {
-            req.body = {};
-        }
+    // Skip JSON parsing untuk endpoint mark-all-as-read
+    if (req.path === '/api/v1/notifications/mark-all-as-read' && req.method === 'PATCH') {
+        req.body = {};
+        return next();
     }
-    next();
+
+    // Untuk endpoint lainnya, gunakan JSON parsing normal
+    express.json()(req, res, next);
 });
+
+app.use(express.urlencoded({ extended: true }));
 
 // Morgan logging configuration
 app.use(morgan('combined', {
@@ -101,19 +102,38 @@ app.get('/api-docs.json', (req, res) => {
 
 // JSON parsing error handler
 app.use((err, req, res, next) => {
+    // Handle JSON parsing errors
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        // Special handling for mark-all-read endpoint - it doesn't need a body
-        if (req.method === 'PATCH' && req.url.includes('/notifications/mark-all-read')) {
-            req.body = {};
-            return next(); // Continue to the route handler
-        }
+        logger.error('JSON parsing error:', {
+            message: err.message,
+            url: req.originalUrl,
+            method: req.method,
+            body: err.body,
+            contentType: req.get('Content-Type'),
+            userAgent: req.get('User-Agent')
+        });
 
-        logger.error('JSON parsing error:', err.message);
         return res.status(400).json({
             status: 'error',
-            message: 'Invalid JSON format in request body'
+            message: 'Format JSON tidak valid dalam request body'
         });
     }
+
+    // Handle other body parsing errors
+    if (err.type === 'entity.parse.failed') {
+        logger.error('Body parsing error:', {
+            message: err.message,
+            url: req.originalUrl,
+            method: req.method,
+            contentType: req.get('Content-Type')
+        });
+
+        return res.status(400).json({
+            status: 'error',
+            message: 'Request body tidak dapat diproses'
+        });
+    }
+
     next(err);
 });
 

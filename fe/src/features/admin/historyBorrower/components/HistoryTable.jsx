@@ -32,8 +32,6 @@ import BookingDetailModal from '@shared/components/BookingDetailModal';
 
 const HistoryTable = ({ bookings, loading, onRefresh }) => {
     const [selectedBooking, setSelectedBooking] = useState(null);
-    const [refundReason, setRefundReason] = useState('');
-    const { isOpen, onOpen, onClose } = useDisclosure();
     const {
         isOpen: isDetailModalOpen,
         onOpen: onDetailModalOpen,
@@ -77,10 +75,46 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
         }
     };
 
-    const handleRefundClick = (booking) => {
-        setSelectedBooking(booking);
-        setRefundReason('');
-        onOpen();
+    const hasRefund = (booking) => {
+        // Check if booking has refund information
+        // Based on the API response structure, refund info could be in different places:
+
+        // 1. Direct refund field in booking
+        if (booking.refund && booking.refund.refundStatus) {
+            return true;
+        }
+
+        // 2. Refund status field directly in booking
+        if (booking.refundStatus && booking.refundStatus !== 'NO_REFUND' && booking.refundStatus !== null) {
+            return true;
+        }
+
+        // 3. Has refund boolean field
+        if (booking.hasRefund === true) {
+            return true;
+        }
+
+        // 4. Refund info in detail object
+        if (booking.detail && booking.detail.refund && booking.detail.refund.refundStatus) {
+            return true;
+        }
+
+        // 5. Refund ID exists (indicates refund has been processed)
+        if (booking.refundId || (booking.refund && booking.refund.id)) {
+            return true;
+        }
+
+        // 6. Check for any refund-related fields that indicate refund exists
+        if (booking.refundAmount || booking.refundDate || booking.refundReason) {
+            return true;
+        }
+
+        return false;
+    };
+
+    // Helper function to check if refund button should be shown
+    const shouldShowRefundButton = (booking) => {
+        return booking.status === 'REJECTED' && !hasRefund(booking);
     };
 
     const handleDetailClick = (booking) => {
@@ -91,29 +125,6 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
     const handleRefundDetailClick = (booking) => {
         setSelectedBooking(booking);
         onRefundDetailModalOpen();
-    };
-
-    const handleRefund = async () => {
-        if (!refundReason.trim()) {
-            toast({
-                title: 'Error',
-                description: 'Alasan refund harus diisi',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
-            return;
-        }
-
-        try {
-            await processRefund(selectedBooking.bookingId, {
-                refundReason: refundReason.trim()
-            });
-            onClose();
-            onRefresh();
-        } catch (error) {
-            // Error handling is done in the hook
-        }
     };
 
     const formatDate = (dateString) => {
@@ -251,33 +262,6 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                                                 onClick={() => handleRefundDetailClick(booking)}
                                             />
                                         </Tooltip>
-
-                                        {booking.status === 'REJECTED' && (
-                                            <Tooltip label="Proses Refund">
-                                                <Button
-                                                    leftIcon={<RefreshCw size={16} />}
-                                                    size="sm"
-                                                    bg="#F59E0B"
-                                                    color="white"
-                                                    borderRadius="9999px"
-                                                    fontFamily="Inter, sans-serif"
-                                                    fontWeight="600"
-                                                    fontSize="xs"
-                                                    _hover={{
-                                                        bg: "#D97706",
-                                                        transform: "translateY(-1px)",
-                                                        boxShadow: "0 2px 8px rgba(245, 158, 11, 0.3)"
-                                                    }}
-                                                    _active={{
-                                                        transform: "translateY(0)"
-                                                    }}
-                                                    transition="all 0.2s ease"
-                                                    onClick={() => handleRefundClick(booking)}
-                                                >
-                                                    Refund
-                                                </Button>
-                                            </Tooltip>
-                                        )}
                                     </HStack>
                                 </Td>
                             </Tr>
@@ -285,257 +269,6 @@ const HistoryTable = ({ bookings, loading, onRefresh }) => {
                     </Tbody>
                 </Table>
             </Box>
-
-            {/* Refund Modal */}
-            <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
-                <ModalOverlay
-                    bg="rgba(215, 215, 215, 0.5)"
-                    backdropFilter="blur(10px)"
-                />
-                <ModalContent
-                    bg="rgba(255, 255, 255, 0.95)"
-                    backdropFilter="blur(15px)"
-                    borderRadius="24px"
-                    border="1px solid rgba(215, 215, 215, 0.5)"
-                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.12)"
-                    fontFamily="Inter, sans-serif"
-                    mx={4}
-                >
-                    <ModalHeader pb={2} pt={6}>
-                        <Text
-                            fontSize="xl"
-                            fontWeight="700"
-                            color="#2A2A2A"
-                            fontFamily="Inter, sans-serif"
-                        >
-                            Proses Refund
-                        </Text>
-                    </ModalHeader>
-                    <ModalCloseButton />
-
-                    <ModalBody pb={4}>
-                        <VStack spacing={5} align="stretch">
-                            {/* Detail Peminjaman */}
-                            <Box>
-                                <Text
-                                    fontSize="sm"
-                                    fontWeight="600"
-                                    color="#2A2A2A"
-                                    mb={3}
-                                    fontFamily="Inter, sans-serif"
-                                >
-                                    Detail Peminjaman:
-                                </Text>
-                                <Box
-                                    bg="rgba(255, 255, 255, 0.8)"
-                                    backdropFilter="blur(10px)"
-                                    borderRadius="24px"
-                                    border="1px solid rgba(215, 215, 215, 0.3)"
-                                    p={4}
-                                >
-                                    <VStack align="start" spacing={3}>
-                                        <HStack spacing={3} w="full">
-                                            <Text
-                                                fontSize="sm"
-                                                color="#2A2A2A"
-                                                opacity={0.7}
-                                                fontWeight="500"
-                                                minW="80px"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                Peminjam:
-                                            </Text>
-                                            <Text
-                                                fontSize="sm"
-                                                fontWeight="600"
-                                                color="#2A2A2A"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                {selectedBooking?.detail?.borrower?.fullName || 'N/A'}
-                                            </Text>
-                                        </HStack>
-                                        <HStack spacing={3} w="full">
-                                            <Text
-                                                fontSize="sm"
-                                                color="#2A2A2A"
-                                                opacity={0.7}
-                                                fontWeight="500"
-                                                minW="80px"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                Gedung:
-                                            </Text>
-                                            <Text
-                                                fontSize="sm"
-                                                fontWeight="600"
-                                                color="#2A2A2A"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                {selectedBooking?.detail?.building?.buildingName || 'N/A'}
-                                            </Text>
-                                        </HStack>
-                                        <HStack spacing={3} w="full">
-                                            <Text
-                                                fontSize="sm"
-                                                color="#2A2A2A"
-                                                opacity={0.7}
-                                                fontWeight="500"
-                                                minW="80px"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                Kegiatan:
-                                            </Text>
-                                            <Text
-                                                fontSize="sm"
-                                                fontWeight="600"
-                                                color="#2A2A2A"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                {selectedBooking?.activityName}
-                                            </Text>
-                                        </HStack>
-                                        <HStack spacing={3} w="full">
-                                            <Text
-                                                fontSize="sm"
-                                                color="#2A2A2A"
-                                                opacity={0.7}
-                                                fontWeight="500"
-                                                minW="80px"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                Tanggal:
-                                            </Text>
-                                            <Text
-                                                fontSize="sm"
-                                                fontWeight="600"
-                                                color="#2A2A2A"
-                                                fontFamily="Inter, sans-serif"
-                                            >
-                                                {formatDate(selectedBooking?.startDate)}
-                                                {selectedBooking?.endDate && selectedBooking?.endDate !== selectedBooking?.startDate &&
-                                                    ` - ${formatDate(selectedBooking?.endDate)}`
-                                                }
-                                            </Text>
-                                        </HStack>
-                                    </VStack>
-                                </Box>
-                            </Box>
-
-                            {/* Alasan Refund */}
-                            <Box>
-                                <Text
-                                    fontSize="sm"
-                                    fontWeight="600"
-                                    color="#2A2A2A"
-                                    mb={3}
-                                    fontFamily="Inter, sans-serif"
-                                >
-                                    Alasan Refund: <Text as="span" color="#EF4444">*</Text>
-                                </Text>
-                                <Textarea
-                                    value={refundReason}
-                                    onChange={(e) => setRefundReason(e.target.value)}
-                                    placeholder="Masukkan alasan refund..."
-                                    rows={4}
-                                    resize="vertical"
-                                    bg="rgba(255, 255, 255, 0.8)"
-                                    backdropFilter="blur(10px)"
-                                    border="1px solid rgba(215, 215, 215, 0.5)"
-                                    borderRadius="24px"
-                                    fontFamily="Inter, sans-serif"
-                                    fontSize="sm"
-                                    p={4}
-                                    _placeholder={{
-                                        color: "#999",
-                                        opacity: 0.8
-                                    }}
-                                    _focus={{
-                                        borderColor: "#21D179",
-                                        boxShadow: "0 0 0 1px #21D179",
-                                        bg: "rgba(255, 255, 255, 0.95)"
-                                    }}
-                                    _hover={{
-                                        borderColor: "rgba(33, 209, 121, 0.6)"
-                                    }}
-                                />
-                                {!refundReason.trim() && (
-                                    <Text
-                                        fontSize="xs"
-                                        color="#EF4444"
-                                        mt={2}
-                                        fontFamily="Inter, sans-serif"
-                                    >
-                                        Alasan refund wajib diisi
-                                    </Text>
-                                )}
-                            </Box>
-                        </VStack>
-                    </ModalBody>
-
-                    <ModalFooter
-                        justifyContent="space-between"
-                        gap={3}
-                        pt={2}
-                        pb={6}
-                    >
-                        <Button
-                            onClick={onClose}
-                            isDisabled={refundLoading}
-                            bg="rgba(215, 215, 215, 0.5)"
-                            backdropFilter="blur(10px)"
-                            color="#2A2A2A"
-                            borderRadius="9999px"
-                            fontFamily="Inter, sans-serif"
-                            fontWeight="600"
-                            w="48%"
-                            h="48px"
-                            border="1px solid rgba(215, 215, 215, 0.5)"
-                            _hover={{
-                                bg: "rgba(215, 215, 215, 0.8)",
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-                            }}
-                            _active={{
-                                transform: "translateY(0)"
-                            }}
-                            transition="all 0.2s ease"
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            onClick={handleRefund}
-                            isLoading={refundLoading}
-                            loadingText="Memproses..."
-                            bg="#F59E0B"
-                            color="white"
-                            borderRadius="9999px"
-                            fontFamily="Inter, sans-serif"
-                            fontWeight="600"
-                            w="48%"
-                            h="48px"
-                            isDisabled={!refundReason.trim()}
-                            _hover={{
-                                bg: "#D97706",
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
-                            }}
-                            _active={{
-                                transform: "translateY(0)"
-                            }}
-                            _disabled={{
-                                bg: "#D1D5DB",
-                                color: "#9CA3AF",
-                                cursor: "not-allowed",
-                                transform: "none",
-                                boxShadow: "none"
-                            }}
-                            transition="all 0.2s ease"
-                        >
-                            Proses Refund
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
 
             {/* Detail Modal */}
             <BookingDetailModal

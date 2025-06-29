@@ -977,7 +977,11 @@ const BookingService = {
             const booking = await prisma.booking.findUnique({
                 where: { id: bookingId },
                 include: {
-                    payment: true,
+                    payment: {
+                        include: {
+                            refund: true
+                        }
+                    },
                     building: true,
                     user: true
                 }
@@ -996,23 +1000,55 @@ const BookingService = {
             }
 
             // Check if refund already exists for this payment
-            const existingRefund = await prisma.refund.findUnique({
-                where: { paymentId: booking.payment.id }
-            });
+            if (booking.payment.refund) {
+                // If booking was already rejected and refund exists, inform user
+                if (booking.bookingStatus === 'REJECTED') {
+                    throw new Error(`Booking ini sudah ditolak dan refund sudah diproses otomatis. Refund sebesar Rp ${booking.payment.refund.refundAmount.toLocaleString('id-ID')} dengan alasan: "${booking.payment.refund.refundReason}"`);
+                }
 
-            if (existingRefund) {
+                // If booking was cancelled and refund exists
+                if (booking.bookingStatus === 'CANCELLED') {
+                    throw new Error(`Refund untuk booking ini sudah pernah diproses sebesar Rp ${booking.payment.refund.refundAmount.toLocaleString('id-ID')} dengan alasan: "${booking.payment.refund.refundReason}"`);
+                }
+
+                // Generic message for other cases
                 throw new Error('Refund untuk booking ini sudah pernah diproses');
             }
 
-            // Create refund with Xendit (if supported)
-            const refundData = {
-                invoice_id: booking.payment.xenditTransactionId,
-                reason: refundReason,
-                amount: booking.payment.totalAmount
-            };
+            // Check if booking is in valid status for manual refund
+            if (booking.bookingStatus === 'REJECTED') {
+                throw new Error('Booking yang sudah ditolak tidak bisa direfund manual. Refund sudah diproses otomatis saat penolakan.');
+            }
 
-            // For now, we'll mark as refunded without actually calling Xendit
-            // In production, you would call Xendit's refund API here
+            logger.info(`Processing manual refund for booking: ${bookingId}, amount: ${booking.payment.totalAmount}`);
+
+            // Create refund dengan Xendit API (REAL REFUND)
+            let xenditRefundId = `manual-refund-${uuidv4()}`;
+            let refundStatus = 'SUCCEEDED';
+
+            try {
+                // Call Xendit refund API untuk refund yang sebenarnya
+                const refundData = {
+                    invoiceId: booking.payment.xenditTransactionId,
+                    reason: refundReason,
+                    amount: booking.payment.totalAmount
+                };
+
+                const XenditHelper = require('../libs/xendit.lib');
+                const xenditRefund = await XenditHelper.createRefund(refundData);
+
+                if (xenditRefund && xenditRefund.id) {
+                    xenditRefundId = xenditRefund.id;
+                    refundStatus = xenditRefund.status || 'SUCCEEDED';
+                    logger.info(`Xendit manual refund created successfully: ${xenditRefundId}`);
+                } else {
+                    logger.warn(`Xendit manual refund failed, using manual refund for booking: ${bookingId}`);
+                }
+            } catch (xenditError) {
+                logger.error('Xendit manual refund API error:', xenditError);
+                logger.warn(`Falling back to manual refund for booking: ${bookingId}`);
+                // Continue with manual refund jika Xendit gagal
+            }
 
             // Create refund record
             const refundId = uuidv4();
@@ -1021,9 +1057,9 @@ const BookingService = {
                     id: refundId,
                     paymentId: booking.payment.id,
                     refundAmount: booking.payment.totalAmount,
-                    refundStatus: 'SUCCEEDED',
+                    refundStatus: refundStatus,
                     refundReason: refundReason,
-                    xenditRefundTransactionId: `refund-${refundId}`,
+                    xenditRefundTransactionId: xenditRefundId,
                     refundDate: moment().format('DD-MM-YYYY')
                 }
             });
@@ -1037,8 +1073,10 @@ const BookingService = {
                 }
             });
 
-            // Send notifications
+            // Send notifications dengan enhanced logging
             try {
+                logger.info(`Sending manual refund notifications for booking: ${bookingId}`);
+
                 // Notification for user
                 await NotificationService.createRefundNotification(booking.userId, {
                     buildingName: booking.building.buildingName,
@@ -1047,7 +1085,7 @@ const BookingService = {
                     refundReason: refundReason
                 });
 
-                // Notification for admin
+                // Enhanced admin notification
                 await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
                     bookingId: bookingId,
                     buildingName: booking.building.buildingName,
@@ -1055,19 +1093,25 @@ const BookingService = {
                     borrowerEmail: booking.user.email,
                     refundAmount: booking.payment.totalAmount,
                     refundReason: refundReason,
+                    refundType: 'MANUAL_REFUND',
+                    xenditRefundId: xenditRefundId,
+                    timestamp: new Date().toISOString(),
                     action: 'MANUAL_REFUND'
                 });
+
+                logger.info(`Manual refund notifications sent successfully for booking: ${bookingId}`);
             } catch (notificationError) {
-                logger.warn('Failed to send refund notifications:', notificationError);
+                logger.error('Failed to send manual refund notifications:', notificationError);
             }
 
-            logger.info(`Refund processed for booking: ${bookingId}`);
+            logger.info(`Manual refund processed successfully for booking: ${bookingId}, xendit ID: ${xenditRefundId}`);
 
             return {
                 bookingId: bookingId,
                 buildingName: booking.building.buildingName,
                 refundAmount: booking.payment.totalAmount,
                 refundReason: refundReason,
+                xenditRefundId: xenditRefundId,
                 status: 'REFUNDED'
             };
         } catch (error) {
@@ -1082,31 +1126,75 @@ const BookingService = {
             const booking = await prisma.booking.findUnique({
                 where: { id: bookingId },
                 include: {
-                    payment: true,
-                    building: true
+                    payment: {
+                        include: {
+                            refund: true
+                        }
+                    },
+                    building: true,
+                    user: true
                 }
             });
 
             if (!booking || !booking.payment || booking.payment.paymentStatus !== 'PAID') {
+                logger.info(`Skipping automatic refund for booking ${bookingId}: No payment or payment not PAID`);
                 return;
             }
 
-            // Create refund record for automatic refund
+            // Check if refund already exists to prevent duplicate
+            if (booking.payment.refund) {
+                logger.info(`Skipping automatic refund for booking ${bookingId}: Refund already exists`);
+                return;
+            }
+
+            logger.info(`Processing automatic refund for booking: ${bookingId}, amount: ${booking.payment.totalAmount}`);
+
+            // Create refund dengan Xendit API (REAL REFUND)
+            let xenditRefundId = `auto-refund-${uuidv4()}`;
+            let refundStatus = 'SUCCEEDED';
+
+            try {
+                // Call Xendit refund API untuk refund yang sebenarnya
+                const refundData = {
+                    invoiceId: booking.payment.xenditTransactionId,
+                    reason: reason,
+                    amount: booking.payment.totalAmount
+                };
+
+                const XenditHelper = require('../libs/xendit.lib');
+                const xenditRefund = await XenditHelper.createRefund(refundData);
+
+                if (xenditRefund && xenditRefund.id) {
+                    xenditRefundId = xenditRefund.id;
+                    refundStatus = xenditRefund.status || 'SUCCEEDED';
+                    logger.info(`Xendit refund created successfully: ${xenditRefundId}`);
+                } else {
+                    logger.warn(`Xendit refund failed, using manual refund for booking: ${bookingId}`);
+                }
+            } catch (xenditError) {
+                logger.error('Xendit refund API error:', xenditError);
+                logger.warn(`Falling back to manual refund for booking: ${bookingId}`);
+                // Continue with manual refund jika Xendit gagal
+            }
+
+            // Create refund record
             const refundId = uuidv4();
             await prisma.refund.create({
                 data: {
                     id: refundId,
                     paymentId: booking.payment.id,
                     refundAmount: booking.payment.totalAmount,
-                    refundStatus: 'SUCCEEDED',
+                    refundStatus: refundStatus,
                     refundReason: reason,
-                    xenditRefundTransactionId: `auto-refund-${refundId}`,
+                    xenditRefundTransactionId: xenditRefundId,
                     refundDate: moment().format('DD-MM-YYYY')
                 }
             });
 
-            // Send notifications
+            // Send notifications dengan enhanced logging
             try {
+                logger.info(`Sending refund notifications for booking: ${bookingId}`);
+
                 // Notification for user
                 await NotificationService.createRefundNotification(booking.userId, {
                     buildingName: booking.building.buildingName,
@@ -1115,19 +1203,26 @@ const BookingService = {
                     refundReason: reason
                 });
 
-                // Notification for admin
+                // Enhanced admin notification
                 await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
                     bookingId: bookingId,
                     buildingName: booking.building.buildingName,
+                    borrowerName: booking.user.fullName,
+                    borrowerEmail: booking.user.email,
                     refundAmount: booking.payment.totalAmount,
                     refundReason: reason,
+                    refundType: 'AUTOMATIC_REFUND',
+                    xenditRefundId: xenditRefundId,
+                    timestamp: new Date().toISOString(),
                     action: 'AUTOMATIC_REFUND'
                 });
+
+                logger.info(`Refund notifications sent successfully for booking: ${bookingId}`);
             } catch (notificationError) {
-                logger.warn('Failed to send automatic refund notifications:', notificationError);
+                logger.error('Failed to send automatic refund notifications:', notificationError);
             }
 
-            logger.info(`Automatic refund processed for booking: ${bookingId}`);
+            logger.info(`Automatic refund processed successfully for booking: ${bookingId}, xendit ID: ${xenditRefundId}`);
         } catch (error) {
             logger.error('Process automatic refund error:', error);
             // Don't throw error to prevent breaking the main flow
@@ -1259,7 +1354,11 @@ const BookingService = {
                     ]
                 },
                 include: {
-                    payment: true,
+                    payment: {
+                        include: {
+                            refund: true
+                        }
+                    },
                     building: true,
                     user: true
                 }
@@ -1272,6 +1371,12 @@ const BookingService = {
 
             // Create or update refund record based on refund status
             if (status === 'SUCCEEDED') {
+                // Check if refund already exists to prevent duplicate
+                if (booking.payment.refund) {
+                    logger.info(`Skipping webhook refund for booking ${booking.id}: Refund already exists`);
+                    return true;
+                }
+
                 // Create refund record from webhook
                 const refundId = uuidv4();
                 await prisma.refund.create({
@@ -1350,7 +1455,11 @@ const BookingService = {
                             fullName: true
                         }
                     },
-                    payment: true
+                    payment: {
+                        include: {
+                            refund: true
+                        }
+                    }
                 }
             });
 
@@ -1406,34 +1515,39 @@ const BookingService = {
 
                     // Process refund if needed
                     if (shouldRefund) {
-                        const refundId = uuidv4();
-                        await prisma.refund.create({
-                            data: {
-                                id: refundId,
-                                paymentId: booking.payment.id,
-                                refundAmount: booking.payment.totalAmount,
-                                refundStatus: 'SUCCEEDED',
-                                refundReason: 'Booking expired - melewati tanggal peminjaman',
-                                xenditRefundTransactionId: `expired-refund-${refundId}`,
-                                refundDate: moment().format('DD-MM-YYYY')
-                            }
-                        });
-
-                        // Send refund notification to admin
-                        try {
-                            await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
-                                bookingId: booking.id,
-                                buildingName: booking.building.buildingName,
-                                borrowerName: booking.user.fullName,
-                                refundAmount: booking.payment.totalAmount,
-                                refundReason: 'Booking expired - melewati tanggal peminjaman',
-                                action: 'EXPIRED_REFUND'
+                        // Check if refund already exists to prevent duplicate
+                        if (booking.payment.refund) {
+                            logger.info(`Skipping expired refund for booking ${booking.id}: Refund already exists`);
+                        } else {
+                            const refundId = uuidv4();
+                            await prisma.refund.create({
+                                data: {
+                                    id: refundId,
+                                    paymentId: booking.payment.id,
+                                    refundAmount: booking.payment.totalAmount,
+                                    refundStatus: 'SUCCEEDED',
+                                    refundReason: 'Booking expired - melewati tanggal peminjaman',
+                                    xenditRefundTransactionId: `expired-refund-${refundId}`,
+                                    refundDate: moment().format('DD-MM-YYYY')
+                                }
                             });
-                        } catch (notificationError) {
-                            logger.warn('Failed to send expired refund notification to admin:', notificationError);
-                        }
 
-                        logger.info(`Automatic refund processed for expired booking: ${booking.id}`);
+                            // Send refund notification to admin
+                            try {
+                                await PusherHelper.sendAdminNotification('REFUND_PROCESSED', {
+                                    bookingId: booking.id,
+                                    buildingName: booking.building.buildingName,
+                                    borrowerName: booking.user.fullName,
+                                    refundAmount: booking.payment.totalAmount,
+                                    refundReason: 'Booking expired - melewati tanggal peminjaman',
+                                    action: 'EXPIRED_REFUND'
+                                });
+                            } catch (notificationError) {
+                                logger.warn('Failed to send expired refund notification to admin:', notificationError);
+                            }
+
+                            logger.info(`Automatic refund processed for expired booking: ${booking.id}`);
+                        }
                     }
 
                     // Send notifications to user and admin

@@ -55,21 +55,20 @@ export const useTransactions = (filters = {}) => {
     };
 };
 
-
 export const useTransactionInvoice = () => {
     const [loading, setLoading] = useState(false);
 
-    const generateInvoice = async (bookingsId) => {
+    const generateInvoice = async (bookingId) => {
         setLoading(true);
         try {
-            // Validasi bookingsId sebelum request
-            if (!bookingsId) {
+            // Validasi bookingId sebelum request
+            if (!bookingId) {
                 toast.error('ID booking tidak ditemukan');
                 return false;
             }
 
-            console.log('Generating invoice for bookingsId:', bookingsId); // Debug log
-            const response = await transactionAPI.generateTransactionInvoice(bookingsId);
+            console.log('Generating invoice for bookingId:', bookingId); // Debug log
+            const response = await transactionAPI.generateTransactionInvoice(bookingId);
 
             if (response.status === 'success' && response.data?.invoiceUrl) {
                 // Open the invoice in a new tab for download
@@ -91,17 +90,17 @@ export const useTransactionInvoice = () => {
     };
 
     // Generate PDF invoice locally using react-pdf
-    const generatePDFInvoice = async (bookingsId) => {
+    const generatePDFInvoice = async (bookingId) => {
         setLoading(true);
         try {
-            // Validasi bookingsId sebelum request
-            if (!bookingsId) {
+            // Validasi bookingId sebelum request
+            if (!bookingId) {
                 toast.error('ID booking tidak ditemukan');
                 return false;
             }
 
-            console.log('Generating PDF invoice for bookingsId:', bookingsId); // Debug log
-            const response = await transactionAPI.generateTransactionInvoice(bookingsId);
+            console.log('Generating PDF invoice for bookingId:', bookingId); // Debug log
+            const response = await transactionAPI.generateTransactionInvoice(bookingId);
 
             console.log('Full API response:', response); // Debug full response
 
@@ -114,21 +113,42 @@ export const useTransactionInvoice = () => {
                 console.log('Customer data:', invoiceData.customer);
                 console.log('Item data:', invoiceData.item);
 
-                // Pastikan data sesuai format yang diharapkan InvoicePDF
-                if (!invoiceData.invoiceNumber || !invoiceData.customer || !invoiceData.item) {
-                    console.error('Missing data fields:', {
-                        hasInvoiceNumber: !!invoiceData.invoiceNumber,
-                        hasCustomer: !!invoiceData.customer,
-                        hasItem: !!invoiceData.item
-                    });
-                    toast.error('Data invoice tidak lengkap');
+                // Enhanced validation with better error messages
+                const missingFields = [];
+                if (!invoiceData.invoiceNumber) missingFields.push('Invoice Number');
+                if (!invoiceData.customer) missingFields.push('Customer Data');
+                if (!invoiceData.item) missingFields.push('Item Data');
+                if (!invoiceData.date) missingFields.push('Date');
+
+                if (missingFields.length > 0) {
+                    console.error('Missing required fields:', missingFields);
+                    toast.error(`Data invoice tidak lengkap: ${missingFields.join(', ')}`);
+                    return false;
+                }
+
+                // Additional validation for nested objects
+                if (invoiceData.customer && (!invoiceData.customer.borrowerName || !invoiceData.customer.email)) {
+                    console.error('Incomplete customer data:', invoiceData.customer);
+                    toast.error('Data pelanggan tidak lengkap');
+                    return false;
+                }
+
+                if (invoiceData.item && (!invoiceData.item.buildingName || !invoiceData.item.totalAmount)) {
+                    console.error('Incomplete item data:', invoiceData.item);
+                    toast.error('Data peminjaman tidak lengkap');
                     return false;
                 }
 
                 console.log('Starting PDF generation...');
 
+                // Add transactionId to invoice data if available from URL or API
+                const enhancedInvoiceData = {
+                    ...invoiceData,
+                    transactionId: invoiceData.transactionId || bookingId // fallback to bookingId if no transactionId
+                };
+
                 // Generate PDF using react-pdf
-                const doc = React.createElement(InvoicePDF, { invoiceData });
+                const doc = React.createElement(InvoicePDF, { invoiceData: enhancedInvoiceData });
                 console.log('PDF document created, generating blob...');
 
                 const pdfBlob = await pdf(doc).toBlob();
@@ -139,11 +159,15 @@ export const useTransactionInvoice = () => {
                     return false;
                 }
 
-                // Create download link
+                // Create download link with better filename
                 const url = URL.createObjectURL(pdfBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `Invoice-${invoiceData.invoiceNumber}.pdf`;
+
+                // Create a more descriptive filename
+                const filename = `Invoice-${invoiceData.invoiceNumber || 'Unknown'}-${invoiceData.date?.replace(/\//g, '-') || 'Unknown'}.pdf`;
+                link.download = filename;
+
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -159,8 +183,16 @@ export const useTransactionInvoice = () => {
         } catch (err) {
             console.error('PDF generation error:', err);
             console.error('Error stack:', err.stack);
-            const errorMessage = extractErrorMessage(err, 'Gagal membuat PDF invoice');
-            toast.error(errorMessage);
+
+            // Enhanced error handling
+            if (err?.response?.status === 404) {
+                toast.error('Data invoice tidak ditemukan');
+            } else if (err?.response?.status === 403) {
+                toast.error('Anda tidak memiliki akses untuk mengunduh invoice ini');
+            } else {
+                const errorMessage = extractErrorMessage(err, 'Gagal membuat PDF invoice');
+                toast.error(errorMessage);
+            }
             return false;
         } finally {
             setLoading(false);

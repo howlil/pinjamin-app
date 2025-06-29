@@ -45,6 +45,7 @@ const TransactionService = {
 
             const formattedTransactions = transactions.map(transaction => ({
                 transactionId: transaction.id,
+                transactionUrl : transaction.paymentUrl,
                 bookingId: transaction.bookingId,
                 buildingName: transaction.booking.building.buildingName,
                 paymentDate: transaction.paymentDate,

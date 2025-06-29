@@ -9,8 +9,13 @@ import {
     Td,
     Badge,
     Text,
-    VStack
+    VStack,
+    HStack,
+    IconButton,
+    Tooltip,
+    Link
 } from '@chakra-ui/react';
+import { ExternalLink, Download, Eye } from 'lucide-react';
 import PrimaryButton from '@shared/components/Button';
 import { useTransactionInvoice } from '../api/useTransactions';
 
@@ -62,16 +67,20 @@ const TransactionTable = ({ transactions }) => {
         }).format(amount);
     };
 
-    const handleGenerateInvoice = async (bookingsId) => {
-        console.log('Transaction data for invoice:', bookingsId); // Debug log
-        await generatePDFInvoice(bookingsId);
+    const handleGenerateInvoice = async (bookingId) => {
+        console.log('Transaction data for invoice:', bookingId); // Debug log
+        await generatePDFInvoice(bookingId);
     };
 
     const canGenerateInvoice = (status) => {
         return ['PAID', 'SETTLED'].includes(status?.toUpperCase());
     };
 
-
+    const handleViewTransaction = (transactionUrl) => {
+        if (transactionUrl) {
+            window.open(transactionUrl, '_blank');
+        }
+    };
 
     if (!transactions || transactions.length === 0) {
         return (
@@ -120,9 +129,18 @@ const TransactionTable = ({ transactions }) => {
                                 py={4}
                                 borderColor="rgba(215, 215, 215, 0.3)"
                             >
+                                Invoice
+                            </Th>
+                            <Th
+                                color="#2A2A2A"
+                                fontWeight="700"
+                                fontSize="sm"
+                                textTransform="none"
+                                py={4}
+                                borderColor="rgba(215, 215, 215, 0.3)"
+                            >
                                 Gedung
                             </Th>
-
                             <Th
                                 color="#2A2A2A"
                                 fontWeight="700"
@@ -172,6 +190,7 @@ const TransactionTable = ({ transactions }) => {
                                 textTransform="none"
                                 py={4}
                                 borderColor="rgba(215, 215, 215, 0.3)"
+                                textAlign="center"
                             >
                                 Aksi
                             </Th>
@@ -206,6 +225,30 @@ const TransactionTable = ({ transactions }) => {
                                         py={4}
                                         borderColor="rgba(215, 215, 215, 0.2)"
                                     >
+                                        <VStack align="start" spacing={1}>
+                                            <Text
+                                                fontSize="xs"
+                                                color="#2A2A2A"
+                                                fontFamily="monospace"
+                                                fontWeight="600"
+                                                maxW="120px"
+                                                noOfLines={1}
+                                            >
+                                                {transaction.invoiceNumber || '-'}
+                                            </Text>
+                                            <Text
+                                                fontSize="xs"
+                                                color="#666"
+                                                fontFamily="monospace"
+                                            >
+                                                ID: {transaction.transactionId?.slice(0, 8) || '-'}...
+                                            </Text>
+                                        </VStack>
+                                    </Td>
+                                    <Td
+                                        py={4}
+                                        borderColor="rgba(215, 215, 215, 0.2)"
+                                    >
                                         <Text
                                             fontSize="sm"
                                             color="#2A2A2A"
@@ -215,7 +258,6 @@ const TransactionTable = ({ transactions }) => {
                                             {transaction.buildingName || '-'}
                                         </Text>
                                     </Td>
-
                                     <Td
                                         py={4}
                                         borderColor="rgba(215, 215, 215, 0.2)"
@@ -228,9 +270,17 @@ const TransactionTable = ({ transactions }) => {
                                         py={4}
                                         borderColor="rgba(215, 215, 215, 0.2)"
                                     >
-                                        <Text fontSize="sm" color="#2A2A2A">
-                                            {transaction.paymentMethod || '-'}
-                                        </Text>
+                                        <Badge
+                                            bg="rgba(33, 209, 121, 0.1)"
+                                            color="#21D179"
+                                            borderRadius="12px"
+                                            px={2}
+                                            py={1}
+                                            fontSize="xs"
+                                            fontWeight="600"
+                                        >
+                                            {transaction.paymentMethod?.replace('_', ' ') || '-'}
+                                        </Badge>
                                     </Td>
                                     <Td
                                         py={4}
@@ -266,18 +316,44 @@ const TransactionTable = ({ transactions }) => {
                                         py={4}
                                         borderColor="rgba(215, 215, 215, 0.2)"
                                     >
-                                        <PrimaryButton
-                                            size="sm"
-                                            w="100%"
-                                            isDisabled={!canGenerateInvoice(transaction.paymentStatus) || invoiceLoading}
-                                            isLoading={invoiceLoading}
-                                            onClick={() => {
-                                                console.log('Full transaction object:', transaction); // Debug log
-                                                handleGenerateInvoice(transaction.bookingId);
-                                            }}
-                                        >
-                                            Cetak Invoice
-                                        </PrimaryButton>
+                                        <HStack spacing={2} justify="center">
+                                            {/* View Transaction Button */}
+                                            {transaction.transactionUrl && (
+                                                <Tooltip label="Lihat Detail Transaksi" placement="top">
+                                                    <IconButton
+                                                        icon={<Eye size={16} />}
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        colorScheme="blue"
+                                                        onClick={() => handleViewTransaction(transaction.transactionUrl)}
+                                                        borderRadius="12px"
+                                                        _hover={{
+                                                            bg: "rgba(59, 130, 246, 0.1)"
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                            )}
+
+                                            {/* Generate Invoice Button */}
+                                            <Tooltip label="Cetak Invoice" placement="top">
+                                                <IconButton
+                                                    icon={<Download size={16} />}
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    colorScheme="green"
+                                                    isDisabled={!canGenerateInvoice(transaction.paymentStatus) || invoiceLoading}
+                                                    isLoading={invoiceLoading}
+                                                    onClick={() => {
+                                                        console.log('Full transaction object:', transaction); // Debug log
+                                                        handleGenerateInvoice(transaction.bookingId);
+                                                    }}
+                                                    borderRadius="12px"
+                                                    _hover={{
+                                                        bg: "rgba(33, 209, 121, 0.1)"
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        </HStack>
                                     </Td>
                                 </Tr>
                             );

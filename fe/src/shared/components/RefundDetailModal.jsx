@@ -130,10 +130,20 @@ const RefundDetailModal = ({ isOpen, onClose, bookingId }) => {
                 icon: CheckCircle,
                 text: 'Selesai'
             },
+            'SUCCEEDED': {
+                color: 'green',
+                icon: CheckCircle,
+                text: 'Berhasil'
+            },
             'FAILED': {
                 color: 'red',
                 icon: XCircle,
                 text: 'Gagal'
+            },
+            'REJECTED': {
+                color: 'red',
+                icon: XCircle,
+                text: 'Ditolak'
             }
         };
 

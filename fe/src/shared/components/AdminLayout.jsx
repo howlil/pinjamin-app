@@ -407,12 +407,17 @@ const AdminLayout = () => {
                                                         markAllAsRead();
                                                     }}
                                                     isLoading={notificationLoading}
-                                                    loadingText="..."
+                                                    loadingText="Menandai..."
                                                     fontFamily="Inter, sans-serif"
                                                     fontSize="xs"
                                                     _hover={{
                                                         bg: "rgba(33, 209, 121, 0.1)"
                                                     }}
+                                                    _disabled={{
+                                                        opacity: 0.6,
+                                                        cursor: "not-allowed"
+                                                    }}
+                                                    disabled={notificationLoading}
                                                 >
                                                     Tandai Semua
                                                 </Button>
