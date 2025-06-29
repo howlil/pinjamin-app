@@ -43,7 +43,7 @@ const WebhookController = {
             }
 
             // Determine webhook type based on payload structure
-            const webhookType = this.determineWebhookType(req.body);
+            const webhookType = WebhookController.determineWebhookType(req.body);
 
             let result;
 
@@ -59,11 +59,21 @@ const WebhookController = {
             }
 
             if (result) {
-                logger.info(`${webhookType.toLowerCase()} webhook processed successfully`);
-                return ResponseHelper.success(res, `${webhookType.toLowerCase()} webhook processed successfully`);
+                const successMessage = `${webhookType.toLowerCase()} webhook processed successfully`;
+                logger.info(successMessage, {
+                    externalId: req.body?.external_id,
+                    status: req.body?.status,
+                    environment: nodeEnv
+                });
+                return ResponseHelper.success(res, successMessage);
             } else {
-                logger.warn(`${webhookType.toLowerCase()} webhook processing failed`);
-                return ResponseHelper.error(res, `${webhookType.toLowerCase()} webhook processing failed`, 400);
+                const errorMessage = `${webhookType.toLowerCase()} webhook processing failed`;
+                logger.warn(errorMessage, {
+                    externalId: req.body?.external_id,
+                    status: req.body?.status,
+                    environment: nodeEnv
+                });
+                return ResponseHelper.error(res, errorMessage, 400);
             }
         } catch (error) {
             logger.error('Webhook processing error:', error);

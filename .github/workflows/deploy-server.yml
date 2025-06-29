@@ -61,22 +61,20 @@ jobs:
 
           # Create ecosystem file if it does not exist
           if [ ! -f ecosystem.config.js ]; then
-            cat > ecosystem.config.js << EOL
-module.exports = {
-  apps: [{
-    name: "pbf-server",
-    script: "./app.js",
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: "1G",
-    env: {
-      NODE_ENV: "production",
-      PORT: 3000
-    }
-  }]
-};
-EOL
+            echo "module.exports = {" > ecosystem.config.js
+            echo "  apps: [{" >> ecosystem.config.js
+            echo "    name: \"pbf-server\"," >> ecosystem.config.js
+            echo "    script: \"./app.js\"," >> ecosystem.config.js
+            echo "    instances: 1," >> ecosystem.config.js
+            echo "    autorestart: true," >> ecosystem.config.js
+            echo "    watch: false," >> ecosystem.config.js
+            echo "    max_memory_restart: \"1G\"," >> ecosystem.config.js
+            echo "    env: {" >> ecosystem.config.js
+            echo "      NODE_ENV: \"production\"," >> ecosystem.config.js
+            echo "      PORT: 3000" >> ecosystem.config.js
+            echo "    }" >> ecosystem.config.js
+            echo "  }]" >> ecosystem.config.js
+            echo "};" >> ecosystem.config.js
           fi
 
           # Create .env file from secrets if it does not exist
