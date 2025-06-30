@@ -108,7 +108,7 @@ const uploadMultiple = multer({
 });
 
 const getFileUrl = (filename, type = 'documents') => {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.BACKEND_URL || 'http://localhost:3000';
     return `${baseUrl}/uploads/${type}/${filename}`;
 };
 

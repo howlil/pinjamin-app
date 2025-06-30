@@ -83,7 +83,14 @@ app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'success',
         message: 'API is running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        environment: {
+            NODE_ENV: process.env.NODE_ENV,
+            BASE_URL: process.env.BACKEND_URL,
+            FRONTEND_URL: process.env.FRONTEND_URL,
+            HOST: req.get('host'),
+            PROTOCOL: req.protocol
+        }
     });
 });
 

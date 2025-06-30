@@ -1,47 +1,17 @@
 # ==========================================
-# Multi-stage Docker Build untuk Production
+# Production Docker Build - Fixed Version
 # ==========================================
+FROM node:18-alpine
 
-# Stage 1: Build stage
-FROM node:18-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Install dependencies untuk native modules (Prisma butuh ini)
-RUN apk add --no-cache \
-    openssl \
-    libc6-compat \
-    python3 \
-    make \
-    g++
-
-# Install pnpm globally
-RUN npm install -g pnpm
-
-# Copy package files
-COPY package*.json ./
-COPY pnpm-lock.yaml* ./
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile --prod=false
-
-# Copy source code
-COPY . .
-
-# Generate Prisma client
-RUN pnpm run db:generate
-
-# ==========================================
-# Stage 2: Production stage
-# ==========================================
-FROM node:18-alpine AS production
-
-# Install runtime dependencies
+# Install system dependencies yang diperlukan untuk Prisma
 RUN apk add --no-cache \
     openssl \
     dumb-init \
-    curl
+    curl \
+    python3 \
+    make \
+    g++ \
+    libc6-compat
 
 # Create non-root user untuk security
 RUN addgroup -g 1001 -S nodejs && \
@@ -50,23 +20,27 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
-# Install pnpm
+# Install pnpm globally
 RUN npm install -g pnpm
 
 # Copy package files
 COPY package*.json ./
 COPY pnpm-lock.yaml* ./
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod=true && \
-    pnpm store prune
+# Install ALL dependencies (including dev dependencies for Prisma generation)
+RUN pnpm install --frozen-lockfile
 
-# Copy built application dan Prisma client dari builder stage
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Copy semua source code
+COPY . .
 
-# Copy source code
-COPY --chown=nodejs:nodejs . .
+# Generate Prisma client
+RUN pnpm run db:generate
+
+# Remove dev dependencies setelah Prisma client di-generate
+RUN pnpm prune --prod && pnpm store prune
+
+# Change ownership of app directory
+RUN chown -R nodejs:nodejs /app
 
 # Create necessary directories dengan proper permissions
 RUN mkdir -p uploads/images uploads/documents uploads/exports logs && \
