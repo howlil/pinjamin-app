@@ -19,11 +19,12 @@ const BookingController = {
         try {
             const userId = req.user.id;
             const bookingData = req.body;
-            const proposalLetter = req.file;
+            const proposalLetter = req.file; // Optional file upload
 
-            if (!proposalLetter) {
-                return ResponseHelper.validationError(res, 'Proposal letter wajib diupload');
-            }
+            // Note: Proposal letter is now optional
+            // if (!proposalLetter) {
+            //     return ResponseHelper.validationError(res, 'Proposal letter wajib diupload');
+            // }
 
             const result = await BookingService.createBooking(userId, bookingData, proposalLetter);
             return ResponseHelper.success(res, 'Booking berhasil dibuat', result, 201);

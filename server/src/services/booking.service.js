@@ -81,7 +81,12 @@ const BookingService = {
 
             // Create booking
             const bookingId = uuidv4();
-            const proposalLetterUrl = getFileUrl(proposalLetter.filename, 'documents');
+            let proposalLetterUrl = null;
+
+            // Handle proposal letter file upload
+            if (proposalLetter && proposalLetter.filename) {
+                proposalLetterUrl = getFileUrl(proposalLetter.filename, 'documents');
+            }
 
             const booking = await prisma.booking.create({
                 data: {
