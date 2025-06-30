@@ -1,75 +1,124 @@
-# Dependencies
+# ==========================================
+# Node.js Dependencies
+# ==========================================
 node_modules
 npm-debug.log*
 pnpm-debug.log*
+yarn-error.log*
 
-# Environment files
+# ==========================================
+# Environment Files
+# ==========================================
 .env*
 !.env.example
 
-# Development files
+# ==========================================
+# Development Files
+# ==========================================
 .DS_Store
-.vscode
-.idea
+.vscode/
+.idea/
 *.swp
 *.swo
+*~
 
-# Logs
-logs
-*.log
+# ==========================================
+# Git Files
+# ==========================================
+.git/
+.gitignore
+.gitattributes
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage
-*.lcov
-
+# ==========================================
 # Documentation
+# ==========================================
 README.md
 *.md
 !api.md
 
-# Git files
-.git
-.gitignore
+# ==========================================
+# Logs
+# ==========================================
+logs/
+*.log
 
-# Testing
-test
-tests
+# ==========================================
+# Testing Files
+# ==========================================
+test/
+tests/
 *.test.js
 *.spec.js
+coverage/
+.nyc_output/
 
-# PM2
-ecosystem.config.js
-
-# Temporary files
-tmp
-temp
-
-# OS generated files
-Thumbs.db
-
-# Docker files
+# ==========================================
+# Build Tools & CI/CD
+# ==========================================
 Dockerfile*
 .dockerignore
+docker-compose*.yml
+.github/
+.gitlab-ci.yml
 
-# Build artifacts (if any)
-dist
-build
+# ==========================================
+# Development Tools
+# ==========================================
+ecosystem.config.js
+nodemon.json
 
-# Database files (SQLite)
+# ==========================================
+# Database Files (Development)
+# ==========================================
 *.db
 *.sqlite
 *.sqlite3
-
-# Prisma
-prisma/migrations/**/migration.sql
 prisma/dev.db*
 
-# Local uploads during development
+# ==========================================
+# Temporary Files
+# ==========================================
+tmp/
+temp/
+.tmp/
+*.pid
+*.seed
+*.pid.lock
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# ==========================================
+# Runtime Data (akan dibuat di container)
+# ==========================================
 uploads/*
-!uploads/.gitkeep 
+!uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# ==========================================
+# Package Lock Files (kecuali pnpm)
+# ==========================================
+package-lock.json
+yarn.lock
+
+# ==========================================
+# Backup Files
+# ==========================================
+*.bak
+*.backup
+*.old
+
+# ==========================================
+# Editor Files
+# ==========================================
+*.sublime-project
+*.sublime-workspace
+.vscode-test 
